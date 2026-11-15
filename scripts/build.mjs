@@ -1,12 +1,14 @@
 import { build as viteBuild } from 'vite';
 import { build as esbuild } from 'esbuild';
-import { cpSync, mkdirSync, rmSync } from 'fs';
+import { cpSync, mkdirSync, readFileSync, rmSync } from 'fs';
+import { execFileSync } from 'child_process';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const dist = resolve(root, 'dist');
+const shouldZip = process.argv.includes('--zip');
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(resolve(dist, 'content'), { recursive: true });
@@ -30,10 +32,23 @@ await Promise.all([
     minify: true,
     format: 'iife',
     target: 'chrome120',
-    outfile: resolve(dist, 'content/main.js')
+    outfile: resolve(root, 'dist/content/main.js')
   })
 ]);
 
-// 3. Copy manifest & static assets
+// 3. Copy manifest & icons
 cpSync(resolve(root, 'public/manifest.json'), resolve(dist, 'manifest.json'));
+cpSync(resolve(root, 'public/icons'), resolve(dist, 'icons'), { recursive: true });
+
+if (shouldZip) {
+  const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
+  const zipName = `geofs-extension-v${pkg.version}.zip`;
+  const releaseDir = resolve(root, 'release');
+  mkdirSync(releaseDir, { recursive: true });
+  const zipPath = resolve(releaseDir, zipName);
+  rmSync(zipPath, { force: true });
+  execFileSync('zip', ['-r', '-q', zipPath, '.'], { cwd: dist });
+  console.log(`[build] Packaged release/${zipName}`);
+}
+
 console.log('[build] GeoFS Extension dist/ built successfully.');
