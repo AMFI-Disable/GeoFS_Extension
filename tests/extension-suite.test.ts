@@ -5,6 +5,9 @@ import { detectGeoFSKeyCollision, formatComboForOs } from '../src/core/keybind-m
 import { formatLogbookCsv } from '../src/core/logbook-export';
 import { buildGForceShader } from '../src/modules/realism-pack';
 import { rateLanding } from '../src/modules/landing-statistics';
+import { EngineThrust } from '../src/modules/overpowered-engines';
+import { fuelBurnKgHr } from '../src/modules/fuel-simulator';
+import { projectFlightPath } from '../src/modules/flight-path-vector';
 import { DEFAULT_SETTINGS } from '../src/types/settings';
 import type { IModule } from '../src/types/module';
 
@@ -155,5 +158,38 @@ describe('Subsystems (Shaders, Landing Ratings, OS Keybinds)', () => {
     expect(csv).toContain('ID,Timestamp,Aircraft ID,Aircraft Name');
     expect(csv).toContain('"Airbus A350, XWB"');
     expect(csv).toContain('Butter');
+  });
+});
+
+describe('Archived Engine and Flight Path Behavior', () => {
+  it('applies forward, afterburner and reverse thrust, then restores the original aircraft parts', () => {
+    const first = { thrust: 100, afterBurnerThrust: 180, reverseThrust: -50 };
+    const replacement = { thrust: 200, reverseThrust: 0 };
+    const engine = new EngineThrust();
+    engine.apply({ first }, 2.5);
+    engine.apply({ first }, 2.5);
+    expect(first).toEqual({ thrust: 250, afterBurnerThrust: 450, reverseThrust: -125 });
+    engine.apply({ replacement }, 2.5);
+    expect(first).toEqual({ thrust: 100, afterBurnerThrust: 180, reverseThrust: -50 });
+    expect(replacement).toEqual({ thrust: 500, reverseThrust: 0 });
+    engine.restore();
+    expect(replacement).toEqual({ thrust: 200, reverseThrust: 0 });
+  });
+
+  it('uses archived V3 and V4 thrust consumption and reverse scaling', () => {
+    const telemetry = new SimAdapter().buildTelemetrySnapshot(0.1, 3);
+    const aircraft = { engines: [{ thrust: 10_000 }, { thrust: 20_000 }], definition: { maxThrust: 60_000 } };
+    expect(fuelBurnKgHr(aircraft, { ...telemetry, reverserActive: true })).toBeCloseTo(225);
+    expect(fuelBurnKgHr(aircraft, { ...telemetry, simMajor: 4, reverserActive: true })).toBeCloseTo(303.75);
+    expect(fuelBurnKgHr({ ...aircraft, engine: { on: false } }, telemetry)).toBe(0);
+  });
+
+  it('projects the measured flight path from the camera and drops stale samples', () => {
+    const previous = { x: 0, y: 0, z: 0 };
+    const current = { x: 5, y: 10, z: -2 };
+    const camera = { x: 50, y: 60, z: 70 };
+    expect(projectFlightPath(previous, current, camera, 0.5)).toEqual({ x: 65, y: 90, z: 64 });
+    expect(projectFlightPath(previous, current, camera, 6)).toBeNull();
+    expect(projectFlightPath(current, current, camera, 0.5)).toBeNull();
   });
 });

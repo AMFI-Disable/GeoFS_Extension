@@ -22,7 +22,7 @@ const MODULE_META: Array<{ id: string; name: string; desc: string }> = [
   { id: 'autothrottle', name: 'Autothrottle', desc: 'Aircraft-class PID & touchdown retard' },
   { id: 'information-display', name: 'Information Display', desc: 'HUD telemetry & multi-engine % THR' },
   { id: 'fuel-simulator', name: 'Fuel Simulator', desc: 'Multi-engine SFC & tank burn' },
-  { id: 'overpowered-engines', name: 'Overpowered Engines', desc: 'Thrust & ceiling multiplier' },
+  { id: 'overpowered-engines', name: 'Overpowered Engines', desc: 'Live engine thrust multiplier' },
   { id: 'checklist-system', name: 'Checklist System', desc: 'Type-aware auto-sync checklists' },
   { id: 'realism-pack', name: 'Realism Pack', desc: 'Adaptive V3/V4 shaders & G-audio' },
   { id: 'failure-simulator', name: 'Failure Simulator', desc: 'Manual & probability failures' },

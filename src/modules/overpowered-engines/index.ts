@@ -1,9 +1,47 @@
+import type { GeoFSEnginePart } from '../../types/geofs.d';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
+
+const THRUST_FIELDS = ['thrust', 'afterBurnerThrust', 'reverseThrust'] as const;
+type ThrustValues = Pick<GeoFSEnginePart, (typeof THRUST_FIELDS)[number]>;
+
+// Both archived Overpowered Engines scripts apply their multiplier to the live engine parts.
+export class EngineThrust {
+  private originals = new Map<GeoFSEnginePart, ThrustValues>();
+
+  public apply(parts: Record<string, GeoFSEnginePart> | undefined, multiplier: number): void {
+    const engines = new Set(Object.values(parts ?? {}).filter((part) => Number.isFinite(part?.thrust)));
+    for (const [part, original] of this.originals) {
+      if (!engines.has(part)) {
+        Object.assign(part, original);
+        this.originals.delete(part);
+      }
+    }
+    for (const part of engines) {
+      let original = this.originals.get(part);
+      if (!original) {
+        original = {};
+        for (const field of THRUST_FIELDS) {
+          if (Number.isFinite(part[field])) original[field] = part[field];
+        }
+        this.originals.set(part, original);
+      }
+      for (const field of THRUST_FIELDS) {
+        const value = original[field];
+        if (value !== undefined) part[field] = value * multiplier;
+      }
+    }
+  }
+
+  public restore(): void {
+    for (const [part, original] of this.originals) Object.assign(part, original);
+    this.originals.clear();
+  }
+}
 
 export class OverpoweredEnginesModule implements IModule {
   public readonly id = 'overpowered-engines';
   public readonly name = 'Overpowered Engines';
-  public readonly description = 'Boosts engine thrust and ceiling limits with clean state restoration.';
+  public readonly description = 'Boosts live engine thrust with clean state restoration.';
   public readonly supportedMajors = [3, 4] as const;
   public readonly defaultEnabled = false;
 
@@ -11,8 +49,7 @@ export class OverpoweredEnginesModule implements IModule {
   private active = false;
   private atEngaged = false;
   private multiplier = 2.5;
-  private origMaxThrust: number | null = null;
-  private origAcId: string | null = null;
+  private thrust = new EngineThrust();
   private btnEl: HTMLButtonElement | null = null;
   private unmounts: Array<() => void> = [];
 
@@ -32,7 +69,7 @@ export class OverpoweredEnginesModule implements IModule {
       context.onEvent<{ engaged: boolean }>('autothrottle:state', (detail) => {
         this.atEngaged = Boolean(detail?.engaged);
         if (this.atEngaged) {
-          this.restoreOriginal();
+          this.thrust.restore();
         } else if (this.active) {
           this.ctx?.anchors.showToast(`OP ${this.multiplier}x Re-Engaged`);
         }
@@ -46,7 +83,7 @@ export class OverpoweredEnginesModule implements IModule {
 
   public toggle(): void {
     this.active = !this.active;
-    if (!this.active) this.restoreOriginal();
+    if (!this.active) this.thrust.restore();
     if (this.btnEl) {
       this.btnEl.classList.toggle('is-active', this.active);
       this.btnEl.textContent = `OP ${this.multiplier}x ${this.active ? 'ON' : 'OFF'}`;
@@ -55,28 +92,17 @@ export class OverpoweredEnginesModule implements IModule {
   }
 
   public update(telemetry: FlightTelemetry): void {
-    const def = window.geofs?.aircraft?.instance?.definition;
-    if (!def || !telemetry.aircraft) return;
-
-    if (telemetry.aircraft.id !== this.origAcId) {
-      this.origAcId = telemetry.aircraft.id;
-      this.origMaxThrust = typeof def.maxThrust === 'number' ? def.maxThrust : null;
-    }
-    if (this.active && !this.atEngaged && this.origMaxThrust !== null) {
-      def.maxThrust = this.origMaxThrust * this.multiplier;
-    }
-  }
-
-  private restoreOriginal(): void {
-    const def = window.geofs?.aircraft?.instance?.definition;
-    if (def && this.origMaxThrust !== null) {
-      def.maxThrust = this.origMaxThrust;
+    if (this.active && !this.atEngaged && !telemetry.crashed) {
+      this.thrust.apply(window.geofs?.aircraft?.instance?.parts, this.multiplier);
+    } else {
+      this.thrust.restore();
     }
   }
 
   public destroy(): void {
     this.active = false;
-    this.restoreOriginal();
+    this.atEngaged = false;
+    this.thrust.restore();
     for (const u of this.unmounts) u();
     this.unmounts = [];
     this.btnEl = null;

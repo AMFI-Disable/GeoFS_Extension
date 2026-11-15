@@ -44,6 +44,13 @@ export interface GeoFSAircraftDefinition {
   [key: string]: unknown;
 }
 
+export interface GeoFSEnginePart {
+  thrust?: number;
+  afterBurnerThrust?: number;
+  reverseThrust?: number;
+  [key: string]: unknown;
+}
+
 export interface GeoFSEngine {
   thrust?: number;
   on?: boolean;
@@ -55,18 +62,21 @@ export interface GeoFSAircraftInstance {
   name?: string;
   groundContact?: boolean;
   crashed?: boolean;
+  stalling?: boolean;
   llaLocation?: [number, number, number];
   engines?: GeoFSEngine[];
   engine?: GeoFSEngine;
-  parts?: Record<string, { thrust?: number; [key: string]: unknown }>;
+  parts?: Record<string, GeoFSEnginePart>;
   definition?: GeoFSAircraftDefinition;
   setup?: { mass?: number; [key: string]: unknown };
   aircraftRecord?: { id?: string | number; name?: string; [key: string]: unknown };
   rigidBody?: {
+    mass?: number;
     setMassProps?: (mass: number, inertia: unknown) => void;
     linearVelocity?: [number, number, number];
     [key: string]: unknown;
   };
+  startEngine?: () => void;
   startEngines?: () => void;
   stopEngines?: () => void;
   stopEngine?: () => void;
@@ -102,6 +112,7 @@ export interface GeoFSGlobal {
   aircraft?: {
     instance?: GeoFSAircraftInstance;
   };
+  camera?: { lla?: [number, number, number] };
   aircraftList?: Record<string, { name?: string; [key: string]: unknown }>;
   animation?: {
     values?: GeoFSAnimationValues;
@@ -111,6 +122,7 @@ export interface GeoFSGlobal {
     imageryProvider?: unknown;
     viewer?: {
       scene?: {
+        canvas?: HTMLCanvasElement;
         postProcessStages?: {
           add?: (stage: unknown) => unknown;
           remove?: (stage: unknown) => void;
@@ -135,6 +147,12 @@ export interface GeoFSGlobal {
   [key: string]: unknown;
 }
 
+export interface GeoFSCartesian {
+  x: number;
+  y: number;
+  z: number;
+}
+
 declare global {
   interface Window {
     geofs?: GeoFSGlobal;
@@ -145,8 +163,11 @@ declare global {
       UrlTemplateImageryProvider?: new (opts: { url: string; maximumLevel?: number; credit?: unknown }) => unknown;
       BingMapsImageryProvider?: new (opts: { url?: string; key: string; mapStyle?: string }) => unknown;
       Credit?: new (text: string, showOnScreen?: boolean) => unknown;
-      Cartesian3?: { fromDegrees?: (lon: number, lat: number, alt: number) => unknown };
-      SceneTransforms?: { wgs84ToWindowCoordinates?: (scene: unknown, pos: unknown) => { x: number; y: number } | undefined };
+      Cartesian3?: { fromDegrees?: (lon: number, lat: number, alt: number) => GeoFSCartesian };
+      SceneTransforms?: {
+        wgs84ToWindowCoordinates?: (scene: unknown, pos: GeoFSCartesian) => { x: number; y: number } | undefined;
+        worldToWindowCoordinates?: (scene: unknown, pos: GeoFSCartesian) => { x: number; y: number } | undefined;
+      };
       [key: string]: unknown;
     };
   }
