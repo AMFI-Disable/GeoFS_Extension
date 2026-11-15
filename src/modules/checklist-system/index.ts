@@ -1,70 +1,95 @@
 import type { AircraftCategory, FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 
+type ChecklistPhase = 'preflight' | 'takeoff' | 'cruise' | 'approach' | 'emergency';
+
 interface ChecklistItem {
   id: string;
   label: string;
   autoCheck?: (t: FlightTelemetry) => boolean;
 }
 
-const CHECKLISTS_BY_CATEGORY: Record<AircraftCategory, ChecklistItem[]> = {
-  'ga-piston': [
-    { id: 'brk', label: 'Parking Brake SET', autoCheck: (t) => t.parkingBrake },
-    { id: 'flaps', label: 'Flaps SET for Takeoff', autoCheck: (t) => t.flapsTarget >= 1 },
-    { id: 'lights', label: 'Nav / Strobe Lights ON', autoCheck: (t) => t.lightsOn },
-    { id: 'thr', label: 'Full Power Verified', autoCheck: (t) => (t.throttles[0] ?? 0) > 0.85 }
-  ],
-  'turboprop': [
-    { id: 'brk', label: 'Parking Brake SET', autoCheck: (t) => t.parkingBrake },
-    { id: 'flaps', label: 'Flaps Approach/TO', autoCheck: (t) => t.flapsTarget >= 1 },
-    { id: 'gear', label: 'Gear Down & Locked', autoCheck: (t) => t.gearDown },
-    { id: 'lights', label: 'Landing Lights ON', autoCheck: (t) => t.lightsOn }
-  ],
-  'airliner-twin': [
-    { id: 'brk', label: 'Parking Brake SET', autoCheck: (t) => t.parkingBrake },
-    { id: 'flaps', label: 'Takeoff Flaps CONFIG', autoCheck: (t) => t.flapsTarget >= 1 },
-    { id: 'lights', label: 'Exterior Lights ON', autoCheck: (t) => t.lightsOn },
-    { id: 'gear', label: 'Gear UP After Positive Climb', autoCheck: (t) => !t.groundContact && !t.gearDown }
-  ],
-  'airliner-quad': [
-    { id: 'brk', label: 'Parking Brake SET', autoCheck: (t) => t.parkingBrake },
-    { id: 'flaps', label: 'Flaps 10/20 SET', autoCheck: (t) => t.flapsTarget >= 2 },
-    { id: 'lights', label: 'Strobes & Taxi ON', autoCheck: (t) => t.lightsOn },
-    { id: 'gear', label: '4-Engine Symmetry & Gear UP', autoCheck: (t) => !t.groundContact && !t.gearDown }
-  ],
-  'fighter': [
-    { id: 'brk', label: 'Wheel Chocks / Brake SET', autoCheck: (t) => t.parkingBrake },
-    { id: 'lights', label: 'Anti-Collision ON', autoCheck: (t) => t.lightsOn },
-    { id: 'ab', label: 'Afterburner / MIL Power', autoCheck: (t) => (t.throttles[0] ?? 0) > 0.9 },
-    { id: 'gear', label: 'Gear UP < 250 KTS', autoCheck: (t) => !t.groundContact && !t.gearDown }
-  ],
-  'supersonic': [
-    { id: 'brk', label: 'Brakes SET', autoCheck: (t) => t.parkingBrake },
-    { id: 'lights', label: 'Landing Lights ON', autoCheck: (t) => t.lightsOn },
-    { id: 'ab', label: 'Reheat Takeoff Power', autoCheck: (t) => (t.throttles[0] ?? 0) > 0.9 },
-    { id: 'gear', label: 'Gear UP Positive Climb', autoCheck: (t) => !t.groundContact && !t.gearDown }
-  ],
-  'specialized': [
-    { id: 'lights', label: 'Tracking Beacons ON', autoCheck: (t) => t.lightsOn },
-    { id: 'gear', label: 'Gear Status Verified', autoCheck: (t) => t.gearDown || !t.groundContact }
-  ]
+const PHASE_LABELS: Record<ChecklistPhase, string> = {
+  preflight: 'PRE',
+  takeoff: 'T/O',
+  cruise: 'CRZ',
+  approach: 'APP',
+  emergency: 'EMERG'
 };
+
+function getPhaseChecklist(category: AircraftCategory, phase: ChecklistPhase): ChecklistItem[] {
+  if (phase === 'emergency') {
+    return [
+      { id: 'em-thr', label: 'Thrust / Mixture VERIFY', autoCheck: (t) => (t.throttles[0] ?? 0) <= 0.5 },
+      { id: 'em-spd', label: 'Best Glide / Safe Airspeed', autoCheck: (t) => t.kias > 70 && t.kias < 260 },
+      { id: 'em-gear', label: 'Landing Gear AS REQUIRED', autoCheck: (t) => t.gearDown }
+    ];
+  }
+  if (phase === 'cruise') {
+    return [
+      { id: 'crz-gear', label: 'Landing Gear UP', autoCheck: (t) => !t.gearDown },
+      { id: 'crz-flaps', label: 'Flaps RETRACTED (0)', autoCheck: (t) => t.flapsTarget === 0 },
+      { id: 'crz-alt', label: 'Cruise Altitude Established', autoCheck: (t) => Math.abs(t.vs) < 300 }
+    ];
+  }
+  if (phase === 'approach') {
+    return [
+      { id: 'app-spd', label: 'Approach Speed < 210 KTS', autoCheck: (t) => t.kias < 210 },
+      { id: 'app-flaps', label: 'Landing Flaps CONFIG', autoCheck: (t) => t.flapsTarget >= 1 },
+      { id: 'app-gear', label: 'Landing Gear DOWN & LOCKED', autoCheck: (t) => t.gearDown },
+      { id: 'app-lights', label: 'Landing Lights ON', autoCheck: (t) => t.lightsOn }
+    ];
+  }
+  if (phase === 'takeoff') {
+    return [
+      { id: 'to-brk', label: 'Parking Brake RELEASED', autoCheck: (t) => !t.parkingBrake },
+      { id: 'to-flaps', label: 'Takeoff Flaps SET', autoCheck: (t) => category === 'supersonic' || t.flapsTarget >= 1 },
+      { id: 'to-thr', label: 'Takeoff Power SET', autoCheck: (t) => (t.throttles[0] ?? 0) > 0.8 },
+      { id: 'to-gear', label: 'Positive Climb → Gear UP', autoCheck: (t) => !t.groundContact && !t.gearDown }
+    ];
+  }
+
+  // preflight
+  const base: ChecklistItem[] = [
+    { id: 'pre-brk', label: 'Parking Brake SET', autoCheck: (t) => t.parkingBrake },
+    { id: 'pre-lights', label: 'Beacon / Nav Lights ON', autoCheck: (t) => t.lightsOn }
+  ];
+  if (category === 'airliner-twin' || category === 'airliner-quad') {
+    base.push({ id: 'pre-flaps', label: 'Verify Flap Detents Free', autoCheck: (t) => t.flapsTarget >= 0 });
+  } else if (category === 'fighter' || category === 'supersonic') {
+    base.push({ id: 'pre-canopy', label: 'Ejection / Flight Controls CHECK', autoCheck: (t) => t.groundContact });
+  }
+  return base;
+}
 
 export class ChecklistSystemModule implements IModule {
   public readonly id = 'checklist-system';
   public readonly name = 'Checklist System';
-  public readonly description = 'Aircraft-category-aware checklists with live switch verification.';
+  public readonly description = 'Aircraft-category and flight-phase checklists with live switch verification.';
   public readonly supportedMajors = [3, 4] as const;
   public readonly defaultEnabled = true;
 
   private rootEl: HTMLDivElement | null = null;
-  private unmountTab: (() => void) | null = null;
+  private unmounts: Array<() => void> = [];
+  private activePhase: ChecklistPhase = 'preflight';
   private lastCategory: AircraftCategory | null = null;
   private manualDone = new Set<string>();
 
   public init(context: ModuleContext): void {
     const root = document.createElement('div');
     this.rootEl = root;
-    this.unmountTab = context.anchors.registerHudTab('chk', 'CHK', root);
+    this.unmounts.push(context.anchors.registerHudTab('chk', 'CHK', root));
+
+    const rightBtn = document.createElement('button');
+    rightBtn.type = 'button';
+    rightBtn.className = 'geofs-ext-pad';
+    rightBtn.textContent = 'CHK';
+    rightBtn.addEventListener('click', () => {
+      const phases: ChecklistPhase[] = ['preflight', 'takeoff', 'cruise', 'approach', 'emergency'];
+      const nextIdx = (phases.indexOf(this.activePhase) + 1) % phases.length;
+      this.activePhase = phases[nextIdx];
+      context.anchors.showToast(`Checklist Phase: ${PHASE_LABELS[this.activePhase]}`);
+    });
+    this.unmounts.push(context.anchors.mountControl('checklist-right-pad', 'right', rightBtn));
   }
 
   public update(telemetry: FlightTelemetry): void {
@@ -75,13 +100,27 @@ export class ChecklistSystemModule implements IModule {
       this.manualDone.clear();
     }
 
-    const items = CHECKLISTS_BY_CATEGORY[cat] || CHECKLISTS_BY_CATEGORY['ga-piston'];
+    const items = getPhaseChecklist(cat, this.activePhase);
     this.rootEl.innerHTML = '';
 
     const title = document.createElement('div');
     title.style.cssText = 'font-weight:700;margin-bottom:6px;text-transform:uppercase;font-size:10px;';
     title.textContent = `${telemetry.aircraft.name} • ${cat}`;
     this.rootEl.appendChild(title);
+
+    const phaseBar = document.createElement('div');
+    phaseBar.style.cssText = 'display:flex;gap:3px;margin-bottom:6px;flex-wrap:wrap;';
+    (Object.keys(PHASE_LABELS) as ChecklistPhase[]).forEach((p) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `geofs-ext-hud-tab ${this.activePhase === p ? 'is-active' : ''}`;
+      btn.textContent = PHASE_LABELS[p];
+      btn.addEventListener('click', () => {
+        this.activePhase = p;
+      });
+      phaseBar.appendChild(btn);
+    });
+    this.rootEl.appendChild(phaseBar);
 
     for (const item of items) {
       const checked = this.manualDone.has(item.id) || Boolean(item.autoCheck?.(telemetry));
@@ -103,8 +142,8 @@ export class ChecklistSystemModule implements IModule {
   }
 
   public destroy(): void {
-    this.unmountTab?.();
-    this.unmountTab = null;
+    for (const u of this.unmounts) u();
+    this.unmounts = [];
     this.rootEl = null;
     this.manualDone.clear();
   }

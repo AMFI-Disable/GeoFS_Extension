@@ -20,9 +20,20 @@ export class LandingStatisticsModule implements IModule {
   private ctx: ModuleContext | null = null;
   private wasAirborne = false;
   private lastTouchdownMs = 0;
+  private sessionRecords: LandingRecord[] = [];
+  private listEl: HTMLDivElement | null = null;
+  private unmountTab: (() => void) | null = null;
 
   public init(context: ModuleContext): void {
     this.ctx = context;
+    const root = document.createElement('div');
+    root.innerHTML = '<div style="font-weight:700;margin-bottom:6px;font-size:11px;">Session Touchdowns</div>';
+    const list = document.createElement('div');
+    list.style.cssText = 'display:flex;flex-direction:column;gap:4px;font-size:10px;max-height:150px;overflow-y:auto;';
+    list.textContent = 'No landings recorded in this session.';
+    root.appendChild(list);
+    this.listEl = list;
+    this.unmountTab = context.anchors.registerHudTab('land', 'LAND', root);
   }
 
   public update(telemetry: FlightTelemetry): void {
@@ -52,6 +63,9 @@ export class LandingStatisticsModule implements IModule {
         lon: Number(telemetry.lon.toFixed(4))
       };
 
+      this.sessionRecords = [record, ...this.sessionRecords].slice(0, 10);
+      this.renderSessionList();
+
       this.ctx.audio.playTouchdown(rating);
       this.ctx.anchors.showToast(
         `Touchdown: ${record.vsFpm} fpm | ${record.gForce}G | ${rating}`,
@@ -64,7 +78,21 @@ export class LandingStatisticsModule implements IModule {
     }
   }
 
+  private renderSessionList(): void {
+    if (!this.listEl) return;
+    this.listEl.innerHTML = '';
+    for (const r of this.sessionRecords) {
+      const row = document.createElement('div');
+      row.style.cssText = 'border-bottom:1px solid rgba(136,136,136,0.3);padding-bottom:3px;';
+      row.textContent = `${r.rating} • ${r.vsFpm} fpm • ${r.gForce}G • ${r.groundSpeedKts} kt`;
+      this.listEl.appendChild(row);
+    }
+  }
+
   public destroy(): void {
+    this.unmountTab?.();
+    this.unmountTab = null;
+    this.listEl = null;
     this.wasAirborne = false;
     this.ctx = null;
   }
