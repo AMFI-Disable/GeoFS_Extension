@@ -1,12 +1,13 @@
+import { pinValue } from '../src/modules/failure-simulator';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-adapter';
 import { ModuleManager } from '../src/core/module-manager';
 import { detectGeoFSKeyCollision, formatComboForOs } from '../src/core/keybind-manager';
 import { formatLogbookCsv } from '../src/core/logbook-export';
 import { buildGForceShader } from '../src/modules/realism-pack';
-import { rateLanding } from '../src/modules/landing-statistics';
-import { EngineThrust } from '../src/modules/overpowered-engines';
-import { fuelBurnKgHr } from '../src/modules/fuel-simulator';
+import { rateLanding, scoreLanding } from '../src/modules/landing-statistics';
+import { EngineCeiling, EngineThrust } from '../src/modules/overpowered-engines';
+import { drainFuelTanks, fuelBurnKgHr } from '../src/modules/fuel-simulator';
 import { projectFlightPath } from '../src/modules/flight-path-vector';
 import { DEFAULT_SETTINGS } from '../src/types/settings';
 import type { IModule } from '../src/types/module';
@@ -99,11 +100,10 @@ describe('Subsystems (Shaders, Landing Ratings, OS Keybinds)', () => {
   });
 
   it('grades landings accurately', () => {
-    expect(rateLanding(-65, 1.05)).toBe('Butter');
-    expect(rateLanding(-160, 1.15)).toBe('Smooth');
-    expect(rateLanding(-310, 1.35)).toBe('Firm');
-    expect(rateLanding(-600, 2.2)).toBe('Hard');
-    expect(rateLanding(-1200, 3.5)).toBe('Crash');
+    expect([79, 80, 160, 300, 500, 800, 1100].map(rateLanding))
+      .toEqual(['Butter', 'Silky', 'Great', 'Firm', 'Hard', 'Bone Shaker', 'Crash']);
+    expect(scoreLanding(-50, 1, 0, 0, true)).toBe(10);
+    expect(scoreLanding(-120, 1.5, 10, 1, false)).toBe(4);
   });
 
   it('formats Mac vs Windows keybind labels and detects GeoFS key collisions', () => {
@@ -174,6 +174,34 @@ describe('Archived Engine and Flight Path Behavior', () => {
     expect(replacement).toEqual({ thrust: 500, reverseThrust: 0 });
     engine.restore();
     expect(replacement).toEqual({ thrust: 200, reverseThrust: 0 });
+  });
+
+  it('restores ceiling fields when switching aircraft or disabling the module', () => {
+    const first = { zeroThrustAltitude: 50_000 };
+    const second = { zeroRPMAltitude: 30_000 };
+    const ceiling = new EngineCeiling();
+    ceiling.apply(first, 3_000_000);
+    expect(first).toEqual({ zeroThrustAltitude: 3_000_000, zeroRPMAltitude: 3_000_000 });
+    ceiling.apply(second, 10_000_000);
+    expect(first).toEqual({ zeroThrustAltitude: 50_000 });
+    ceiling.restore();
+    expect(second).toEqual({ zeroRPMAltitude: 30_000 });
+  });
+
+  it('restores original and absent failure properties', () => {
+    const controls: { target: number; positionTarget?: number } = { target: 2 };
+    const target = pinValue(controls, 'target', 0);
+    const position = pinValue(controls, 'positionTarget', 0);
+    target.apply();
+    position.apply();
+    expect(controls).toEqual({ target: 0, positionTarget: 0 });
+    position.restore();
+    target.restore();
+    expect(controls).toEqual({ target: 2 });
+  });
+
+  it('drains the center fuel tank before both wing tanks', () => {
+    expect(drainFuelTanks({ left: 30, center: 40, right: 30 }, 50)).toEqual({ left: 25, center: 0, right: 25 });
   });
 
   it('uses archived V3 and V4 thrust consumption and reverse scaling', () => {

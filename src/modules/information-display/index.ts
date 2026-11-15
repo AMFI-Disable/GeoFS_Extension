@@ -29,6 +29,7 @@ export class InformationDisplayModule implements IModule {
         <div>HDG: <strong data-field="hdg">--</strong></div>
         <div>AGL: <strong data-field="agl">--</strong></div>
         <div>GS: <strong data-field="gs">--</strong></div>
+        <div>GS DEV: <strong data-field="glideslope">--</strong></div>
         <div>AOA: <strong data-field="aoa">--</strong></div>
         <div>G: <strong data-field="g">--</strong></div>
         <div><span data-field="power-label">THR</span>: <strong data-field="thr">--</strong></div>
@@ -48,10 +49,10 @@ export class InformationDisplayModule implements IModule {
 
   public update(telemetry: FlightTelemetry): void {
     if (!this.rootEl) return;
-    if (Math.abs(telemetry.kias - this.lastKias) > 0.15) {
+    if (Math.abs(telemetry.kias - this.lastKias) > 0.1) {
       this.trend = telemetry.kias > this.lastKias ? ' ▲' : ' ▼';
       this.lastKias = telemetry.kias;
-    } else if (Math.abs(telemetry.kias - this.lastKias) < 0.02) {
+    } else if (Math.abs(telemetry.kias - this.lastKias) < 0.01) {
       this.trend = '';
     }
 
@@ -61,18 +62,20 @@ export class InformationDisplayModule implements IModule {
     this.setText('mach', telemetry.mach.toFixed(2));
     this.setText('alt', `${Math.round(telemetry.altitude).toLocaleString()} ft`);
 
-    const vsColor = telemetry.vs > 150 ? '#22c55e' : telemetry.vs < -1000 ? '#ef4444' : '';
+    const vsColor = telemetry.vs > 100 ? '#22c55e' : telemetry.vs < -1000 ? '#ef4444' : '';
     this.setText('vs', `${Math.round(telemetry.vs)} fpm`, vsColor);
 
     this.setText('hdg', `${Math.round(telemetry.heading).toString().padStart(3, '0')}°`);
     this.setText('agl', `${Math.round(telemetry.aglFeet).toLocaleString()} ft`);
-    this.setText('gs', `${Math.round(telemetry.groundSpeed)} kt`);
+    this.setText('gs', `${telemetry.groundSpeed.toFixed(1)} kt`);
+
+    this.setText('glideslope', telemetry.glideslopeDeviation === undefined ? 'N/A' : `${telemetry.glideslopeDeviation.toFixed(1)}°`);
 
     const aoaColor = telemetry.aoa > 16 ? '#ef4444' : telemetry.aoa > 12 ? '#eab308' : '';
     this.setText('aoa', `${telemetry.aoa.toFixed(1)}°`, aoaColor);
 
     const gColor = telemetry.gForce > 3 || telemetry.gForce < -1 ? '#ef4444' : '';
-    this.setText('g', telemetry.gForce.toFixed(2), gColor);
+    this.setText('g', telemetry.gForce.toFixed(1), gColor);
 
     this.setText('v-speeds', formatVSpeeds(telemetry.aircraft?.vSpeeds, telemetry.aircraft?.machSpeeds));
     const rotorcraft = telemetry.aircraft?.category === 'rotorcraft';
@@ -101,6 +104,8 @@ export class InformationDisplayModule implements IModule {
     this.unmountTab?.();
     this.unmountTab = null;
     this.cells.clear();
+    this.lastKias = 0;
+    this.trend = '';
     this.rootEl = null;
   }
 }

@@ -58,6 +58,8 @@ export interface FlightTelemetry {
   parkingBrake: boolean;
   gearDown: boolean;
   flapsTarget: number;
+  airbrakesPosition?: number;
+  glideslopeDeviation?: number;
   lightsOn: boolean;
   lat: number;
   lon: number;

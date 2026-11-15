@@ -38,7 +38,10 @@ export interface GeoFSAircraftDefinition {
   gearPositions?: number[];
   hasAirbrakes?: boolean;
   reverseThrust?: boolean;
+  reverse?: boolean;
   maxAltitude?: number;
+  zeroThrustAltitude?: number;
+  zeroRPMAltitude?: number;
   inertiaTensor?: unknown;
   tensorFactor?: unknown;
   [key: string]: unknown;
@@ -48,6 +51,7 @@ export interface GeoFSEnginePart {
   thrust?: number;
   afterBurnerThrust?: number;
   reverseThrust?: number;
+  torque?: number;
   [key: string]: unknown;
 }
 
@@ -60,18 +64,24 @@ export interface GeoFSEngine {
 export interface GeoFSAircraftInstance {
   id?: string | number;
   name?: string;
+  suspensions?: Array<{ name?: string; collisionPoints?: Array<[number, number, number]> }>;
+  airfoils?: Array<{ name?: string; propwash?: number; forceDirection?: number; object3d?: { _scale?: [number, number, number] } }>;
   groundContact?: boolean;
   crashed?: boolean;
+  crash?: () => void;
+  animationValue?: Record<string, unknown>;
   stalling?: boolean;
   llaLocation?: [number, number, number];
   engines?: GeoFSEngine[];
   engine?: GeoFSEngine;
   parts?: Record<string, GeoFSEnginePart>;
   definition?: GeoFSAircraftDefinition;
-  setup?: { mass?: number; [key: string]: unknown };
+  setup?: { mass?: number; parts?: Array<{ centerOfMass?: [number, number, number] }>; [key: string]: unknown };
   aircraftRecord?: { id?: string | number; name?: string; [key: string]: unknown };
   rigidBody?: {
     mass?: number;
+    getAngularVelocity?: () => [number, number, number];
+    setAngularVelocity?: (velocity: [number, number, number]) => void;
     setMassProps?: (mass: number, inertia: unknown) => void;
     linearVelocity?: [number, number, number];
     [key: string]: unknown;
@@ -84,6 +94,20 @@ export interface GeoFSAircraftInstance {
   [key: string]: unknown;
 }
 
+export interface GeoFSPositionControl {
+  position?: number;
+  target?: number;
+  positionTarget?: number;
+  delta?: number;
+}
+
+export interface GeoFSInstruments {
+  update?: (...args: unknown[]) => unknown;
+  hide?: () => void;
+  show?: () => void;
+  visible?: boolean;
+}
+
 export interface GeoFSControls {
   throttle?: number;
   throttleLeft?: number;
@@ -93,7 +117,11 @@ export interface GeoFSControls {
   throttle3?: number;
   throttle4?: number;
   reversers?: boolean;
-  flaps?: { target?: number };
+  flaps?: GeoFSPositionControl;
+  airbrakes?: GeoFSPositionControl;
+  brakes?: number;
+  elevatorTrim?: number;
+  elevatorTrimMin?: number;
   manipulatorSetters?: {
     setThrottle?: (val: number) => void;
   };
@@ -105,20 +133,36 @@ export interface GeoFSControls {
   [key: string]: unknown;
 }
 
+export interface GeoFSThrottlePid {
+  initialize?: (output: number, input: number) => void;
+  set: (setpoint: number, min: number, max: number) => void;
+  compute: (input: number, dt: number) => number;
+}
+
 export interface GeoFSGlobal {
   version?: string | number;
   isPaused?: () => boolean;
-  autopilot?: { on?: boolean };
+  autopilot?: { on?: boolean; turnOff?: () => void; PIDs?: { throttle?: GeoFSThrottlePid } };
   aircraft?: {
     instance?: GeoFSAircraftInstance;
   };
-  camera?: { lla?: [number, number, number] };
+  camera?: { lla?: [number, number, number]; translate?: (x: number, y: number, z: number) => void };
+  preferences?: { crashDetection?: boolean };
+  flyToCamera?: () => void;
+  cautiousWithTerrain?: boolean;
+  runways?: {
+    getNearestRunway?: (location: [number, number, number]) => {
+      aimingPointLla1?: [number, number, number];
+      aimingPointLla2?: [number, number, number];
+    } | undefined;
+  };
   aircraftList?: Record<string, { name?: string; [key: string]: unknown }>;
   animation?: {
     values?: GeoFSAnimationValues;
   };
   api?: {
     hdOn?: boolean;
+    renderingSettings?: { physicsDeltaMs?: number; degradedCollisions?: boolean; lowResRunways?: boolean };
     imageryProvider?: unknown;
     viewer?: {
       scene?: {
@@ -143,6 +187,8 @@ export interface GeoFSGlobal {
   };
   utils?: {
     now?: () => number;
+    machToKnots?: (mach: number) => number;
+    distanceBetweenLocations?: (a: [number, number, number], b: [number, number, number]) => number;
   };
   [key: string]: unknown;
 }
@@ -156,7 +202,8 @@ export interface GeoFSCartesian {
 declare global {
   interface Window {
     geofs?: GeoFSGlobal;
-    weather?: { localTime?: number };
+    weather?: { localTime?: number; definition?: { turbulences?: number } };
+    instruments?: GeoFSInstruments;
     controls?: GeoFSControls;
     Cesium?: {
       PostProcessStage?: new (opts: { fragmentShader: string; uniforms?: Record<string, unknown> }) => unknown;

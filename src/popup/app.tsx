@@ -19,10 +19,10 @@ const SETTINGS_KEY = 'geofs_ext_settings';
 const LOGBOOK_KEY = 'geofs_ext_logbook';
 
 const MODULE_META: Array<{ id: string; name: string; desc: string }> = [
-  { id: 'autothrottle', name: 'Autothrottle', desc: 'Aircraft-class PID & touchdown retard' },
+  { id: 'autothrottle', name: 'Autothrottle', desc: 'GeoFS PID, reverse thrust & touchdown retard' },
   { id: 'information-display', name: 'Information Display', desc: 'HUD telemetry & multi-engine % THR' },
   { id: 'fuel-simulator', name: 'Fuel Simulator', desc: 'Multi-engine SFC & tank burn' },
-  { id: 'overpowered-engines', name: 'Overpowered Engines', desc: 'Live engine thrust multiplier' },
+  { id: 'overpowered-engines', name: 'Overpowered Engines', desc: 'Thrust, ceiling and stability controls' },
   { id: 'checklist-system', name: 'Checklist System', desc: 'Type-aware auto-sync checklists' },
   { id: 'realism-pack', name: 'Realism Pack', desc: 'Adaptive V3/V4 shaders & G-audio' },
   { id: 'failure-simulator', name: 'Failure Simulator', desc: 'Manual & probability failures' },
@@ -231,7 +231,7 @@ export function App() {
               <div class="card" key={rec.id} style="flex-direction:column;align-items:stretch;gap:3px">
                 <div class="field-row">
                   <strong>{rec.aircraftName}</strong>
-                  <span class="badge">{rec.rating}</span>
+                  <span class="badge">{rec.rating}{rec.score !== undefined && ` · ${rec.score.toFixed(1)}/10`}</span>
                 </div>
                 <div style="font-size:10px;color:var(--muted)">
                   {rec.vsFpm} fpm • {rec.gForce}G • {rec.groundSpeedKts} kts • {new Date(rec.timestamp).toLocaleString()}

@@ -43,18 +43,6 @@ export class AudioEngine {
     setTimeout(() => this.playTone(1174.66, 0.2, 'sine', 0.06), 110);
   }
 
-  public playTouchdown(rating: string): void {
-    if (rating === 'Butter' || rating === 'Smooth') {
-      this.playTone(587.33, 0.15, 'triangle', 0.07);
-      setTimeout(() => this.playTone(880, 0.25, 'sine', 0.06), 90);
-    } else if (rating === 'Hard' || rating === 'Crash') {
-      this.playTone(180, 0.25, 'sawtooth', 0.09);
-      setTimeout(() => this.playTone(130, 0.35, 'sawtooth', 0.08), 120);
-    } else {
-      this.playChime();
-    }
-  }
-
   public playGpwsAlert(): void {
     this.playTone(440, 0.12, 'square', 0.06);
     setTimeout(() => this.playTone(620, 0.14, 'square', 0.06), 130);

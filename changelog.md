@@ -12,6 +12,12 @@
 - Approach and touchdown telemetry exports in JSON and CSV from the Logbook.
 - A popup reminder to reload open GeoFS tabs after installing or updating the extension.
 
+### Changed
+
+- Restored archived Autothrottle PID behavior, reverse thrust and automatic engine boost, with live module cleanup.
+- Restored thrust, ceiling and stability controls, fuel options, aircraft checklist procedures, and the original touchdown grading and scoring formulas.
+- Ported aircraft system failures and Realism Pack effects into the shared extension telemetry loop.
+
 ### Fixed
 
 - Popup appearance now supports Dark, Light, and Auto (System). The in-game panel follows GeoFS local time.

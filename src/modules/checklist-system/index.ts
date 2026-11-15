@@ -1,3 +1,4 @@
+import { ARCHIVED_PROCEDURES, type ChecklistProcedure } from './procedures';
 import { formatVSpeeds } from '../../core/aircraft-profile';
 import type { AircraftCategory, FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 
@@ -15,6 +16,7 @@ type ChecklistPhase =
 interface ChecklistItem {
   id: string;
   label: string;
+  description?: string;
   autoCheck?: (t: FlightTelemetry) => boolean;
 }
 
@@ -100,76 +102,21 @@ function getPhaseChecklist(category: AircraftCategory, phase: ChecklistPhase): C
     ];
   }
 
-  if (phase === 'emergency') {
-    return [
-      { id: 'em-thr', label: 'Thrust / Mixture VERIFY', autoCheck: (t) => (t.throttles[0] ?? 0) <= 0.5 },
-      { id: 'em-spd', label: 'Best Glide / Safe Airspeed', autoCheck: (t) => t.kias > 70 && t.kias < 260 },
-      { id: 'em-gear', label: 'Landing Gear AS REQUIRED', autoCheck: (t) => t.gearDown }
-    ];
-  }
-  if (phase === 'taxi') {
-    return [
-      { id: 'tx-brk', label: 'Parking Brake RELEASED', autoCheck: (t) => !t.parkingBrake },
-      { id: 'tx-spd', label: 'Taxi Speed < 25 KTS', autoCheck: (t) => t.groundSpeed < 25 },
-      { id: 'tx-flaps', label: 'Takeoff Flaps PRESET', autoCheck: (t) => category === 'supersonic' || t.flapsTarget >= 1 }
-    ];
-  }
-  if (phase === 'climb') {
-    return [
-      { id: 'clb-gear', label: 'Landing Gear UP', autoCheck: (t) => !t.gearDown },
-      { id: 'clb-flaps', label: 'Flaps RETRACTED (0)', autoCheck: (t) => t.flapsTarget === 0 },
-      { id: 'clb-vs', label: 'Positive Climb Rate', autoCheck: (t) => t.vs > 200 }
-    ];
-  }
-  if (phase === 'cruise') {
-    return [
-      { id: 'crz-gear', label: 'Landing Gear UP', autoCheck: (t) => !t.gearDown },
-      { id: 'crz-flaps', label: 'Flaps RETRACTED (0)', autoCheck: (t) => t.flapsTarget === 0 },
-      { id: 'crz-alt', label: 'Cruise Altitude Established', autoCheck: (t) => Math.abs(t.vs) < 300 }
-    ];
-  }
-  if (phase === 'approach') {
-    return [
-      { id: 'app-spd', label: 'Approach Speed < 210 KTS', autoCheck: (t) => t.kias < 210 },
-      { id: 'app-flaps', label: 'Landing Flaps CONFIG', autoCheck: (t) => t.flapsTarget >= 1 },
-      { id: 'app-gear', label: 'Landing Gear DOWN & LOCKED', autoCheck: (t) => t.gearDown },
-      { id: 'app-lights', label: 'Landing Lights ON', autoCheck: (t) => t.lightsOn }
-    ];
-  }
-  if (phase === 'landing') {
-    return [
-      { id: 'ldg-gear', label: 'Gear DOWN Three Green', autoCheck: (t) => t.gearDown },
-      { id: 'ldg-flaps', label: 'Full Landing Flaps', autoCheck: (t) => t.flapsTarget >= 1 },
-      { id: 'ldg-thr', label: 'Throttle IDLE On Touchdown', autoCheck: (t) => t.groundContact && (t.throttles[0] ?? 0) <= 0.1 }
-    ];
-  }
-  if (phase === 'shutdown') {
-    return [
-      { id: 'sdn-brk', label: 'Parking Brake SET', autoCheck: (t) => t.parkingBrake },
-      { id: 'sdn-thr', label: 'Throttles CUTOFF / IDLE', autoCheck: (t) => (t.throttles[0] ?? 0) <= 0.05 },
-      { id: 'sdn-lights', label: 'Landing Lights OFF', autoCheck: (t) => !t.lightsOn }
-    ];
-  }
-  if (phase === 'takeoff') {
-    return [
-      { id: 'to-brk', label: 'Parking Brake RELEASED', autoCheck: (t) => !t.parkingBrake },
-      { id: 'to-flaps', label: 'Takeoff Flaps SET', autoCheck: (t) => category === 'supersonic' || t.flapsTarget >= 1 },
-      { id: 'to-thr', label: 'Takeoff Power SET', autoCheck: (t) => (t.throttles[0] ?? 0) > 0.8 },
-      { id: 'to-gear', label: 'Positive Climb → Gear UP', autoCheck: (t) => !t.groundContact && !t.gearDown }
-    ];
-  }
+  return [];
+}
 
-  // preflight
-  const base: ChecklistItem[] = [
-    { id: 'pre-brk', label: 'Parking Brake SET', autoCheck: (t) => t.parkingBrake },
-    { id: 'pre-lights', label: 'Beacon / Nav Lights ON', autoCheck: (t) => t.lightsOn }
-  ];
-  if (category === 'airliner-twin' || category === 'airliner-quad') {
-    base.push({ id: 'pre-flaps', label: 'Verify Flap Detents Free', autoCheck: (t) => t.flapsTarget >= 0 });
-  } else if (category === 'fighter' || category === 'supersonic') {
-    base.push({ id: 'pre-canopy', label: 'Ejection / Flight Controls CHECK', autoCheck: (t) => t.groundContact });
-  }
-  return base;
+function aircraftProcedures(name: string): ChecklistProcedure[] {
+  const match = Object.keys(ARCHIVED_PROCEDURES).find((key) => name.toLowerCase().includes(key));
+  return ARCHIVED_PROCEDURES[match ?? 'generic'];
+}
+
+function isProcedureItemComplete(sync: string | undefined, telemetry: FlightTelemetry): boolean {
+  if (sync === 'parkingBrake') return telemetry.parkingBrake;
+  if (sync === 'airbrakes') return (telemetry.airbrakesPosition ?? 0) > 0;
+  if (sync === 'flaps') return telemetry.flapsTarget > 0;
+  if (sync === 'flaps:full') return telemetry.flapsTarget === telemetry.aircraft?.maxFlaps;
+  if (sync?.startsWith('flaps:')) return telemetry.flapsTarget === Number(sync.slice(6));
+  return false;
 }
 
 export class ChecklistSystemModule implements IModule {
@@ -182,7 +129,9 @@ export class ChecklistSystemModule implements IModule {
   private ctx: ModuleContext | null = null;
   private rootEl: HTMLDivElement | null = null;
   private unmounts: Array<() => void> = [];
-  private activePhase: ChecklistPhase = 'preflight';
+  private activePhase = 0;
+  private phaseTitles: string[] = [];
+  private emergencies = new Map<string, ChecklistProcedure>();
   private lastAircraftKey = '';
   private lastRender = '';
   private manualDone = new Set<string>();
@@ -194,10 +143,10 @@ export class ChecklistSystemModule implements IModule {
     this.unmounts.push(context.anchors.registerHudTab('chk', 'CHK', root));
 
     const cyclePhase = () => {
-      const phases = Object.keys(PHASE_LABELS) as ChecklistPhase[];
-      const nextIdx = (phases.indexOf(this.activePhase) + 1) % phases.length;
-      this.activePhase = phases[nextIdx];
-      context.anchors.showToast(`Checklist Phase: ${PHASE_LABELS[this.activePhase]}`);
+      if (!this.phaseTitles.length) return;
+      this.activePhase = (this.activePhase + 1) % this.phaseTitles.length;
+      context.anchors.openHudTab('chk');
+      context.anchors.showToast(`Checklist Phase: ${this.phaseTitles[this.activePhase]}`);
     };
 
     const rightBtn = document.createElement('button');
@@ -209,6 +158,14 @@ export class ChecklistSystemModule implements IModule {
 
     const combo = context.getSettings().keybindings.toggleChecklist;
     this.unmounts.push(context.keybinds.register('checklist-cycle', combo, cyclePhase));
+    this.unmounts.push(context.onEvent<{ type: string; procedure?: ChecklistProcedure }>('failure:triggered', ({ type, procedure }) => {
+      if (!procedure) return;
+      this.emergencies.set(type, procedure);
+      context.anchors.openHudTab('chk');
+    }));
+    this.unmounts.push(context.onEvent<{ type: string }>('failure:cleared', ({ type }) => {
+      this.emergencies.delete(type);
+    }));
   }
 
   public onSettingsChange(settings: import('../../types/settings').ExtensionSettings): void {
@@ -228,14 +185,28 @@ export class ChecklistSystemModule implements IModule {
     if (key !== this.lastAircraftKey) {
       this.lastAircraftKey = key;
       this.manualDone.clear();
+      this.activePhase = 0;
+      this.emergencies.clear();
     }
 
-    const items = getPhaseChecklist(cat, this.activePhase).map((item) => ({
+    const rotorPhases = Object.keys(PHASE_LABELS) as ChecklistPhase[];
+    const procedures = cat === 'rotorcraft' ? [] : aircraftProcedures(telemetry.aircraft.name);
+    const emergencies = [...this.emergencies.entries()];
+    const normalTitles = cat === 'rotorcraft' ? rotorPhases.map((phase) => PHASE_LABELS[phase]) : procedures.map(({ title }) => title);
+    this.phaseTitles = [...normalTitles, ...emergencies.map(([, { title }]) => title)];
+    if (this.activePhase >= this.phaseTitles.length) this.activePhase = 0;
+    const emergency = emergencies[this.activePhase - normalTitles.length];
+    const procedure = emergency?.[1] ?? procedures[this.activePhase];
+    const source: ChecklistItem[] = procedure ? procedure.items.map((item, index) => ({
+      id: `${emergency?.[0] ?? this.activePhase}-${index}`, label: item.text, description: item.desc,
+      autoCheck: (snapshot) => isProcedureItemComplete(item.sync, snapshot)
+    })) : getPhaseChecklist(cat, rotorPhases[this.activePhase]);
+    const items = source.map((item) => ({
       ...item,
       checked: this.manualDone.has(item.id) || Boolean(item.autoCheck?.(telemetry))
     }));
     const speeds = formatVSpeeds(telemetry.aircraft.vSpeeds, telemetry.aircraft.machSpeeds);
-    const render = JSON.stringify([key, telemetry.aircraft.name, this.activePhase, speeds, items.map((item) => item.checked)]);
+    const render = JSON.stringify([key, telemetry.aircraft.name, this.activePhase, this.phaseTitles, speeds, items.map((item) => [item.id, item.checked])]);
     if (render === this.lastRender) return;
     this.lastRender = render;
     this.rootEl.replaceChildren();
@@ -247,11 +218,11 @@ export class ChecklistSystemModule implements IModule {
 
     const phaseBar = document.createElement('div');
     phaseBar.style.cssText = 'display:flex;gap:3px;margin-bottom:6px;flex-wrap:wrap;';
-    (Object.keys(PHASE_LABELS) as ChecklistPhase[]).forEach((p) => {
+    this.phaseTitles.forEach((phaseTitle, p) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = `geofs-ext-hud-tab ${this.activePhase === p ? 'is-active' : ''}`;
-      btn.textContent = PHASE_LABELS[p];
+      btn.textContent = phaseTitle;
       btn.addEventListener('click', () => {
         this.activePhase = p;
       });
@@ -278,6 +249,7 @@ export class ChecklistSystemModule implements IModule {
       });
       const span = document.createElement('span');
       span.textContent = item.label;
+      if (item.description) span.title = item.description;
       if (checked) span.style.textDecoration = 'line-through';
       row.append(cb, span);
       this.rootEl.appendChild(row);
@@ -291,5 +263,8 @@ export class ChecklistSystemModule implements IModule {
     this.lastRender = '';
     this.lastAircraftKey = '';
     this.manualDone.clear();
+    this.emergencies.clear();
+    this.activePhase = 0;
+    this.phaseTitles = [];
   }
 }

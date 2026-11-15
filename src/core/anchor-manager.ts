@@ -77,6 +77,13 @@ export class AnchorManager {
     };
   }
 
+  public openHudTab(id: string): void {
+    this.ensureHud();
+    if (!this.hudRoot || !this.tabPanels.has(id)) return;
+    this.hudRoot.style.display = 'block';
+    this.selectTab(id);
+  }
+
   public toggleHudVisibility(): boolean {
     this.ensureHud();
     if (!this.hudRoot) return false;

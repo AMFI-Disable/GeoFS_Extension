@@ -307,6 +307,8 @@ export class SimAdapter {
       parkingBrake: Boolean(v.parkingBrake),
       gearDown: Number(v.gearPosition ?? 0) > 0.5,
       flapsTarget: Number(v.flapsTarget ?? 0),
+      airbrakesPosition: Number.isFinite(v.airbrakesPosition) ? v.airbrakesPosition : undefined,
+      glideslopeDeviation: v.NAVVNAV && Number.isFinite(v.NAVGlideAngleDeviation) ? v.NAVGlideAngleDeviation : undefined,
       lightsOn: Boolean(v.lights),
       lat: Number(lla[0] || 0),
       lon: Number(lla[1] || 0)

@@ -2,13 +2,38 @@ import { LandingReplay } from '../../core/landing-replay';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 import type { LandingRecord } from '../../types/settings';
 
-export function rateLanding(vsFpm: number, gForce: number): LandingRecord['rating'] {
+export function rateLanding(vsFpm: number): LandingRecord['rating'] {
   const sink = Math.abs(vsFpm);
-  if (sink > 900 || gForce > 2.8) return 'Crash';
-  if (sink > 450 || gForce > 2.0) return 'Hard';
-  if (sink > 220) return 'Firm';
-  if (sink > 90) return 'Smooth';
-  return 'Butter';
+  if (sink < 80) return 'Butter';
+  if (sink < 160) return 'Silky';
+  if (sink < 300) return 'Great';
+  if (sink < 500) return 'Firm';
+  if (sink < 800) return 'Hard';
+  if (sink < 1100) return 'Bone Shaker';
+  return 'Crash';
+}
+
+export function scoreLanding(sink: number, gForce: number, roll: number, bounces: number, inZone: boolean): number {
+  const clamp = (value: number, max: number) => Math.max(0, Math.min(max, value));
+  const penalties = clamp((Math.abs(sink) - 50) / 70, 5) + clamp(Math.abs(gForce - 1) * 2, 2) +
+    Math.min(bounces * 2, 6) + clamp(Math.abs(roll) / 10, 1.5) + (inZone ? 0 : 1);
+  return clamp(10 - penalties, 10);
+}
+
+function isInTouchdownZone(): boolean {
+  const geofs = window.geofs;
+  const location = geofs?.aircraft?.instance?.llaLocation;
+  if (!location || !geofs?.runways?.getNearestRunway || !geofs.utils?.distanceBetweenLocations) return false;
+  try {
+    const runway = geofs.runways.getNearestRunway(location);
+    if (!runway?.aimingPointLla1 || !runway.aimingPointLla2) return false;
+    return Math.min(
+      geofs.utils.distanceBetweenLocations(location, runway.aimingPointLla1),
+      geofs.utils.distanceBetweenLocations(location, runway.aimingPointLla2)
+    ) < 600;
+  } catch {
+    return false;
+  }
 }
 
 export class LandingStatisticsModule implements IModule {
@@ -22,14 +47,26 @@ export class LandingStatisticsModule implements IModule {
   private wasAirborne = false;
   private aircraftId: string | null = null;
   private replay = new LandingReplay();
-  private lastTouchdownMs = 0;
+  private lastTouchdownMs: number | null = null;
+  private lastApproach: FlightTelemetry | null = null;
+  private bounces = 0;
+  private inTouchdownZone = false;
   private gpwsFired = new Set<number>();
   private sessionRecords: LandingRecord[] = [];
+  private sounds: Record<'soft' | 'hard' | 'crash', HTMLAudioElement> | undefined;
   private listEl: HTMLDivElement | null = null;
   private unmountTab: (() => void) | null = null;
 
   public init(context: ModuleContext): void {
     this.ctx = context;
+    const base = context.sim.getMajorVersion() === 3 ? 'https://geofs-assets.evengao6688.workers.dev/audio/'
+      : 'https://cdn.jsdelivr.net/gh/AMFI-Disable/GeoFS-V3.9_Assets@main/audio/';
+    this.sounds = {
+      soft: new Audio(base + 'soft_landing.wav'),
+      hard: new Audio(base + 'hard_landing.wav'),
+      crash: new Audio(base + 'crash_landing.wav')
+    };
+    for (const sound of Object.values(this.sounds)) sound.preload = 'none';
     const root = document.createElement('div');
     root.innerHTML = '<div style="font-weight:700;margin-bottom:6px;font-size:11px;">Session Touchdowns</div>';
     const list = document.createElement('div');
@@ -41,20 +78,22 @@ export class LandingStatisticsModule implements IModule {
   }
 
   public update(telemetry: FlightTelemetry): void {
-    if (telemetry.paused || !this.ctx) return;
+    if (telemetry.paused || !this.ctx || window.geofs?.cautiousWithTerrain) return;
 
     const aircraftId = telemetry.aircraft?.id ?? null;
     if (aircraftId !== this.aircraftId) {
       this.aircraftId = aircraftId;
       this.wasAirborne = false;
-      this.lastTouchdownMs = 0;
+      this.lastTouchdownMs = null;
+      this.lastApproach = null;
       this.gpwsFired.clear();
       this.replay.reset();
     }
     if (!aircraftId) return;
 
     if (!telemetry.groundContact && !telemetry.crashed) {
-      if (telemetry.aglFeet > 25) this.wasAirborne = true;
+      this.wasAirborne = true;
+      this.lastApproach = telemetry;
       if (this.wasAirborne) this.replay.record(telemetry);
       if (telemetry.aglFeet > 80) this.gpwsFired.clear();
       if (this.wasAirborne && telemetry.vs < -100) {
@@ -81,23 +120,34 @@ export class LandingStatisticsModule implements IModule {
     if (this.wasAirborne) {
       this.wasAirborne = false;
       this.gpwsFired.clear();
-      if (telemetry.timestamp - this.lastTouchdownMs <= 6000) {
+      if (!telemetry.crashed && telemetry.aglFeet >= 500) {
         this.replay.reset();
         return;
       }
+      const isBounce = this.lastTouchdownMs !== null && telemetry.timestamp - this.lastTouchdownMs <= 15_000;
+      this.bounces = isBounce ? this.bounces + 1 : 0;
+      if (!isBounce) this.inTouchdownZone = isInTouchdownZone();
       this.lastTouchdownMs = telemetry.timestamp;
 
-      const rating = telemetry.crashed ? 'Crash' : rateLanding(telemetry.vs, telemetry.gForce);
+      const approach = this.lastApproach ?? telemetry;
+      this.lastApproach = null;
+      const values = window.geofs?.animation?.values;
+      const gForce = typeof values?.accZ === 'number' && Number.isFinite(values.accZ)
+        ? values.accZ / 9.80665 : telemetry.gForce;
+      const rating = telemetry.crashed ? 'Crash' : rateLanding(approach.vs);
       const record: LandingRecord = {
         id: `${telemetry.timestamp}-${Math.random().toString(36).slice(2, 7)}`,
         timestamp: new Date(telemetry.timestamp).toISOString(),
         aircraftId: telemetry.aircraft?.id || 'unknown',
         aircraftName: telemetry.aircraft?.name || 'Unknown Aircraft',
-        vsFpm: Math.round(telemetry.vs),
-        gForce: Number(telemetry.gForce.toFixed(2)),
-        rollDeg: Number(telemetry.roll.toFixed(1)),
+        vsFpm: Math.round(approach.vs),
+        gForce: Number(gForce.toFixed(2)),
+        rollDeg: Number(approach.roll.toFixed(1)),
         groundSpeedKts: Math.round(telemetry.groundSpeed),
         rating,
+        bounces: this.bounces,
+        inTouchdownZone: this.inTouchdownZone,
+        score: scoreLanding(approach.vs, gForce, approach.roll, this.bounces, this.inTouchdownZone),
         lat: Number(telemetry.lat.toFixed(4)),
         lon: Number(telemetry.lon.toFixed(4)),
         replay: this.replay.finish(telemetry)
@@ -106,10 +156,19 @@ export class LandingStatisticsModule implements IModule {
       this.sessionRecords = [record, ...this.sessionRecords].slice(0, 10);
       this.renderSessionList();
 
-      this.ctx.audio.playTouchdown(rating);
+      const sounds = this.sounds;
+      if (sounds) {
+        for (const sound of Object.values(sounds)) {
+          sound.pause();
+          sound.currentTime = 0;
+        }
+        const effect = rating === 'Crash' ? sounds.crash :
+          rating === 'Firm' || rating === 'Hard' || rating === 'Bone Shaker' ? sounds.hard : sounds.soft;
+        void effect.play().catch(() => {});
+      }
       this.ctx.anchors.showToast(
-        `Touchdown: ${record.vsFpm} fpm | ${record.gForce}G | ${rating}`,
-        rating === 'Crash' || rating === 'Hard' ? 'warn' : 'info'
+        `${isBounce ? `Bounce #${this.bounces}` : 'Touchdown'}: ${record.vsFpm} fpm | ${record.gForce}G | ${rating}`,
+        rating === 'Crash' ? 'critical' : rating === 'Hard' || rating === 'Bone Shaker' ? 'warn' : 'info'
       );
 
       if (typeof window !== 'undefined') {
@@ -124,7 +183,7 @@ export class LandingStatisticsModule implements IModule {
     for (const r of this.sessionRecords) {
       const row = document.createElement('div');
       row.style.cssText = 'border-bottom:1px solid rgba(136,136,136,0.3);padding-bottom:3px;';
-      row.textContent = `${r.rating} • ${r.vsFpm} fpm • ${r.gForce}G • ${r.groundSpeedKts} kt`;
+      row.textContent = `${r.rating} • ${r.vsFpm} fpm • ${r.gForce}G • ${r.groundSpeedKts} kt • ${r.score?.toFixed(1) ?? '—'}/10`;
       this.listEl.appendChild(row);
     }
   }
@@ -135,7 +194,12 @@ export class LandingStatisticsModule implements IModule {
     this.listEl = null;
     this.wasAirborne = false;
     this.aircraftId = null;
-    this.lastTouchdownMs = 0;
+    this.lastTouchdownMs = null;
+    this.lastApproach = null;
+    this.gpwsFired.clear();
+    this.sessionRecords = [];
+    if (this.sounds) for (const sound of Object.values(this.sounds)) sound.pause();
+    this.sounds = undefined;
     this.replay.reset();
     this.ctx = null;
   }

@@ -22,10 +22,26 @@ export interface LandingRecord {
   gForce: number;
   rollDeg: number;
   groundSpeedKts: number;
-  rating: 'Butter' | 'Smooth' | 'Firm' | 'Hard' | 'Crash';
+  rating: 'Butter' | 'Silky' | 'Great' | 'Smooth' | 'Firm' | 'Hard' | 'Bone Shaker' | 'Crash';
+  score?: number;
+  bounces?: number;
+  inTouchdownZone?: boolean;
   lat: number;
   lon: number;
   replay?: LandingSample[];
+}
+
+export interface RealismOptions {
+  gBreath: boolean;
+  windAudio: boolean;
+  blackout: boolean;
+  cameraShake: boolean;
+  propwash: boolean;
+  spinFix: boolean;
+  bladeCollisions: boolean;
+  engineInertia: boolean;
+  spoilerArming: boolean;
+  performanceMode: boolean;
 }
 
 export interface ExtensionSettings {
@@ -36,6 +52,13 @@ export interface ExtensionSettings {
   autothrottleResponsiveness: number; // 0.5 to 2.0
   failureProbabilitiesEnabled: boolean;
   imageryProvider: ImageryProviderMode;
+  opThrustMultiplier?: number;
+  opCeilingFeet?: number;
+  opStability?: boolean;
+  fuelAutoRefuel?: boolean;
+  fuelDynamicSfc?: boolean;
+  fuelRealisticTanks?: boolean;
+  realismOptions?: Partial<RealismOptions>;
   customImageryUrl: string;
   customImageryToken: string;
   aircraftOverrides: Record<string, AircraftOverride>;
