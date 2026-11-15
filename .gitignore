@@ -1,5 +1,28 @@
+# Section 1: Explicit Repository Whitelists
+!src/
+!public/
+!scripts/
+!tests/
+!legacy-scripts/
+!agents.md
+!readme*.md
+!changelog.md
+!roadmap.md
+!security.md
+!license
+!.gitignore
+!.github/
+!package.json
+!package-lock.json
+!tsconfig.json
+!vite.config.ts
+!vitest.config.ts
+
+# Section 2: Ignored Build Artifacts And Local Files
 node_modules/
 dist/
 release/
-*.log
+coverage/
 .DS_Store
+*.log
+.env*

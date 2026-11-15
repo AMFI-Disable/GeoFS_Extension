@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/SimAdapter';
-import { ModuleManager } from '../src/core/ModuleManager';
-import { formatComboForOs } from '../src/core/KeybindManager';
+import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-adapter';
+import { ModuleManager } from '../src/core/module-manager';
+import { formatComboForOs } from '../src/core/keybind-manager';
 import { buildGForceShader } from '../src/modules/realism-pack';
 import { rateLanding } from '../src/modules/landing-statistics';
 import { DEFAULT_SETTINGS } from '../src/types/settings';

@@ -1,9 +1,9 @@
-import { SimAdapter, parseSimMajor } from '../core/SimAdapter';
-import { TelemetryBus } from '../core/TelemetryBus';
-import { AudioEngine } from '../core/AudioEngine';
-import { KeybindManager } from '../core/KeybindManager';
-import { AnchorManager } from '../core/AnchorManager';
-import { ModuleManager } from '../core/ModuleManager';
+import { SimAdapter, parseSimMajor } from '../core/sim-adapter';
+import { TelemetryBus } from '../core/telemetry-bus';
+import { AudioEngine } from '../core/audio-engine';
+import { KeybindManager } from '../core/keybind-manager';
+import { AnchorManager } from '../core/anchor-manager';
+import { ModuleManager } from '../core/module-manager';
 import { createBuiltinModules } from '../modules';
 import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
 

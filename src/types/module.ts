@@ -1,7 +1,7 @@
-import type { SimAdapter } from '../core/SimAdapter';
-import type { AudioEngine } from '../core/AudioEngine';
-import type { AnchorManager } from '../core/AnchorManager';
-import type { KeybindManager } from '../core/KeybindManager';
+import type { SimAdapter } from '../core/sim-adapter';
+import type { AudioEngine } from '../core/audio-engine';
+import type { AnchorManager } from '../core/anchor-manager';
+import type { KeybindManager } from '../core/keybind-manager';
 import type { ExtensionSettings } from './settings';
 
 export type SimMajorVersion = 3 | 4;
