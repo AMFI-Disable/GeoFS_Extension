@@ -1,3 +1,5 @@
+import { hasAircraftCallouts } from '../realism-pack/aircraft-sounds';
+import { landingFeedback } from './feedback';
 import { LandingReplay } from '../../core/landing-replay';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 import type { LandingRecord } from '../../types/settings';
@@ -47,7 +49,12 @@ export class LandingStatisticsModule implements IModule {
   private wasAirborne = false;
   private aircraftId: string | null = null;
   private replay = new LandingReplay();
-  private lastTouchdownMs: number | null = null;
+  private reportTimer: ReturnType<typeof setTimeout> | undefined;
+  private report: HTMLElement | null = null;
+  private reportOpen = false;
+  private reportDuration: number | null = null;
+  private lastGroundHeight: { feet: number; time: number } | undefined;
+  private calibratedVsFpm: number | undefined;
   private lastApproach: FlightTelemetry | null = null;
   private bounces = 0;
   private inTouchdownZone = false;
@@ -59,14 +66,6 @@ export class LandingStatisticsModule implements IModule {
 
   public init(context: ModuleContext): void {
     this.ctx = context;
-    const base = context.sim.getMajorVersion() === 3 ? 'https://geofs-assets.evengao6688.workers.dev/audio/'
-      : 'https://cdn.jsdelivr.net/gh/AMFI-Disable/GeoFS-V3.9_Assets@main/audio/';
-    this.sounds = {
-      soft: new Audio(base + 'soft_landing.wav'),
-      hard: new Audio(base + 'hard_landing.wav'),
-      crash: new Audio(base + 'crash_landing.wav')
-    };
-    for (const sound of Object.values(this.sounds)) sound.preload = 'none';
     const root = document.createElement('div');
     root.innerHTML = '<div style="font-weight:700;margin-bottom:6px;font-size:11px;">Session Touchdowns</div>';
     const list = document.createElement('div');
@@ -75,6 +74,25 @@ export class LandingStatisticsModule implements IModule {
     root.appendChild(list);
     this.listEl = list;
     this.unmountTab = context.anchors.registerHudTab('land', 'LAND', root);
+    const timer = document.createElement('input');
+    timer.type = 'checkbox';
+    timer.checked = context.getSettings().landingReportAutoClose ?? true;
+    timer.addEventListener('change', () => context.updateSettings({ landingReportAutoClose: timer.checked }));
+    const timerLabel = document.createElement('label');
+    timerLabel.append(timer, ' Auto-close report');
+    const seconds = document.createElement('input');
+    seconds.type = 'number';
+    seconds.min = '1';
+    seconds.max = '3600';
+    seconds.value = String(context.getSettings().landingReportSeconds ?? 15);
+    seconds.style.width = '4em';
+    seconds.setAttribute('aria-label', 'Landing report duration in seconds');
+    seconds.addEventListener('change', () => {
+      const duration = Math.max(1, Math.min(3600, seconds.valueAsNumber || 15));
+      seconds.value = String(duration);
+      context.updateSettings({ landingReportSeconds: duration });
+    });
+    root.prepend(timerLabel, seconds, ' s');
   }
 
   public update(telemetry: FlightTelemetry): void {
@@ -84,19 +102,34 @@ export class LandingStatisticsModule implements IModule {
     if (aircraftId !== this.aircraftId) {
       this.aircraftId = aircraftId;
       this.wasAirborne = false;
-      this.lastTouchdownMs = null;
+      this.closeReport();
+      this.lastGroundHeight = undefined;
+      this.calibratedVsFpm = undefined;
       this.lastApproach = null;
       this.gpwsFired.clear();
       this.replay.reset();
     }
     if (!aircraftId) return;
 
+    const aircraft = window.geofs?.aircraft?.instance;
+    const values = window.geofs?.animation?.values;
+    const collisionOffset = aircraft?.collisionPoints?.at(-2)?.worldPosition?.[2] ?? 0;
+    const groundHeight = typeof values?.altitude === 'number' && typeof values.groundElevationFeet === 'number'
+      ? values.altitude - values.groundElevationFeet + collisionOffset * 3.2808399 : telemetry.aglFeet;
+    const previousHeight = this.lastGroundHeight;
+    if (Number.isFinite(groundHeight) && (!previousHeight || groundHeight !== previousHeight.feet)) {
+      if (previousHeight && telemetry.timestamp > previousHeight.time) {
+        this.calibratedVsFpm = (groundHeight - previousHeight.feet) * 60_000 / (telemetry.timestamp - previousHeight.time);
+      }
+      this.lastGroundHeight = { feet: groundHeight, time: telemetry.timestamp };
+    }
+
     if (!telemetry.groundContact && !telemetry.crashed) {
       this.wasAirborne = true;
       this.lastApproach = telemetry;
-      if (this.wasAirborne) this.replay.record(telemetry);
+      this.replay.record(telemetry);
       if (telemetry.aglFeet > 80) this.gpwsFired.clear();
-      if (this.wasAirborne && telemetry.vs < -100) {
+      if (!hasAircraftCallouts() && telemetry.vs < -100) {
         const thresholds: Array<{ ft: number; callout: '50' | '40' | '30' | '20' | '10' }> = [
           { ft: 50, callout: '50' },
           { ft: 40, callout: '40' },
@@ -120,18 +153,16 @@ export class LandingStatisticsModule implements IModule {
     if (this.wasAirborne) {
       this.wasAirborne = false;
       this.gpwsFired.clear();
-      if (!telemetry.crashed && telemetry.aglFeet >= 500) {
+      if (!telemetry.crashed && groundHeight >= 500) {
         this.replay.reset();
         return;
       }
-      const isBounce = this.lastTouchdownMs !== null && telemetry.timestamp - this.lastTouchdownMs <= 15_000;
+      const isBounce = this.reportOpen;
       this.bounces = isBounce ? this.bounces + 1 : 0;
       if (!isBounce) this.inTouchdownZone = isInTouchdownZone();
-      this.lastTouchdownMs = telemetry.timestamp;
 
       const approach = this.lastApproach ?? telemetry;
       this.lastApproach = null;
-      const values = window.geofs?.animation?.values;
       const gForce = typeof values?.accZ === 'number' && Number.isFinite(values.accZ)
         ? values.accZ / 9.80665 : telemetry.gForce;
       const rating = telemetry.crashed ? 'Crash' : rateLanding(approach.vs);
@@ -145,6 +176,11 @@ export class LandingStatisticsModule implements IModule {
         rollDeg: Number(approach.roll.toFixed(1)),
         groundSpeedKts: Math.round(telemetry.groundSpeed),
         rating,
+        calibratedVsFpm: this.calibratedVsFpm,
+        indicatedAirspeedKts: approach.kias,
+        trueAirspeedKts: typeof aircraft?.trueAirSpeed === 'number' ? aircraft.trueAirSpeed * 1.94384449 : undefined,
+        pitchDeg: Math.abs(typeof values?.atilt === 'number' ? values.atilt : telemetry.pitch),
+        ...landingFeedback(rating, approach.vs, this.bounces),
         bounces: this.bounces,
         inTouchdownZone: this.inTouchdownZone,
         score: scoreLanding(approach.vs, gForce, approach.roll, this.bounces, this.inTouchdownZone),
@@ -155,6 +191,17 @@ export class LandingStatisticsModule implements IModule {
 
       this.sessionRecords = [record, ...this.sessionRecords].slice(0, 10);
       this.renderSessionList();
+      this.showReport(record, isBounce);
+
+      const base = this.ctx.getAudioUrl?.('');
+      if (base && !this.sounds) {
+        this.sounds = {
+          soft: new Audio(base + 'soft_landing.wav'),
+          hard: new Audio(base + 'hard_landing.wav'),
+          crash: new Audio(base + 'crash_landing.wav')
+        };
+        for (const sound of Object.values(this.sounds)) sound.preload = 'none';
+      }
 
       const sounds = this.sounds;
       if (sounds) {
@@ -177,6 +224,73 @@ export class LandingStatisticsModule implements IModule {
     }
   }
 
+  private showReport(record: LandingRecord, bounce: boolean): void {
+    this.closeReport();
+    const report = document.createElement('section');
+    report.className = 'geofs-ext-landing-report';
+    report.setAttribute('aria-label', 'Landing Statistics');
+    const title = document.createElement('strong');
+    title.textContent = `Landing Statistics · ${record.rating}${bounce ? ' (Bounce)' : ''} · ${record.score?.toFixed(1)}/10`;
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'geofs-ext-pad';
+    close.textContent = '×';
+    close.setAttribute('aria-label', 'Close landing report');
+    close.addEventListener('click', () => this.closeReport());
+    const stats = document.createElement('dl');
+    const entries: Array<[string, string]> = [
+      ['Pre-Impact V/S', `${record.vsFpm} fpm`],
+      ['Touchdown G-Force', `${record.gForce.toFixed(2)} G`],
+      ['Calibrated V/S', record.calibratedVsFpm === undefined ? '—' : `${record.calibratedVsFpm.toFixed(1)} fpm`],
+      ['Indicated Airspeed', `${record.indicatedAirspeedKts?.toFixed(1)} kt`],
+      ['True Airspeed', record.trueAirspeedKts === undefined ? '—' : `${record.trueAirspeedKts.toFixed(1)} kt`],
+      ['Ground Speed', `${record.groundSpeedKts} kt`],
+      ['Roll', `${record.rollDeg.toFixed(1)}°`],
+      ['Pitch', `${record.pitchDeg?.toFixed(1)}°`],
+      ['Touchdown Zone', record.inTouchdownZone ? 'On Target' : 'Off Target'],
+      ['Bounces', String(record.bounces)]
+    ];
+    for (const [label, value] of entries) {
+      const term = document.createElement('dt');
+      term.textContent = label;
+      const detail = document.createElement('dd');
+      detail.textContent = value;
+      stats.append(term, detail);
+    }
+    const quality = document.createElement('p');
+    quality.textContent = record.qualityFeedback ?? '';
+    const passenger = document.createElement('p');
+    passenger.textContent = record.passengerFeedback ?? '';
+    report.append(close, title, stats, quality, passenger);
+    document.body.append(report);
+    this.report = report;
+    this.reportOpen = true;
+    this.scheduleReportClose();
+  }
+
+  public onSettingsChange(): void {
+    if (this.reportOpen) this.scheduleReportClose();
+  }
+
+  private scheduleReportClose(): void {
+    const settings = this.ctx?.getSettings();
+    const seconds = settings?.landingReportAutoClose === false
+      ? null : Math.max(1, Math.min(3600, settings?.landingReportSeconds || 15));
+    if (seconds === this.reportDuration) return;
+    clearTimeout(this.reportTimer);
+    this.reportDuration = seconds;
+    this.reportTimer = seconds === null ? undefined : setTimeout(() => this.closeReport(), seconds * 1000);
+  }
+
+  private closeReport(): void {
+    clearTimeout(this.reportTimer);
+    this.reportTimer = undefined;
+    this.report?.remove();
+    this.report = null;
+    this.reportDuration = null;
+    this.reportOpen = false;
+  }
+
   private renderSessionList(): void {
     if (!this.listEl) return;
     this.listEl.innerHTML = '';
@@ -194,7 +308,9 @@ export class LandingStatisticsModule implements IModule {
     this.listEl = null;
     this.wasAirborne = false;
     this.aircraftId = null;
-    this.lastTouchdownMs = null;
+    this.closeReport();
+    this.lastGroundHeight = undefined;
+    this.calibratedVsFpm = undefined;
     this.lastApproach = null;
     this.gpwsFired.clear();
     this.sessionRecords = [];

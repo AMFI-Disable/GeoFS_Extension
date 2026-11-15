@@ -168,6 +168,12 @@ export class FuelSimulatorModule implements IModule {
       this.distributeFuel();
     } else if (settings?.fuelRealisticTanks) {
       this.tanks = drainFuelTanks(this.tanks, drain);
+      const imbalance = this.tanks.left - this.tanks.right;
+      const axis = aircraft.object3d?.worldRotation?.[0];
+      if (axis && Math.abs(imbalance) > 10) {
+        const torque = imbalance * 0.000001;
+        aircraft.rigidBody?.applyTorque?.([axis[0] * torque, axis[1] * torque, axis[2] * torque]);
+      }
     } else this.distributeFuel();
 
     if (this.fuelKg === 0 && !this.flameoutTriggered && aircraft.engine?.on !== false) {

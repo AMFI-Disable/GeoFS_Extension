@@ -24,6 +24,12 @@ export interface LandingRecord {
   groundSpeedKts: number;
   rating: 'Butter' | 'Silky' | 'Great' | 'Smooth' | 'Firm' | 'Hard' | 'Bone Shaker' | 'Crash';
   score?: number;
+  calibratedVsFpm?: number;
+  indicatedAirspeedKts?: number;
+  trueAirspeedKts?: number;
+  pitchDeg?: number;
+  qualityFeedback?: string;
+  passengerFeedback?: string;
   bounces?: number;
   inTouchdownZone?: boolean;
   lat: number;
@@ -34,6 +40,7 @@ export interface LandingRecord {
 export interface RealismOptions {
   gBreath: boolean;
   windAudio: boolean;
+  soundExpansion: boolean;
   blackout: boolean;
   cameraShake: boolean;
   propwash: boolean;
@@ -58,6 +65,8 @@ export interface ExtensionSettings {
   fuelAutoRefuel?: boolean;
   fuelDynamicSfc?: boolean;
   fuelRealisticTanks?: boolean;
+  landingReportAutoClose?: boolean;
+  landingReportSeconds?: number;
   realismOptions?: Partial<RealismOptions>;
   customImageryUrl: string;
   customImageryToken: string;

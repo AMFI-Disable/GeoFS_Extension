@@ -17,7 +17,7 @@ function mergeSettings(raw: Partial<ExtensionSettings> | undefined): ExtensionSe
 }
 
 function broadcastSettings(settings: ExtensionSettings): void {
-  window.postMessage({ type: 'GEOFS_EXT_SETTINGS', settings }, '*');
+  window.postMessage({ type: 'GEOFS_EXT_SETTINGS', settings, audioBase: chrome.runtime.getURL('audio/') }, '*');
 }
 
 function refreshSettings(): void {

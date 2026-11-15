@@ -36,9 +36,11 @@ await Promise.all([
   })
 ]);
 
-// 3. Copy manifest & icons
+// 3. Copy manifest and static assets
 cpSync(resolve(root, 'public/manifest.json'), resolve(dist, 'manifest.json'));
-cpSync(resolve(root, 'public/icons'), resolve(dist, 'icons'), { recursive: true });
+for (const directory of ['icons', 'audio']) {
+  cpSync(resolve(root, 'public', directory), resolve(dist, directory), { recursive: true });
+}
 
 if (shouldZip) {
   const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
@@ -56,7 +58,7 @@ if (process.argv.includes('--unpacked')) {
   mkdirSync(unpacked, { recursive: true });
 
   // Replace only the entries produced by this build.
-  for (const entry of ['manifest.json', 'content', 'icons', 'popup']) {
+  for (const entry of ['manifest.json', 'content', 'icons', 'audio', 'popup']) {
     const destination = resolve(unpacked, entry);
     rmSync(destination, { recursive: true, force: true });
     cpSync(resolve(dist, entry), destination, { recursive: true });

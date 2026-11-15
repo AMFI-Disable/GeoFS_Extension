@@ -106,6 +106,7 @@ export class AutothrottleModule implements IModule {
     this.unmounts.push(context.onEvent<{ type: string }>('failure:cleared', ({ type }) => {
       if (type === 'electrical') this.electricalFailure = false;
     }));
+    context.emitEvent('failure:request-active');
   }
 
   public adjustSpeed(dir: -1 | 1): void {

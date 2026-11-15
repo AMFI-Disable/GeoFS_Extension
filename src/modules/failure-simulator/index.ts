@@ -1,6 +1,7 @@
 import type { ChecklistProcedure } from '../checklist-system/procedures';
-import type { GeoFSAircraftInstance, GeoFSPositionControl } from '../../types/geofs.d';
+import type { GeoFSAircraftInstance, GeoFSEngine, GeoFSPositionControl } from '../../types/geofs.d';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
+import type { ExtensionSettings } from '../../types/settings';
 
 const SYSTEMS = {
   gearFront: 'Nose Gear', gearLeft: 'Left Gear', gearRight: 'Right Gear',
@@ -75,6 +76,46 @@ function jamControl(control: GeoFSPositionControl, target: number, position: num
   };
 }
 
+function engineSmoke(engine: GeoFSEngine) {
+  const fx = window.geofs?.fx;
+  const Emitter = fx?.ParticleEmitter;
+  const position = engine.object3d?.worldPosition;
+  const anchor = engine.points?.contrailAnchor ?? (position && { worldPosition: position });
+  if (!Emitter || !anchor) return;
+  try {
+    const emitter = new Emitter({
+      anchor, duration: 1e10, rate: 0.03, life: 1e4, easing: 'easeOutQuart',
+      startScale: 0.01, endScale: 0.2, randomizeStartScale: 0.01, randomizeEndScale: 0.15,
+      startOpacity: 1, endOpacity: 0.2, startRotation: 'random', texture: 'whitesmoke'
+    });
+    const Color = window.Cesium?.Color;
+    const smokeColor = Color && new Color(0.1, 0.1, 0.1, 1);
+    return {
+      apply: () => {
+        for (const particle of Object.values(fx.particles ?? {})) {
+          if (particle?._emitter === emitter && smokeColor) particle.setColor?.(smokeColor);
+        }
+      },
+      restore: () => {
+        emitter.destroy();
+        for (const particle of Object.values(fx.particles ?? {})) {
+          if (particle?._emitter === emitter) particle.destroy();
+        }
+      }
+    };
+  } catch (error) {
+    console.warn('[GeoFS Extension] Could not start engine smoke:', error);
+    return undefined;
+  }
+}
+
+const SYSTEM_GROUPS: ReadonlyArray<readonly [string, readonly System[]]> = [
+  ['Landing Gear', ['gearFront', 'gearLeft', 'gearRight']],
+  ['Flight Controls', ['ailerons', 'elevators', 'rudder']],
+  ['Hydraulics', ['flaps', 'brakes', 'spoilers']],
+  ['Advanced Systems', ['electrical', 'fuelLeak', 'structural', 'pressurization', 'mcas', 'pitotStatic']]
+];
+
 export class FailureSimulatorModule implements IModule {
   public readonly id = 'failure-simulator';
   public readonly name = 'Failure Simulator';
@@ -88,10 +129,17 @@ export class FailureSimulatorModule implements IModule {
   private chances = new Map<FailureType, number>();
   private nextProbabilityMs = 0;
   private list: HTMLElement | null = null;
+  private probabilityToggle?: HTMLInputElement;
+  private restoreWeather?: () => void;
+  private lastAltitude = 0;
+  private unsubscribe?: () => void;
   private unmount: (() => void) | undefined;
 
   public init(context: ModuleContext): void {
     this.ctx = context;
+    this.unsubscribe = context.onEvent('failure:request-active', () => {
+      for (const type of this.active.keys()) this.emitFailure(type);
+    });
     const root = document.createElement('div');
     root.innerHTML = '<div data-systems style="max-height:180px;overflow:auto;"></div>';
     this.list = root.querySelector('[data-systems]');
@@ -100,6 +148,15 @@ export class FailureSimulatorModule implements IModule {
     clear.className = 'geofs-ext-pad';
     clear.textContent = 'Clear All Failures';
     clear.addEventListener('click', () => this.clear());
+    const probability = document.createElement('input');
+    probability.type = 'checkbox';
+    probability.checked = context.getSettings().failureProbabilitiesEnabled;
+    probability.addEventListener('change', () =>
+      context.updateSettings({ failureProbabilitiesEnabled: probability.checked }));
+    this.probabilityToggle = probability;
+    const probabilityLabel = document.createElement('label');
+    probabilityLabel.append(probability, ' Enable Probability');
+    root.prepend(probabilityLabel);
     root.append(clear);
     this.unmount = context.anchors.registerHudTab('fail', 'FAIL', root);
     this.aircraft = window.geofs?.aircraft?.instance;
@@ -110,34 +167,62 @@ export class FailureSimulatorModule implements IModule {
     if (!this.list) return;
     const engines = this.aircraft?.engines?.length ?? (this.aircraft?.engine ? 1 : 0);
     const engineTypes = Array.from({ length: engines }, (_, index): FailureType => `engine${index}`);
-    const types = [...engineTypes, ...Object.keys(SYSTEMS) as System[]];
-    this.list.replaceChildren(...types.map((type) => {
-      const row = document.createElement('div');
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'geofs-ext-pad';
-      button.classList.toggle('is-active', this.active.has(type));
-      button.textContent = label(type);
-      button.setAttribute('aria-pressed', String(this.active.has(type)));
-      button.addEventListener('click', () => {
-        if (this.active.has(type)) {
-          this.fix(type);
+    const groups: ReadonlyArray<readonly [string, readonly FailureType[]]> = [
+      ['Engines', engineTypes], ...SYSTEM_GROUPS
+    ];
+    this.list.replaceChildren(...groups.filter(([, types]) => types.length).map(([group, types]) => {
+      const section = document.createElement('fieldset');
+      const title = document.createElement('legend');
+      title.textContent = group;
+      section.append(title);
+      for (const action of ['Auto', 'Fail', 'Fix'] as const) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'geofs-ext-pad';
+        button.textContent = action;
+        button.setAttribute('aria-label', `${action} ${group}`);
+        button.addEventListener('click', () => {
+          for (const type of types) {
+            if (action === 'Auto') this.chances.set(type, Math.random() * (group === 'Advanced Systems' ? 0.05 : 0.1));
+            else if (action === 'Fail') this.fail(type, false);
+            else if (this.active.has(type)) this.fix(type);
+          }
           this.render();
-        } else this.fail(type);
-      });
-      const chance = document.createElement('input');
-      chance.type = 'number';
-      chance.min = '0';
-      chance.max = '100';
-      chance.value = String((this.chances.get(type) ?? 0) * 100);
-      chance.setAttribute('aria-label', `${label(type)} failure probability (%)`);
-      chance.style.width = '4em';
-      chance.addEventListener('change', () => {
-        this.chances.set(type, Math.max(0, Math.min(100, chance.valueAsNumber || 0)) / 100);
-      });
-      row.append(button, chance, '%');
-      return row;
+        });
+        section.append(button);
+      }
+      for (const type of types) section.append(this.systemRow(type));
+      return section;
     }));
+  }
+
+  private systemRow(type: FailureType): HTMLElement {
+    const row = document.createElement('div');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'geofs-ext-pad';
+    button.classList.toggle('is-active', this.active.has(type));
+    button.textContent = label(type);
+    button.setAttribute('aria-pressed', String(this.active.has(type)));
+    button.addEventListener('click', () => {
+      if (this.active.has(type)) {
+        this.fix(type);
+        this.render();
+      } else this.fail(type);
+    });
+    const chance = document.createElement('input');
+    chance.type = 'number';
+    chance.min = '0';
+    chance.max = '100';
+    chance.step = 'any';
+    chance.value = String(Number(((this.chances.get(type) ?? 0) * 100).toFixed(2)));
+    chance.setAttribute('aria-label', `${label(type)} failure probability (%)`);
+    chance.style.width = '4em';
+    chance.addEventListener('change', () => {
+      this.chances.set(type, Math.max(0, Math.min(100, chance.valueAsNumber || 0)) / 100);
+    });
+    row.append(button, chance, '%');
+    return row;
   }
 
   private effect(type: FailureType, aircraft: GeoFSAircraftInstance): FailureEffect | undefined {
@@ -148,8 +233,13 @@ export class FailureSimulatorModule implements IModule {
     if (type.startsWith('engine')) {
       const index = Number(type.slice(6));
       const engine = aircraft.engines?.[index] ?? (index === 0 ? aircraft.engine : undefined);
-      if (engine) return repeat(pinValue(engine, 'thrust', 0), 50);
-      return;
+      if (!engine) return;
+      const thrust = pinValue(engine, 'thrust', 0);
+      const smoke = engineSmoke(engine);
+      return repeat({
+        apply: () => { thrust.apply(); smoke?.apply(); },
+        restore: () => { thrust.restore(); smoke?.restore(); }
+      }, 50);
     }
 
     switch (type) {
@@ -188,9 +278,18 @@ export class FailureSimulatorModule implements IModule {
         const autopilot = window.geofs?.autopilot;
         const instruments = window.instruments;
         const wasVisible = instruments?.visible !== false;
+        const pins = (aircraft.cockpitSetup?.parts ?? []).slice(1, 6).flatMap((part) => part?.object3d
+          ? [pinValue(part.object3d, '_scale', [0, 0, 0])] : []);
         return repeat({
-          apply: () => { autopilot?.turnOff?.(); instruments?.hide?.(); },
-          restore: () => { if (wasVisible) instruments?.show?.(); }
+          apply: () => {
+            autopilot?.turnOff?.();
+            instruments?.hide?.();
+            pins.forEach((pin) => pin.apply());
+          },
+          restore: () => {
+            pins.forEach((pin) => pin.restore());
+            if (wasVisible) instruments?.show?.();
+          }
         });
       }
       case 'pitotStatic': {
@@ -235,12 +334,10 @@ export class FailureSimulatorModule implements IModule {
       case 'pressurization': {
         const weather = window.weather?.definition;
         if (!weather) return;
-        const original = pinValue(weather, 'turbulences', 3);
+        this.restoreWeather ??= pinValue(weather, 'turbulences', 3).restore;
         return repeat({
-          apply: (telemetry) => {
-            weather.turbulences = type === 'structural' ? 3 : Math.max(0, ((telemetry?.altitude ?? 0) - 9000) / 5000);
-          },
-          restore: original.restore
+          apply: () => this.applyWeather(),
+          restore: () => this.applyWeather()
         });
       }
       case 'mcas': {
@@ -262,7 +359,22 @@ export class FailureSimulatorModule implements IModule {
     }
   }
 
-  private fail(type: FailureType): void {
+  private applyWeather(): void {
+    const weather = window.weather?.definition;
+    if (weather && this.active.has('structural')) weather.turbulences = 3;
+    else if (weather && this.active.has('pressurization')) {
+      weather.turbulences = Math.max(0, (this.lastAltitude - 9000) / 5000);
+    } else {
+      this.restoreWeather?.();
+      this.restoreWeather = undefined;
+    }
+  }
+
+  private emitFailure(type: FailureType): void {
+    this.ctx?.emitEvent('failure:triggered', { type, procedure: emergencyProcedure(type) });
+  }
+
+  private fail(type: FailureType, render = true): void {
     if (!this.aircraft || this.aircraft.crashed || this.active.has(type)) return;
     const effect = this.effect(type, this.aircraft);
     if (!effect) {
@@ -273,19 +385,24 @@ export class FailureSimulatorModule implements IModule {
     if (type !== 'fuelLeak') effect.apply();
     this.ctx?.audio.playGpwsAlert();
     this.ctx?.anchors.showToast(`${label(type)} failure`, 'critical');
-    this.ctx?.emitEvent('failure:triggered', { type, procedure: emergencyProcedure(type) });
-    this.render();
+    this.emitFailure(type);
+    if (render) this.render();
   }
 
   private fix(type: FailureType): void {
-    this.active.get(type)?.restore();
+    const effect = this.active.get(type);
     this.active.delete(type);
+    effect?.restore();
     this.ctx?.emitEvent('failure:cleared', { type });
   }
 
   private clear(): void {
     for (const type of [...this.active.keys()].reverse()) this.fix(type);
     this.render();
+  }
+
+  public onSettingsChange(settings: ExtensionSettings): void {
+    if (this.probabilityToggle) this.probabilityToggle.checked = settings.failureProbabilitiesEnabled;
   }
 
   public update(telemetry: FlightTelemetry): void {
@@ -296,6 +413,7 @@ export class FailureSimulatorModule implements IModule {
       this.render();
     }
     if (telemetry.paused || telemetry.crashed || !this.ctx) return;
+    this.lastAltitude = telemetry.altitude;
     for (const effect of this.active.values()) {
       if (telemetry.timestamp >= effect.dueAt) {
         effect.apply(telemetry);
@@ -313,10 +431,13 @@ export class FailureSimulatorModule implements IModule {
 
   public destroy(): void {
     this.clear();
+    this.unsubscribe?.();
+    this.unsubscribe = undefined;
     this.unmount?.();
     this.unmount = undefined;
     this.aircraft = undefined;
     this.list = null;
+    this.probabilityToggle = undefined;
     this.ctx = null;
     this.nextProbabilityMs = 0;
   }

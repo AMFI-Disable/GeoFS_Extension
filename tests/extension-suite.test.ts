@@ -4,12 +4,14 @@ import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-ada
 import { ModuleManager } from '../src/core/module-manager';
 import { detectGeoFSKeyCollision, formatComboForOs } from '../src/core/keybind-manager';
 import { formatLogbookCsv } from '../src/core/logbook-export';
+import { hasAircraftCallouts, installAircraftSounds } from '../src/modules/realism-pack/aircraft-sounds';
 import { buildGForceShader } from '../src/modules/realism-pack';
 import { rateLanding, scoreLanding } from '../src/modules/landing-statistics';
 import { EngineCeiling, EngineThrust } from '../src/modules/overpowered-engines';
 import { drainFuelTanks, fuelBurnKgHr } from '../src/modules/fuel-simulator';
 import { projectFlightPath } from '../src/modules/flight-path-vector';
 import { DEFAULT_SETTINGS } from '../src/types/settings';
+import type { GeoFSAnimationValues, GeoFSSound } from '../src/types/geofs.d';
 import type { IModule } from '../src/types/module';
 
 describe('SimAdapter & Version Detection', () => {
@@ -186,6 +188,30 @@ describe('Archived Engine and Flight Path Behavior', () => {
     expect(first).toEqual({ zeroThrustAltitude: 50_000 });
     ceiling.restore();
     expect(second).toEqual({ zeroRPMAltitude: 30_000 });
+  });
+
+  it('restores native aircraft sounds and callout values after a live toggle', () => {
+    const nativeEngine = { id: 'rpm1', file: 'native.mp3', effects: { volume: { value: 'rpm' }, pitch: { value: 'rpm' } } };
+    const nativeWarning = { id: 'native-warning', file: 'warning.mp3' };
+    const sounds: Record<string, GeoFSSound> = { rpm1: nativeEngine, 'native-warning': nativeWarning };
+    const stopped: GeoFSSound[] = [];
+    window.audio = { sounds, soundplayer: { stopSound: (sound) => stopped.push(sound) } };
+    const aircraft = { id: 25, definition: { sounds: [nativeEngine] } };
+    const effects = installAircraftSounds(aircraft);
+    expect(effects).toBeDefined();
+    expect(sounds.rpm1.file).toContain('777enginelow.mp3');
+    expect(sounds['native-warning']).toBe(nativeWarning);
+    expect(hasAircraftCallouts()).toBe(true);
+
+    const values: GeoFSAnimationValues = { gearPosition: 0, flapsPosition: 3 };
+    const telemetry = new SimAdapter().buildTelemetrySnapshot(0.02, 4);
+    effects?.update({ ...telemetry, aglFeet: 62, vs: -400, groundContact: false }, values);
+    expect(values['geofs-ext-realism-50']).toBe(1);
+    effects?.restore();
+    expect(stopped).toContain(nativeEngine);
+    expect(sounds).toEqual({ rpm1: nativeEngine, 'native-warning': nativeWarning });
+    expect(values).toEqual({ gearPosition: 0, flapsPosition: 3 });
+    delete window.audio;
   });
 
   it('restores original and absent failure properties', () => {

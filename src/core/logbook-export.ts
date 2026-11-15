@@ -9,7 +9,7 @@ function escapeCsvCell(value: string | number): string {
 }
 
 export function formatLogbookCsv(records: LandingRecord[]): string {
-  const header = ['ID', 'Timestamp', 'Aircraft ID', 'Aircraft Name', 'V/S (fpm)', 'G-Force', 'Roll (deg)', 'Ground Speed (kts)', 'Rating', 'Lat', 'Lon'].join(',');
+  const header = ['ID', 'Timestamp', 'Aircraft ID', 'Aircraft Name', 'V/S (fpm)', 'G-Force', 'Roll (deg)', 'Ground Speed (kts)', 'Rating', 'Lat', 'Lon', 'Score', 'Bounces', 'Touchdown Zone', 'Calibrated V/S (fpm)', 'IAS (kt)', 'TAS (kt)', 'Pitch (deg)', 'Quality Feedback', 'Passenger Feedback'].join(',');
   const rows = records.map((r) => [
     r.id,
     r.timestamp,
@@ -21,7 +21,16 @@ export function formatLogbookCsv(records: LandingRecord[]): string {
     r.groundSpeedKts,
     r.rating,
     r.lat,
-    r.lon
+    r.lon,
+    r.score ?? '',
+    r.bounces ?? '',
+    r.inTouchdownZone === undefined ? '' : r.inTouchdownZone ? 'On Target' : 'Off Target',
+    r.calibratedVsFpm ?? '',
+    r.indicatedAirspeedKts ?? '',
+    r.trueAirspeedKts ?? '',
+    r.pitchDeg ?? '',
+    r.qualityFeedback ?? '',
+    r.passengerFeedback ?? ''
   ].map(escapeCsvCell).join(','));
   return [header, ...rows].join('\n');
 }

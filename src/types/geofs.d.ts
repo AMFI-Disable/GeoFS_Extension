@@ -24,7 +24,18 @@ export interface GeoFSAnimationValues {
   [key: string]: unknown;
 }
 
+export interface GeoFSSound {
+  id: string;
+  file: string;
+  effects?: Record<string, { value?: string; ratio?: number; offset?: number; ramp?: number[]; lastValue?: unknown }>;
+  playing?: boolean;
+  loading?: boolean;
+  loaded?: boolean;
+  loop?: boolean;
+}
+
 export interface GeoFSAircraftDefinition {
+  sounds?: GeoFSSound[];
   Vspeeds?: Record<string, number>;
   name?: string;
   externalName?: string;
@@ -55,7 +66,13 @@ export interface GeoFSEnginePart {
   [key: string]: unknown;
 }
 
+interface GeoFSParticleEmitter {
+  destroy: () => void;
+}
+
 export interface GeoFSEngine {
+  points?: { contrailAnchor?: unknown };
+  object3d?: { worldPosition?: [number, number, number] };
   thrust?: number;
   on?: boolean;
   [key: string]: unknown;
@@ -71,6 +88,10 @@ export interface GeoFSAircraftInstance {
   crash?: () => void;
   animationValue?: Record<string, unknown>;
   stalling?: boolean;
+  trueAirSpeed?: number;
+  collisionPoints?: Array<{ worldPosition?: [number, number, number] }>;
+  cockpitSetup?: { parts?: Array<{ object3d?: { _scale?: [number, number, number] } }> };
+  object3d?: { worldRotation?: Array<[number, number, number]> };
   llaLocation?: [number, number, number];
   engines?: GeoFSEngine[];
   engine?: GeoFSEngine;
@@ -80,6 +101,7 @@ export interface GeoFSAircraftInstance {
   aircraftRecord?: { id?: string | number; name?: string; [key: string]: unknown };
   rigidBody?: {
     mass?: number;
+    applyTorque?: (torque: [number, number, number]) => void;
     getAngularVelocity?: () => [number, number, number];
     setAngularVelocity?: (velocity: [number, number, number]) => void;
     setMassProps?: (mass: number, inertia: unknown) => void;
@@ -150,7 +172,18 @@ export interface GeoFSGlobal {
   preferences?: { crashDetection?: boolean };
   flyToCamera?: () => void;
   cautiousWithTerrain?: boolean;
+  fx?: {
+    ParticleEmitter?: new (options: Record<string, unknown>) => GeoFSParticleEmitter;
+    particles?: Record<string, {
+      _emitter?: GeoFSParticleEmitter;
+      setColor?: (color: unknown) => void;
+      destroy: () => void;
+    }>;
+  };
   runways?: {
+    nearRunways?: Record<string, { icao?: string }>;
+    modelVisibility?: number | boolean;
+    setRunwayModelVisibility?: (visible: number | boolean) => void;
     getNearestRunway?: (location: [number, number, number]) => {
       aimingPointLla1?: [number, number, number];
       aimingPointLla2?: [number, number, number];
@@ -202,10 +235,15 @@ export interface GeoFSCartesian {
 declare global {
   interface Window {
     geofs?: GeoFSGlobal;
+    audio?: {
+      sounds?: Record<string, GeoFSSound>;
+      soundplayer?: { stopSound?: (sound: GeoFSSound) => void };
+    };
     weather?: { localTime?: number; definition?: { turbulences?: number } };
     instruments?: GeoFSInstruments;
     controls?: GeoFSControls;
     Cesium?: {
+      Color?: new (r: number, g: number, b: number, a: number) => unknown;
       PostProcessStage?: new (opts: { fragmentShader: string; uniforms?: Record<string, unknown> }) => unknown;
       UrlTemplateImageryProvider?: new (opts: { url: string; maximumLevel?: number; credit?: unknown }) => unknown;
       BingMapsImageryProvider?: new (opts: { url?: string; key: string; mapStyle?: string }) => unknown;

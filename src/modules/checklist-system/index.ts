@@ -166,6 +166,7 @@ export class ChecklistSystemModule implements IModule {
     this.unmounts.push(context.onEvent<{ type: string }>('failure:cleared', ({ type }) => {
       this.emergencies.delete(type);
     }));
+    context.emitEvent('failure:request-active');
   }
 
   public onSettingsChange(settings: import('../../types/settings').ExtensionSettings): void {

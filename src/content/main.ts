@@ -26,6 +26,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
   const startSuite = (simMajor: 3 | 4) => {
     let settings: ExtensionSettings = { ...DEFAULT_SETTINGS };
 
+    let audioBase: string | undefined;
     const sim = new SimAdapter();
     const audio = new AudioEngine();
     const keybinds = new KeybindManager();
@@ -37,6 +38,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
       audio,
       anchors,
       keybinds,
+      getAudioUrl: (file) => audioBase && audioBase + file,
       getSettings: () => settings,
       updateSettings: (patch) => {
         settings = { ...settings, ...patch };
@@ -97,8 +99,11 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
 
     window.addEventListener('message', (event) => {
       if (event.source !== window || !event.data || typeof event.data !== 'object') return;
-      const msg = event.data as { type?: string; settings?: ExtensionSettings };
+      const msg = event.data as { type?: string; settings?: ExtensionSettings; audioBase?: string };
       if (msg.type === 'GEOFS_EXT_SETTINGS' && msg.settings) {
+        if (typeof msg.audioBase === 'string' && /^chrome-extension:\/\/[a-p]{32}\/audio\/$/.test(msg.audioBase)) {
+          audioBase = msg.audioBase;
+        }
         settings = msg.settings;
         sim.setAircraftOverrides(settings.aircraftOverrides);
         keybinds.updateCombo('hud-toggle', settings.keybindings.toggleHud);

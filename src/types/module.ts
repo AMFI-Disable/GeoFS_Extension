@@ -70,6 +70,7 @@ export interface ModuleContext {
   audio: AudioEngine;
   anchors: AnchorManager;
   keybinds: KeybindManager;
+  getAudioUrl?: (file: string) => string | undefined;
   getSettings: () => ExtensionSettings;
   updateSettings: (patch: Partial<ExtensionSettings>) => void;
   emitEvent: <T = unknown>(event: string, detail?: T) => void;

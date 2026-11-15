@@ -200,7 +200,7 @@ export class AnchorManager {
         --geofs-ext-muted: #475569;
         --geofs-ext-border: #64748b;
       }
-      #geofs-ext-hud {
+      #geofs-ext-hud, .geofs-ext-landing-report {
         position: fixed;
         top: 64px;
         left: 16px;
@@ -217,6 +217,20 @@ export class AnchorManager {
         transform-origin: top left;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
       }
+      .geofs-ext-landing-report {
+        top: 12%;
+        left: auto;
+        right: 16px;
+        width: min(320px, 85vw);
+        transform-origin: top right;
+      }
+      .geofs-ext-landing-report button { float: right; }
+      .geofs-ext-landing-report dl {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 4px 12px;
+      }
+      .geofs-ext-landing-report dd { margin: 0; text-align: right; }
       .geofs-ext-hud-header {
         font-size: 10px;
         font-weight: 700;
