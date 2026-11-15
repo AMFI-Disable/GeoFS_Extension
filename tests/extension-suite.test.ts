@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-adapter';
 import { ModuleManager } from '../src/core/module-manager';
-import { formatComboForOs } from '../src/core/keybind-manager';
+import { detectGeoFSKeyCollision, formatComboForOs } from '../src/core/keybind-manager';
 import { formatLogbookCsv } from '../src/core/logbook-export';
 import { buildGForceShader } from '../src/modules/realism-pack';
 import { rateLanding } from '../src/modules/landing-statistics';
@@ -103,9 +103,11 @@ describe('Subsystems (Shaders, Landing Ratings, OS Keybinds)', () => {
     expect(rateLanding(-1200, 3.5)).toBe('Crash');
   });
 
-  it('formats Mac vs Windows keybind labels', () => {
+  it('formats Mac vs Windows keybind labels and detects GeoFS key collisions', () => {
     expect(formatComboForOs('Ctrl+Shift+A', 'mac')).toBe('⌃⇧A');
     expect(formatComboForOs('Ctrl+Shift+A', 'windows')).toBe('Ctrl+Shift+A');
+    expect(detectGeoFSKeyCollision('G')).toContain('Landing Gear');
+    expect(detectGeoFSKeyCollision('Shift+G')).toBeNull();
   });
 
   it('classifies rotorcraft and applies custom aircraft profile overrides', () => {

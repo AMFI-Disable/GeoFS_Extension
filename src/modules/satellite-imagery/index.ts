@@ -25,7 +25,23 @@ export class SatelliteImageryModule implements IModule {
   private applyProvider(settings: ExtensionSettings): void {
     const Cesium = window.Cesium;
     const setImagery = window.geofs?.api?.setImageryProvider;
-    if (!Cesium?.UrlTemplateImageryProvider || !setImagery) return;
+    if (!Cesium || !setImagery) return;
+    if (settings.imageryProvider === 'bing' && settings.customImageryToken && Cesium.BingMapsImageryProvider) {
+      try {
+        const provider = new Cesium.BingMapsImageryProvider({
+          url: 'https://dev.virtualearth.net',
+          key: settings.customImageryToken,
+          mapStyle: 'Aerial'
+        });
+        setImagery(provider, false);
+        this.ctx?.anchors.showToast('Imagery switched to BING AERIAL');
+      } catch (err) {
+        console.warn('[GeoFS Extension] Failed to apply Bing imagery:', err);
+      }
+      return;
+    }
+
+    if (!Cesium.UrlTemplateImageryProvider) return;
 
     let url = '';
     let credit = 'Custom Imagery';

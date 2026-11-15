@@ -119,6 +119,11 @@ export class AutothrottleModule implements IModule {
       this.ctx?.anchors.showToast('Autothrottle Disengaged');
     }
     this.renderControls();
+    this.ctx?.emitEvent('autothrottle:state', { engaged: this.engaged });
+  }
+
+  public onSettingsChange(settings: import('../../types/settings').ExtensionSettings): void {
+    this.ctx?.keybinds.updateCombo('autothrottle-toggle', settings.keybindings.toggleAutothrottle);
   }
 
   public update(telemetry: FlightTelemetry): void {
@@ -128,6 +133,7 @@ export class AutothrottleModule implements IModule {
       this.ctx.sim.setThrottle(0);
       this.engaged = false;
       this.renderControls();
+      this.ctx.emitEvent('autothrottle:state', { engaged: false });
       this.ctx.anchors.showToast('Autothrottle Auto-Retard on Touchdown');
       return;
     }

@@ -7,7 +7,7 @@ import {
   type LandingRecord,
   type ThemeMode
 } from '../types/settings';
-import { detectOsPlatform, formatComboForOs } from '../core/keybind-manager';
+import { detectGeoFSKeyCollision, detectOsPlatform, formatComboForOs } from '../core/keybind-manager';
 import { formatLogbookCsv, triggerDownload } from '../core/logbook-export';
 import type { AircraftCategory } from '../types/module';
 
@@ -260,13 +260,14 @@ export function App() {
                 <option value="native">GeoFS Native</option>
                 <option value="osm">OpenStreetMap</option>
                 <option value="esri">Esri (API Token)</option>
+                <option value="bing">Bing Maps Aerial (API Key)</option>
                 <option value="custom">Custom Tile URL</option>
               </select>
             </div>
-            {settings.imageryProvider === 'esri' && (
+            {(settings.imageryProvider === 'esri' || settings.imageryProvider === 'bing') && (
               <input
                 type="text"
-                placeholder="Esri ArcGIS API Token"
+                placeholder={settings.imageryProvider === 'bing' ? 'Bing Maps API Key' : 'Esri ArcGIS API Token'}
                 value={settings.customImageryToken}
                 onInput={(e) => saveSettings({ ...settings, customImageryToken: (e.target as HTMLInputElement).value })}
               />
@@ -283,20 +284,26 @@ export function App() {
 
           <div class="card field-col" style="align-items:stretch">
             <div style="font-weight:700">Keybindings ({os.toUpperCase()})</div>
-            {(Object.keys(settings.keybindings) as Array<keyof ExtensionSettings['keybindings']>).map((k) => (
-              <div class="field-row" key={k}>
-                <span style="font-size:10px;color:var(--muted)">{k}</span>
-                <input
-                  type="text"
-                  style="width:110px;text-align:right"
-                  value={formatComboForOs(settings.keybindings[k], os)}
-                  onChange={(e) => saveSettings({
-                    ...settings,
-                    keybindings: { ...settings.keybindings, [k]: (e.target as HTMLInputElement).value }
-                  })}
-                />
-              </div>
-            ))}
+            {(Object.keys(settings.keybindings) as Array<keyof ExtensionSettings['keybindings']>).map((k) => {
+              const collision = detectGeoFSKeyCollision(settings.keybindings[k]);
+              return (
+                <div class="field-col" key={k} style="gap:2px">
+                  <div class="field-row">
+                    <span style="font-size:10px;color:var(--muted)">{k}</span>
+                    <input
+                      type="text"
+                      style={`width:110px;text-align:right;${collision ? 'border-color:#ef4444' : ''}`}
+                      value={formatComboForOs(settings.keybindings[k], os)}
+                      onChange={(e) => saveSettings({
+                        ...settings,
+                        keybindings: { ...settings.keybindings, [k]: (e.target as HTMLInputElement).value }
+                      })}
+                    />
+                  </div>
+                  {collision && <div style="font-size:9px;color:#ef4444;text-align:right">{collision}</div>}
+                </div>
+              );
+            })}
           </div>
 
           <div class="card field-col" style="align-items:stretch;gap:6px">

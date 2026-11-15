@@ -20,6 +20,7 @@ export class LandingStatisticsModule implements IModule {
   private ctx: ModuleContext | null = null;
   private wasAirborne = false;
   private lastTouchdownMs = 0;
+  private gpwsFired = new Set<number>();
   private sessionRecords: LandingRecord[] = [];
   private listEl: HTMLDivElement | null = null;
   private unmountTab: (() => void) | null = null;
@@ -39,13 +40,37 @@ export class LandingStatisticsModule implements IModule {
   public update(telemetry: FlightTelemetry): void {
     if (telemetry.paused || !this.ctx) return;
 
+    if (!telemetry.groundContact && telemetry.aglFeet > 80) {
+      this.gpwsFired.clear();
+    }
+
     if (!telemetry.groundContact && telemetry.aglFeet > 25) {
       this.wasAirborne = true;
-      return;
+    }
+
+    if (this.wasAirborne && !telemetry.groundContact && telemetry.vs < -100) {
+      const thresholds: Array<{ ft: number; callout: '50' | '40' | '30' | '20' | '10' }> = [
+        { ft: 50, callout: '50' },
+        { ft: 40, callout: '40' },
+        { ft: 30, callout: '30' },
+        { ft: 20, callout: '20' },
+        { ft: 10, callout: '10' }
+      ];
+      for (const item of thresholds) {
+        if (telemetry.aglFeet <= item.ft && !this.gpwsFired.has(item.ft)) {
+          this.gpwsFired.add(item.ft);
+          this.ctx.audio.playGpwsCallout(item.callout);
+          if (item.ft === 20 && (telemetry.throttles[0] ?? 0) > 0.15) {
+            this.ctx.audio.playGpwsCallout('RETARD');
+          }
+          break;
+        }
+      }
     }
 
     if (this.wasAirborne && telemetry.groundContact && telemetry.timestamp - this.lastTouchdownMs > 6000) {
       this.wasAirborne = false;
+      this.gpwsFired.clear();
       this.lastTouchdownMs = telemetry.timestamp;
 
       const rating = rateLanding(telemetry.vs, telemetry.gForce);

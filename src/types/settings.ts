@@ -1,6 +1,6 @@
 export type ThemeMode = 'auto' | 'dark' | 'light';
 export type CalibratorPreset = '1080p' | '1440p' | '4k' | 'ultrawide' | 'laptop';
-export type ImageryProviderMode = 'native' | 'esri' | 'osm' | 'custom';
+export type ImageryProviderMode = 'native' | 'esri' | 'bing' | 'osm' | 'custom';
 
 export interface KeybindConfig {
   toggleAutothrottle: string;

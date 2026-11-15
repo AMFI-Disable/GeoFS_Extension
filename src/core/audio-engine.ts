@@ -60,6 +60,25 @@ export class AudioEngine {
     setTimeout(() => this.playTone(620, 0.14, 'square', 0.06), 130);
   }
 
+  public playGpwsCallout(callout: '50' | '40' | '30' | '20' | '10' | 'RETARD' | 'PULL_UP'): void {
+    if (this.muted) return;
+    if (callout === 'PULL_UP') {
+      this.playGpwsAlert();
+    } else if (callout === 'RETARD') {
+      this.playTone(523.25, 0.1, 'triangle', 0.06);
+      setTimeout(() => this.playTone(392, 0.14, 'triangle', 0.06), 110);
+    } else {
+      const pitchMap: Record<'50' | '40' | '30' | '20' | '10', number> = {
+        '50': 784,
+        '40': 740,
+        '30': 698,
+        '20': 659,
+        '10': 587
+      };
+      this.playTone(pitchMap[callout], 0.09, 'sine', 0.05);
+    }
+  }
+
   public destroy(): void {
     if (this.ctx) {
       this.ctx.close().catch(() => {});
