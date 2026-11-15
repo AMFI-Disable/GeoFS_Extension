@@ -7,7 +7,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "package": "node scripts/build.mjs --zip"
   },
   "dependencies": {
     "preact": "^10.25.4"
