@@ -17,6 +17,41 @@ const PHASE_LABELS: Record<ChecklistPhase, string> = {
 };
 
 function getPhaseChecklist(category: AircraftCategory, phase: ChecklistPhase): ChecklistItem[] {
+  if (category === 'rotorcraft') {
+    if (phase === 'emergency') {
+      return [
+        { id: 'heli-em-coll', label: 'Collective LOWER (Autorotation)', autoCheck: (t) => t.collectivePct <= 25 },
+        { id: 'heli-em-spd', label: 'Best Glide / Auto 60-80 KTS', autoCheck: (t) => t.kias >= 55 && t.kias <= 85 },
+        { id: 'heli-em-flare', label: 'Flare & Level Before Touchdown', autoCheck: (t) => t.aglFeet < 50 && Math.abs(t.roll) < 8 }
+      ];
+    }
+    if (phase === 'cruise') {
+      return [
+        { id: 'heli-crz-trq', label: 'Torque Within Green (< 95%)', autoCheck: (t) => t.torquePct <= 95 },
+        { id: 'heli-crz-alt', label: 'Cruise Altitude Stabilized', autoCheck: (t) => Math.abs(t.vs) < 250 }
+      ];
+    }
+    if (phase === 'approach') {
+      return [
+        { id: 'heli-app-spd', label: 'Approach Decel < 70 KTS', autoCheck: (t) => t.kias < 70 },
+        { id: 'heli-app-lights', label: 'Landing Light ON', autoCheck: (t) => t.lightsOn },
+        { id: 'heli-app-hover', label: 'Stabilized Hover < 15 ft AGL', autoCheck: (t) => t.aglFeet <= 15 && t.kias < 15 }
+      ];
+    }
+    if (phase === 'takeoff') {
+      return [
+        { id: 'heli-to-coll', label: 'Collective RAISE Smoothly', autoCheck: (t) => t.collectivePct > 45 },
+        { id: 'heli-to-hover', label: 'Hover Check (5-15 ft AGL)', autoCheck: (t) => !t.groundContact && t.aglFeet >= 3 },
+        { id: 'heli-to-etl', label: 'Effective Translational Lift > 20 KTS', autoCheck: (t) => t.kias >= 20 }
+      ];
+    }
+    return [
+      { id: 'heli-pre-coll', label: 'Collective FULL DOWN', autoCheck: (t) => t.collectivePct <= 10 },
+      { id: 'heli-pre-lights', label: 'Anti-Collision / Nav Lights ON', autoCheck: (t) => t.lightsOn },
+      { id: 'heli-pre-ground', label: 'Skids / Gear Level On Ground', autoCheck: (t) => t.groundContact }
+    ];
+  }
+
   if (phase === 'emergency') {
     return [
       { id: 'em-thr', label: 'Thrust / Mixture VERIFY', autoCheck: (t) => (t.throttles[0] ?? 0) <= 0.5 },

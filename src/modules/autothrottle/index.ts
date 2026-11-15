@@ -13,6 +13,7 @@ const CATEGORY_PID_PRESETS: Record<AircraftCategory, PidGains> = {
   'airliner-quad': { kp: 0.022, ki: 0.004, kd: 0.012 },
   'fighter': { kp: 0.045, ki: 0.01, kd: 0.018 },
   'supersonic': { kp: 0.03, ki: 0.006, kd: 0.015 },
+  'rotorcraft': { kp: 0.03, ki: 0.006, kd: 0.012 },
   'specialized': { kp: 0.02, ki: 0.004, kd: 0.01 }
 };
 

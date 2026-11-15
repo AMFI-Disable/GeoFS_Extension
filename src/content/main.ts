@@ -102,13 +102,15 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
       if (event.source !== window || !event.data || typeof event.data !== 'object') return;
       const msg = event.data as { type?: string; settings?: ExtensionSettings };
       if (msg.type === 'GEOFS_EXT_SETTINGS' && msg.settings) {
-        settings = msg.settings;
+        settings = { ...DEFAULT_SETTINGS, ...msg.settings };
+        sim.setOverrides(settings.aircraftOverrides);
         keybinds.updateCombo('hud-toggle', settings.keybindings.toggleHud);
         applyGlobalVisuals(settings, sim.isNight());
         manager.applySettings(settings);
       }
     });
 
+    sim.setOverrides(settings.aircraftOverrides);
     applyGlobalVisuals(settings, sim.isNight());
     manager.applySettings(settings);
     bus.start();

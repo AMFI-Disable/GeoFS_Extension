@@ -13,7 +13,17 @@ export type AircraftCategory =
   | 'airliner-quad'
   | 'fighter'
   | 'supersonic'
+  | 'rotorcraft'
   | 'specialized';
+
+export interface VSpeedReference {
+  v1?: number;
+  vr?: number;
+  v2?: number;
+  vref: number;
+  vfe?: number;
+  vne: number;
+}
 
 export interface AircraftProfile {
   id: string;
@@ -26,6 +36,7 @@ export interface AircraftProfile {
   oew: number;
   mtow: number;
   maxFuel: number;
+  vSpeeds: VSpeedReference;
   isDynamic: boolean;
 }
 
@@ -50,6 +61,8 @@ export interface FlightTelemetry {
   groundContact: boolean;
   reverserActive: boolean;
   throttles: number[];
+  collectivePct: number;
+  torquePct: number;
   parkingBrake: boolean;
   gearDown: boolean;
   flapsTarget: number;

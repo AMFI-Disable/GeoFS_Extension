@@ -24,6 +24,17 @@ export interface LandingRecord {
   lon: number;
 }
 
+import type { AircraftCategory, VSpeedReference } from './module';
+
+export interface AircraftProfileOverride {
+  name?: string;
+  category?: AircraftCategory;
+  oew?: number;
+  mtow?: number;
+  maxFuel?: number;
+  vSpeeds?: Partial<VSpeedReference>;
+}
+
 export interface ExtensionSettings {
   modules: Record<string, boolean>;
   themeMode: ThemeMode;
@@ -34,6 +45,7 @@ export interface ExtensionSettings {
   imageryProvider: ImageryProviderMode;
   customImageryUrl: string;
   customImageryToken: string;
+  aircraftOverrides: Record<string, AircraftProfileOverride>;
 }
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
@@ -62,5 +74,6 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   failureProbabilitiesEnabled: false,
   imageryProvider: 'native',
   customImageryUrl: '',
-  customImageryToken: ''
+  customImageryToken: '',
+  aircraftOverrides: {}
 };

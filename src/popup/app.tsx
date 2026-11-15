@@ -8,6 +8,8 @@ import {
   type ThemeMode
 } from '../types/settings';
 import { detectOsPlatform, formatComboForOs } from '../core/keybind-manager';
+import { formatLogbookCsv, triggerDownload } from '../core/logbook-export';
+import type { AircraftCategory } from '../types/module';
 
 const SETTINGS_KEY = 'geofs_ext_settings';
 const LOGBOOK_KEY = 'geofs_ext_logbook';
@@ -39,6 +41,10 @@ export function App() {
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
   const [logbook, setLogbook] = useState<LandingRecord[]>([]);
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);
+  const [overrideKey, setOverrideKey] = useState('');
+  const [overrideCat, setOverrideCat] = useState<AircraftCategory>('airliner-twin');
+  const [overrideVref, setOverrideVref] = useState('135');
+  const [overrideVne, setOverrideVne] = useState('340');
   const os = detectOsPlatform();
 
   useEffect(() => {
@@ -49,7 +55,8 @@ export function App() {
           ...DEFAULT_SETTINGS,
           ...raw,
           modules: { ...DEFAULT_SETTINGS.modules, ...(raw.modules || {}) },
-          keybindings: { ...DEFAULT_SETTINGS.keybindings, ...(raw.keybindings || {}) }
+          keybindings: { ...DEFAULT_SETTINGS.keybindings, ...(raw.keybindings || {}) },
+          aircraftOverrides: { ...DEFAULT_SETTINGS.aircraftOverrides, ...(raw.aircraftOverrides || {}) }
         });
       }
     });
@@ -159,6 +166,20 @@ export function App() {
       {tab === 'logbook' && (
         <div class="field-col">
           <div class="preset-row">
+            <button
+              class="btn-sm"
+              disabled={logbook.length === 0}
+              onClick={() => triggerDownload('geofs-landing-logbook.json', JSON.stringify(logbook, null, 2), 'application/json')}
+            >
+              Export JSON
+            </button>
+            <button
+              class="btn-sm"
+              disabled={logbook.length === 0}
+              onClick={() => triggerDownload('geofs-landing-logbook.csv', formatLogbookCsv(logbook), 'text/csv')}
+            >
+              Export CSV
+            </button>
             <button class="btn-sm" onClick={clearLogbook}>Clear History</button>
           </div>
           <div class="list">
@@ -274,6 +295,86 @@ export function App() {
                     keybindings: { ...settings.keybindings, [k]: (e.target as HTMLInputElement).value }
                   })}
                 />
+              </div>
+            ))}
+          </div>
+
+          <div class="card field-col" style="align-items:stretch;gap:6px">
+            <div style="font-weight:700">Aircraft Profile Overrides</div>
+            <div class="field-row" style="gap:4px">
+              <input
+                type="text"
+                placeholder="ID or Name (e.g. 242)"
+                style="flex:1"
+                value={overrideKey}
+                onInput={(e) => setOverrideKey((e.target as HTMLInputElement).value)}
+              />
+              <select
+                value={overrideCat}
+                onChange={(e) => setOverrideCat((e.target as HTMLSelectElement).value as AircraftCategory)}
+              >
+                <option value="ga-piston">GA Piston</option>
+                <option value="turboprop">Turboprop</option>
+                <option value="airliner-twin">Airliner Twin</option>
+                <option value="airliner-quad">Airliner Quad</option>
+                <option value="fighter">Fighter</option>
+                <option value="supersonic">Supersonic</option>
+                <option value="rotorcraft">Rotorcraft</option>
+                <option value="specialized">Specialized</option>
+              </select>
+            </div>
+            <div class="field-row" style="gap:4px">
+              <input
+                type="number"
+                placeholder="Vref"
+                style="width:72px"
+                value={overrideVref}
+                onInput={(e) => setOverrideVref((e.target as HTMLInputElement).value)}
+              />
+              <input
+                type="number"
+                placeholder="Vne"
+                style="width:72px"
+                value={overrideVne}
+                onInput={(e) => setOverrideVne((e.target as HTMLInputElement).value)}
+              />
+              <button
+                class="btn-sm"
+                onClick={() => {
+                  const key = overrideKey.trim().toLowerCase();
+                  if (!key) return;
+                  saveSettings({
+                    ...settings,
+                    aircraftOverrides: {
+                      ...settings.aircraftOverrides,
+                      [key]: {
+                        category: overrideCat,
+                        vSpeeds: {
+                          vref: Number(overrideVref) || 130,
+                          vne: Number(overrideVne) || 340
+                        }
+                      }
+                    }
+                  });
+                  setOverrideKey('');
+                }}
+              >
+                Save Override
+              </button>
+            </div>
+            {Object.entries(settings.aircraftOverrides).map(([key, ov]) => (
+              <div class="field-row" key={key} style="font-size:10px">
+                <span><strong>{key}</strong> • {ov.category || 'auto'} (Vref {ov.vSpeeds?.vref ?? '--'} / Vne {ov.vSpeeds?.vne ?? '--'})</span>
+                <button
+                  class="btn-sm"
+                  onClick={() => {
+                    const next = { ...settings.aircraftOverrides };
+                    delete next[key];
+                    saveSettings({ ...settings, aircraftOverrides: next });
+                  }}
+                >
+                  Remove
+                </button>
               </div>
             ))}
           </div>

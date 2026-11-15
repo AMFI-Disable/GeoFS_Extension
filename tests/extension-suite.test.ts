@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-adapter';
 import { ModuleManager } from '../src/core/module-manager';
 import { formatComboForOs } from '../src/core/keybind-manager';
+import { formatLogbookCsv } from '../src/core/logbook-export';
 import { buildGForceShader } from '../src/modules/realism-pack';
 import { rateLanding } from '../src/modules/landing-statistics';
 import { DEFAULT_SETTINGS } from '../src/types/settings';
@@ -105,5 +106,52 @@ describe('Subsystems (Shaders, Landing Ratings, OS Keybinds)', () => {
   it('formats Mac vs Windows keybind labels', () => {
     expect(formatComboForOs('Ctrl+Shift+A', 'mac')).toBe('⌃⇧A');
     expect(formatComboForOs('Ctrl+Shift+A', 'windows')).toBe('Ctrl+Shift+A');
+  });
+
+  it('classifies rotorcraft and applies custom aircraft profile overrides', () => {
+    expect(classifyAircraft('Robinson R44', 1134, 1, 180)).toBe('rotorcraft');
+
+    const win = (globalThis as unknown as { window: Record<string, unknown> }).window;
+    win.geofs = {
+      version: '4.0',
+      aircraft: {
+        instance: {
+          id: '9999',
+          definition: { name: 'Boeing 737-800', mass: 41413 }
+        }
+      }
+    };
+
+    const sim = new SimAdapter();
+    const matched = sim.getAircraftProfile();
+    expect(matched?.category).toBe('airliner-twin');
+    expect(matched?.vSpeeds.vref).toBe(134);
+
+    sim.setOverrides({ '9999': { category: 'specialized', vSpeeds: { vref: 150, vne: 400 } } });
+    const overridden = sim.getAircraftProfile();
+    expect(overridden?.category).toBe('specialized');
+    expect(overridden?.vSpeeds.vref).toBe(150);
+    expect(overridden?.vSpeeds.vne).toBe(400);
+  });
+
+  it('exports landing logbook records as escaped CSV', () => {
+    const csv = formatLogbookCsv([
+      {
+        id: '1',
+        timestamp: '2026-11-15T12:00:00Z',
+        aircraftId: '24',
+        aircraftName: 'Airbus A350, XWB',
+        vsFpm: -65,
+        gForce: 1.04,
+        rollDeg: 0.5,
+        groundSpeedKts: 136,
+        rating: 'Butter',
+        lat: 37.62,
+        lon: -122.38
+      }
+    ]);
+    expect(csv).toContain('ID,Timestamp,Aircraft ID,Aircraft Name');
+    expect(csv).toContain('"Airbus A350, XWB"');
+    expect(csv).toContain('Butter');
   });
 });

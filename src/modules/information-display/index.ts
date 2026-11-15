@@ -30,8 +30,9 @@ export class InformationDisplayModule implements IModule {
         <div>GS: <strong data-field="gs">--</strong></div>
         <div>AOA: <strong data-field="aoa">--</strong></div>
         <div>G: <strong data-field="g">--</strong></div>
-        <div>THR: <strong data-field="thr">--</strong></div>
+        <div><span data-field="thr-label">THR</span>: <strong data-field="thr">--</strong></div>
       </div>
+      <div data-field="vspeeds" style="margin-top:6px;padding-top:4px;border-top:1px solid rgba(128,128,128,0.25);font-size:9px;opacity:0.85;">V-Speeds: --</div>
     `;
 
     root.querySelectorAll<HTMLElement>('[data-field]').forEach((el) => {
@@ -71,9 +72,31 @@ export class InformationDisplayModule implements IModule {
     const gColor = telemetry.gForce > 3 || telemetry.gForce < -1 ? '#ef4444' : '';
     this.setText('g', telemetry.gForce.toFixed(2), gColor);
 
-    const rev = telemetry.reverserActive ? '[REV] ' : '';
-    const thrText = telemetry.throttles.map((t) => `${Math.round(t * 100)}%`).join('/');
-    this.setText('thr', `${rev}${thrText}`, telemetry.reverserActive ? '#f97316' : '');
+    if (telemetry.aircraft?.category === 'rotorcraft') {
+      this.setText('thr-label', 'COLL/TRQ');
+      const trqColor = telemetry.torquePct > 100 ? '#ef4444' : telemetry.torquePct > 90 ? '#eab308' : '';
+      this.setText('thr', `${telemetry.collectivePct}% / ${telemetry.torquePct}%`, trqColor);
+    } else {
+      this.setText('thr-label', 'THR');
+      const rev = telemetry.reverserActive ? '[REV] ' : '';
+      const thrText = telemetry.throttles.map((t) => `${Math.round(t * 100)}%`).join('/');
+      this.setText('thr', `${rev}${thrText}`, telemetry.reverserActive ? '#f97316' : '');
+    }
+
+    const vs = telemetry.aircraft?.vSpeeds;
+    if (vs) {
+      const parts: string[] = [];
+      if (vs.v1) parts.push(`V1 ${vs.v1}`);
+      if (vs.vr) parts.push(`VR ${vs.vr}`);
+      if (vs.v2) parts.push(`V2 ${vs.v2}`);
+      parts.push(`Vref ${vs.vref}`);
+      if (vs.vfe) parts.push(`Vfe ${vs.vfe}`);
+      parts.push(`Vne ${vs.vne}`);
+      const overspeed = telemetry.kias > vs.vne;
+      this.setText('vspeeds', parts.join(' • '), overspeed ? '#ef4444' : '');
+    } else {
+      this.setText('vspeeds', 'V-Speeds: --');
+    }
   }
 
   private setText(field: string, value: string, color = ''): void {
