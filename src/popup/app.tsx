@@ -91,6 +91,13 @@ export function App() {
   const saveSettings = (next: ExtensionSettings) => {
     setSettings(next);
     chrome.storage?.sync?.set({ [SETTINGS_KEY]: next });
+    chrome.tabs?.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs?.[0]?.id;
+      if (!tabId) return;
+      chrome.tabs.sendMessage(tabId, { type: 'GEOFS_EXT_APPLY_SETTINGS', settings: next }, () => {
+        void chrome.runtime.lastError;
+      });
+    });
   };
 
   const toggleModule = (id: string) => {

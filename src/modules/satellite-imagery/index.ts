@@ -10,9 +10,14 @@ export class SatelliteImageryModule implements IModule {
 
   private ctx: ModuleContext | null = null;
   private cleanTimer: number | null = null;
+  private origProvider: unknown = null;
 
   public init(context: ModuleContext): void {
     this.ctx = context;
+    const viewer = window.geofs?.api?.viewer as { imageryLayers?: { get?: (i: number) => { imageryProvider?: unknown } } } | undefined;
+    if (!this.origProvider) {
+      this.origProvider = viewer?.imageryLayers?.get?.(0)?.imageryProvider ?? null;
+    }
     this.applyProvider(context.getSettings());
     this.cleanAds();
     this.cleanTimer = window.setInterval(() => this.cleanAds(), 3000);
@@ -26,6 +31,19 @@ export class SatelliteImageryModule implements IModule {
     const Cesium = window.Cesium;
     const setImagery = window.geofs?.api?.setImageryProvider;
     if (!Cesium || !setImagery) return;
+
+    if (settings.imageryProvider === 'native') {
+      if (this.origProvider) {
+        try {
+          setImagery(this.origProvider, false);
+          this.ctx?.anchors.showToast('Imagery restored to GeoFS Native');
+        } catch (err) {
+          console.warn('[GeoFS Extension] Failed to restore native imagery:', err);
+        }
+      }
+      return;
+    }
+
     if (settings.imageryProvider === 'bing' && settings.customImageryToken && Cesium.BingMapsImageryProvider) {
       try {
         const provider = new Cesium.BingMapsImageryProvider({
@@ -81,6 +99,13 @@ export class SatelliteImageryModule implements IModule {
     if (this.cleanTimer !== null) {
       clearInterval(this.cleanTimer);
       this.cleanTimer = null;
+    }
+    if (this.origProvider) {
+      try {
+        window.geofs?.api?.setImageryProvider?.(this.origProvider, false);
+      } catch {
+        // ignore
+      }
     }
     this.ctx = null;
   }

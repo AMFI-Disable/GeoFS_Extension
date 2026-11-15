@@ -10,7 +10,8 @@ function mergeSettings(raw: Partial<ExtensionSettings> | undefined): ExtensionSe
     ...DEFAULT_SETTINGS,
     ...raw,
     modules: { ...DEFAULT_SETTINGS.modules, ...(raw?.modules || {}) },
-    keybindings: { ...DEFAULT_SETTINGS.keybindings, ...(raw?.keybindings || {}) }
+    keybindings: { ...DEFAULT_SETTINGS.keybindings, ...(raw?.keybindings || {}) },
+    aircraftOverrides: { ...DEFAULT_SETTINGS.aircraftOverrides, ...(raw?.aircraftOverrides || {}) }
   };
 }
 
@@ -58,6 +59,9 @@ window.addEventListener('message', (event) => {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'GET_LIVE_TELEMETRY') {
     sendResponse({ telemetry: latestTelemetry });
+  } else if (msg?.type === 'GEOFS_EXT_APPLY_SETTINGS' && msg.settings) {
+    broadcastSettings(mergeSettings(msg.settings as Partial<ExtensionSettings>));
+    sendResponse({ ok: true });
   }
   return false;
 });
