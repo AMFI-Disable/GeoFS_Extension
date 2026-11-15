@@ -47,8 +47,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
     });
 
     const applyGlobalVisuals = (cfg: ExtensionSettings, simIsNight: boolean) => {
-      const resolvedTheme = cfg.themeMode === 'auto' ? (simIsNight ? 'dark' : 'light') : cfg.themeMode;
-      anchors.setTheme(resolvedTheme);
+      anchors.setTheme(simIsNight ? 'dark' : 'light');
       anchors.setCalibratorPreset(cfg.calibratorPreset);
     };
 
@@ -85,9 +84,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
             type: 'GEOFS_EXT_LIVE_TELEMETRY',
             telemetry: {
               simMajor: telemetry.simMajor,
-              isNight: telemetry.isNight,
-              aircraftName: telemetry.aircraft?.name || null,
-              aircraftCategory: telemetry.aircraft?.category || null,
+              aircraftProfile: telemetry.aircraft,
               kias: Math.round(telemetry.kias),
               altitude: Math.round(telemetry.altitude),
               vs: Math.round(telemetry.vs)
@@ -103,6 +100,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
       const msg = event.data as { type?: string; settings?: ExtensionSettings };
       if (msg.type === 'GEOFS_EXT_SETTINGS' && msg.settings) {
         settings = msg.settings;
+        sim.setAircraftOverrides(settings.aircraftOverrides);
         keybinds.updateCombo('hud-toggle', settings.keybindings.toggleHud);
         applyGlobalVisuals(settings, sim.isNight());
         manager.applySettings(settings);

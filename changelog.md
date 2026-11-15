@@ -1,5 +1,21 @@
 # Changelog
 
+> [!CAUTION]
+> **Educational And Fair-Play Disclaimer**: Use this extension for education and single-player simulation. Respect GeoFS subscriptions, ad-reward entitlements, multiplayer rules, and access controls.
+
+## [0.2.0] - Aircraft Profiles And Landing Replay
+
+### Added
+
+- Rotorcraft classification, collective and available torque readings, and helicopter checklists.
+- Aircraft V-speed references in Information Display and Checklist System, with synced per-aircraft overrides in Setup.
+- Approach and touchdown telemetry exports in JSON and CSV from the Logbook.
+- A popup reminder to reload open GeoFS tabs after installing or updating the extension.
+
+### Fixed
+
+- Popup appearance now supports Dark, Light, and Auto (System). The in-game panel follows GeoFS local time.
+
 ## [0.1.0] - Initial Unified Manifest V3 Release
 
 ### Added

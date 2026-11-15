@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --bg: #0b0d10;
   --surface: rgba(255, 255, 255, 0.05);
   --fg: #f8fafc;
@@ -8,12 +9,25 @@
 }
 
 :root[data-theme="light"] {
+  color-scheme: light;
   --bg: #f8fafc;
   --surface: #ffffff;
   --fg: #0f172a;
   --muted: #475569;
   --border: #cbd5e1;
   --accent: #16a34a;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --fg: #0f172a;
+    --muted: #475569;
+    --border: #cbd5e1;
+    --accent: #16a34a;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -104,7 +118,7 @@ body {
 .field-col { display: flex; flex-direction: column; gap: 6px; }
 .field-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 
-input[type="text"], select {
+input[type="text"], input[type="number"], select {
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--border);
@@ -112,3 +126,10 @@ input[type="text"], select {
   padding: 4px 6px;
   font-size: 11px;
 }
+
+.reload-notice { margin: 0; color: var(--muted); line-height: 1.4; }
+
+.aircraft-editor { display: block; }
+.aircraft-editor summary { cursor: pointer; font-weight: 700; }
+.aircraft-editor .field-row { margin-bottom: 6px; }
+.aircraft-editor input { width: 120px; }

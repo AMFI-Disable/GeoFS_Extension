@@ -1,3 +1,6 @@
+import { landingReplayCsv } from '../core/landing-replay';
+import { AircraftEditor } from './aircraft-editor';
+import type { AircraftProfile } from '../types/module';
 import { useEffect, useState } from 'preact/hooks';
 import {
   DEFAULT_SETTINGS,
@@ -27,8 +30,7 @@ const MODULE_META: Array<{ id: string; name: string; desc: string }> = [
 
 interface LiveTelemetrySummary {
   simMajor?: number;
-  isNight?: boolean;
-  aircraftName?: string | null;
+  aircraftProfile?: AircraftProfile | null;
   kias?: number;
   altitude?: number;
   vs?: number;
@@ -60,26 +62,42 @@ export function App() {
       }
     });
 
+    const refreshLogbook = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area === 'local' && changes[LOGBOOK_KEY]) {
+        const records: unknown = changes[LOGBOOK_KEY].newValue;
+        setLogbook(Array.isArray(records) ? records : []);
+      }
+    };
+    chrome.storage.onChanged.addListener(refreshLogbook);
+
     const queryLive = () => {
       chrome.tabs?.query({ active: true, currentWindow: true }, (tabs) => {
         const tabId = tabs?.[0]?.id;
-        if (!tabId) return;
+        if (tabId === undefined) {
+          setLive(null);
+          return;
+        }
         chrome.tabs.sendMessage(tabId, { type: 'GET_LIVE_TELEMETRY' }, (resp) => {
-          if (chrome.runtime.lastError) return;
-          if (resp?.telemetry) setLive(resp.telemetry as LiveTelemetrySummary);
+          if (chrome.runtime.lastError) {
+            setLive(null);
+            return;
+          }
+          setLive((resp?.telemetry as LiveTelemetrySummary | undefined) ?? null);
         });
       });
     };
 
     queryLive();
     const timer = setInterval(queryLive, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      chrome.storage.onChanged.removeListener(refreshLogbook);
+    };
   }, []);
 
   useEffect(() => {
-    const resolved = settings.themeMode === 'auto' ? (live?.isNight ? 'dark' : 'light') : settings.themeMode;
-    document.documentElement.setAttribute('data-theme', resolved);
-  }, [settings.themeMode, live?.isNight]);
+    document.documentElement.dataset.theme = settings.themeMode;
+  }, [settings.themeMode]);
 
   const saveSettings = (next: ExtensionSettings) => {
     setSettings(next);
@@ -103,6 +121,17 @@ export function App() {
     saveSettings({ ...settings, modules: nextModules });
   };
 
+  const exportLanding = (record: LandingRecord, format: 'json' | 'csv') => {
+    const data = format === 'json' ? JSON.stringify(record, null, 2) : landingReplayCsv(record);
+    const type = format === 'json' ? 'application/json' : 'text/csv;charset=utf-8';
+    const url = URL.createObjectURL(new Blob([data], { type }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `geofs-landing-${record.id}.${format}`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const clearLogbook = () => {
     setLogbook([]);
     chrome.storage?.local?.set({ [LOGBOOK_KEY]: [] });
@@ -116,6 +145,8 @@ export function App() {
           {live?.simMajor ? `GeoFS V${live.simMajor}` : 'Standby'} • {os.toUpperCase()}
         </span>
       </div>
+
+      <p class="reload-notice">Reload the GeoFS tab after installing or updating the extension to activate the addons.</p>
 
       {live && (
         <div class="telemetry-strip">
@@ -174,6 +205,11 @@ export function App() {
                 <div style="font-size:10px;color:var(--muted)">
                   {rec.vsFpm} fpm • {rec.gForce}G • {rec.groundSpeedKts} kts • {new Date(rec.timestamp).toLocaleString()}
                 </div>
+                <div class="preset-row">
+                  <button class="btn-sm" onClick={() => exportLanding(rec, 'json')}>Export JSON</button>
+                  <button class="btn-sm" onClick={() => exportLanding(rec, 'csv')}>Export CSV</button>
+                </div>
+                {!rec.replay?.length && <small>Touchdown summary only</small>}
               </div>
             ))}
           </div>
@@ -182,13 +218,19 @@ export function App() {
 
       {tab === 'setup' && (
         <div class="list">
+          {live?.aircraftProfile ? (
+            <AircraftEditor key={live.aircraftProfile.id} profile={live.aircraftProfile} />
+          ) : (
+            <div class="card">Open GeoFS to edit the active aircraft profile.</div>
+          )}
           <div class="card field-row">
-            <span>Theme Mode</span>
+            <span>Popup Appearance</span>
             <select
+              aria-label="Popup Appearance"
               value={settings.themeMode}
               onChange={(e) => saveSettings({ ...settings, themeMode: (e.target as HTMLSelectElement).value as ThemeMode })}
             >
-              <option value="auto">Auto (Sim Time)</option>
+              <option value="auto">Auto (System)</option>
               <option value="dark">Dark</option>
               <option value="light">Light</option>
             </select>

@@ -2,18 +2,17 @@ import type { SimAdapter } from '../core/sim-adapter';
 import type { AudioEngine } from '../core/audio-engine';
 import type { AnchorManager } from '../core/anchor-manager';
 import type { KeybindManager } from '../core/keybind-manager';
+import type { VSpeeds } from '../core/aircraft-profile';
 import type { ExtensionSettings } from './settings';
 
 export type SimMajorVersion = 3 | 4;
 
-export type AircraftCategory =
-  | 'ga-piston'
-  | 'turboprop'
-  | 'airliner-twin'
-  | 'airliner-quad'
-  | 'fighter'
-  | 'supersonic'
-  | 'specialized';
+export const AIRCRAFT_CATEGORIES = [
+  'ga-piston', 'turboprop', 'airliner-twin', 'airliner-quad', 'fighter',
+  'supersonic', 'rotorcraft', 'specialized'
+] as const;
+
+export type AircraftCategory = (typeof AIRCRAFT_CATEGORIES)[number];
 
 export interface AircraftProfile {
   id: string;
@@ -27,6 +26,8 @@ export interface AircraftProfile {
   mtow: number;
   maxFuel: number;
   isDynamic: boolean;
+  vSpeeds?: VSpeeds;
+  machSpeeds?: VSpeeds;
 }
 
 export interface FlightTelemetry {
@@ -48,8 +49,12 @@ export interface FlightTelemetry {
   pitch: number;
   roll: number;
   groundContact: boolean;
+  crashed: boolean;
+  autopilotOn: boolean;
   reverserActive: boolean;
   throttles: number[];
+  collective: number | null;
+  rotorTorque: number | null;
   parkingBrake: boolean;
   gearDown: boolean;
   flapsTarget: number;

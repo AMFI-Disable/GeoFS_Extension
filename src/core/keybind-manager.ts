@@ -41,8 +41,9 @@ export class KeybindManager {
   private listening = false;
 
   private onKeyDown = (e: KeyboardEvent) => {
+    if (e.repeat || e.defaultPrevented) return;
     const target = e.target as HTMLElement | null;
-    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
       return;
     }
     for (const entry of this.bindings.values()) {

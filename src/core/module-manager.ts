@@ -6,6 +6,8 @@ export class ModuleManager {
   private active = new Set<string>();
   private eventBus = new Map<string, Set<(detail: unknown) => void>>();
 
+  private settingsUpdate = Promise.resolve();
+
   constructor(
     private readonly simMajor: SimMajorVersion,
     private readonly baseContext: Omit<ModuleContext, 'emitEvent' | 'onEvent'>
@@ -23,7 +25,15 @@ export class ModuleManager {
     return this.active.has(id);
   }
 
-  public async applySettings(settings: ExtensionSettings): Promise<void> {
+  public applySettings(settings: ExtensionSettings): Promise<void> {
+    const next = this.settingsUpdate.then(() => this.reconcileSettings(settings));
+    this.settingsUpdate = next.catch((error) => {
+      console.error('[GeoFS Extension] Could not apply module settings:', error);
+    });
+    return next;
+  }
+
+  private async reconcileSettings(settings: ExtensionSettings): Promise<void> {
     for (const [id, mod] of this.registry) {
       const supported = mod.supportedMajors.includes(this.simMajor);
       const wantEnabled = supported && (settings.modules[id] ?? mod.defaultEnabled);

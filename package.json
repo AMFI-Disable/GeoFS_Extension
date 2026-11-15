@@ -1,6 +1,6 @@
 {
   "name": "geofs-extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Unified Manifest V3 Chrome Extension for GeoFS V3.x and V4.x",
@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "node scripts/build.mjs",
+    "build:unpacked": "node scripts/build.mjs --unpacked",
     "package": "node scripts/build.mjs --zip"
   },
   "dependencies": {

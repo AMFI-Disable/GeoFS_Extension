@@ -1,5 +1,8 @@
 # GeoFS Extension Roadmap And Awaiting Planes
 
+> [!CAUTION]
+> **Educational And Fair-Play Disclaimer**: Use this extension for education and single-player simulation. Respect GeoFS subscriptions, ad-reward entitlements, multiplayer rules, and access controls.
+
 This document tracks all aircraft (`AIRCRAFT_CATALOG` entries, OEW/MTOW/fuel specs, autothrottle PID tuning, and type-specific checklists) as well as upcoming feature milestones for `GeoFS_Extension`.
 
 ---
@@ -111,11 +114,11 @@ Aircraft awaiting dedicated `AIRCRAFT_CATALOG` entries (OEW, MTOW, max fuel, fla
 
 ---
 
-## Upcoming Extension Milestones
+## Extension Milestones
 
-### Target `v0.2.0`
+### Version `v0.2.0`
 
-- [ ] Dedicated `rotorcraft` aircraft category in `SimAdapter` with collective/torque telemetry and helicopter checklists.
-- [ ] Per-aircraft V-speed reference cards (`V1`, `VR`, `V2`, `Vref`, `Vfe`, `Vne`) integrated into Information Display and Checklist System.
-- [ ] Custom user-editable aircraft profile overrides stored in `chrome.storage.sync`.
-- [ ] Automated landing replay export (JSON/CSV) from the Logbook popup tab.
+- [x] Dedicated `rotorcraft` aircraft category in `SimAdapter` with collective and available torque telemetry and helicopter checklists.
+- [x] Per-aircraft V-speed reference cards (`V1`, `VR`, `V2`, `Vref`, `Vfe`, `Vne`) integrated into Information Display and Checklist System. Values come from GeoFS aircraft definitions or user overrides.
+- [x] Custom user-editable aircraft profile overrides stored in `chrome.storage.sync`.
+- [x] Landing replay capture and export (JSON/CSV) from the Logbook popup tab.

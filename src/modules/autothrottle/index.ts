@@ -1,12 +1,14 @@
 import type { AircraftCategory, FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 
+import type { ExtensionSettings } from '../../types/settings';
+
 interface PidGains {
   kp: number;
   ki: number;
   kd: number;
 }
 
-const CATEGORY_PID_PRESETS: Record<AircraftCategory, PidGains> = {
+const CATEGORY_PID_PRESETS: Record<Exclude<AircraftCategory, 'rotorcraft'>, PidGains> = {
   'ga-piston': { kp: 0.04, ki: 0.008, kd: 0.015 },
   'turboprop': { kp: 0.035, ki: 0.007, kd: 0.014 },
   'airliner-twin': { kp: 0.025, ki: 0.005, kd: 0.012 },
@@ -27,10 +29,12 @@ export class AutothrottleModule implements IModule {
   private engaged = false;
   private machMode = false;
   private landingArmed = false;
+  private wasAirborne = false;
+  private aircraftId: string | null = null;
   private targetKias = 250;
   private targetMach = 0.78;
   private integral = 0;
-  private prevError = 0;
+  private prevError: number | null = null;
 
   private toggleBtn: HTMLButtonElement | null = null;
   private speedLabel: HTMLSpanElement | null = null;
@@ -70,6 +74,8 @@ export class AutothrottleModule implements IModule {
     modeBtn.className = 'geofs-ext-pad';
     modeBtn.addEventListener('click', () => {
       this.machMode = !this.machMode;
+      this.integral = 0;
+      this.prevError = null;
       this.renderControls();
     });
 
@@ -88,7 +94,7 @@ export class AutothrottleModule implements IModule {
     this.armBtn = armBtn;
     this.renderControls();
 
-    this.unmounts.push(context.anchors.mountControl('autothrottle-pad', 'bottom', bar));
+    this.unmounts.push(context.anchors.mountControl('autothrottle-pad', 'autopilot', bar));
     const combo = context.getSettings().keybindings.toggleAutothrottle;
     this.unmounts.push(context.keybinds.register('autothrottle-toggle', combo, () => this.toggle()));
   }
@@ -103,11 +109,22 @@ export class AutothrottleModule implements IModule {
   }
 
   public toggle(): void {
+    if (!this.ctx) return;
+    const snap = this.ctx.sim.buildTelemetrySnapshot(0.016, this.ctx.sim.getMajorVersion() ?? 4);
+    if (!this.engaged && (!snap.aircraft || snap.crashed || snap.aircraft.category === 'rotorcraft')) {
+      this.ctx.anchors.showToast('Autothrottle requires an active fixed-wing aircraft.');
+      return;
+    }
+    if (!this.engaged && snap.autopilotOn) {
+      this.ctx.anchors.showToast('Switch off GeoFS autopilot before engaging Autothrottle.');
+      return;
+    }
     this.engaged = !this.engaged;
     this.integral = 0;
-    this.prevError = 0;
-    if (this.engaged && this.ctx) {
-      const snap = this.ctx.sim.buildTelemetrySnapshot(0.016, this.ctx.sim.getMajorVersion() ?? 4);
+    this.prevError = null;
+    this.aircraftId = this.engaged ? snap.aircraft?.id ?? null : null;
+    this.wasAirborne = this.engaged && !snap.groundContact;
+    if (this.engaged) {
       if (!this.machMode && snap.kias > 25) this.targetKias = Math.round(snap.kias);
       if (this.machMode && snap.mach > 0.15) this.targetMach = Number(snap.mach.toFixed(2));
       this.ctx.audio.playChime();
@@ -121,17 +138,28 @@ export class AutothrottleModule implements IModule {
   }
 
   public update(telemetry: FlightTelemetry): void {
-    if (!this.engaged || telemetry.paused || !this.ctx) return;
+    if (!this.engaged || !this.ctx) return;
 
-    if (this.landingArmed && telemetry.groundContact && telemetry.aglFeet < 10) {
+    const aircraft = telemetry.aircraft;
+    if (!aircraft || aircraft.id !== this.aircraftId || aircraft.category === 'rotorcraft' || telemetry.crashed || telemetry.autopilotOn) {
+      this.landingArmed = false;
+      this.toggle();
+      return;
+    }
+    if (telemetry.paused) return;
+
+    const touchdown = this.wasAirborne && telemetry.groundContact;
+    this.wasAirborne = !telemetry.groundContact;
+    if (this.landingArmed && touchdown) {
       this.ctx.sim.setThrottle(0);
       this.engaged = false;
+      this.landingArmed = false;
       this.renderControls();
       this.ctx.anchors.showToast('Autothrottle Auto-Retard on Touchdown');
       return;
     }
 
-    const category = telemetry.aircraft?.category ?? 'airliner-twin';
+    const category = aircraft.category;
     const base = CATEGORY_PID_PRESETS[category];
     const resp = this.ctx.getSettings().autothrottleResponsiveness ?? 1.0;
 
@@ -141,7 +169,7 @@ export class AutothrottleModule implements IModule {
 
     const error = (targetVal - currentVal) * errorScale;
     this.integral = Math.max(-50, Math.min(50, this.integral + error * telemetry.dt));
-    const derivative = (error - this.prevError) / Math.max(0.001, telemetry.dt);
+    const derivative = this.prevError === null ? 0 : (error - this.prevError) / Math.max(0.001, telemetry.dt);
     this.prevError = error;
 
     const cmd = resp * (base.kp * error + base.ki * this.integral + base.kd * derivative);
@@ -166,8 +194,13 @@ export class AutothrottleModule implements IModule {
     }
   }
 
+  public onSettingsChange(settings: ExtensionSettings): void {
+    this.ctx?.keybinds.updateCombo('autothrottle-toggle', settings.keybindings.toggleAutothrottle);
+  }
+
   public destroy(): void {
     this.engaged = false;
+    this.landingArmed = false;
     for (const u of this.unmounts) u();
     this.unmounts = [];
     this.toggleBtn = null;

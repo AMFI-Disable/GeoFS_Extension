@@ -25,6 +25,7 @@ export interface GeoFSAnimationValues {
 }
 
 export interface GeoFSAircraftDefinition {
+  Vspeeds?: Record<string, number>;
   name?: string;
   externalName?: string;
   mass?: number;
@@ -53,6 +54,7 @@ export interface GeoFSAircraftInstance {
   id?: string | number;
   name?: string;
   groundContact?: boolean;
+  crashed?: boolean;
   llaLocation?: [number, number, number];
   engines?: GeoFSEngine[];
   engine?: GeoFSEngine;
@@ -96,6 +98,7 @@ export interface GeoFSControls {
 export interface GeoFSGlobal {
   version?: string | number;
   isPaused?: () => boolean;
+  autopilot?: { on?: boolean };
   aircraft?: {
     instance?: GeoFSAircraftInstance;
   };
@@ -135,6 +138,7 @@ export interface GeoFSGlobal {
 declare global {
   interface Window {
     geofs?: GeoFSGlobal;
+    weather?: { localTime?: number };
     controls?: GeoFSControls;
     Cesium?: {
       PostProcessStage?: new (opts: { fragmentShader: string; uniforms?: Record<string, unknown> }) => unknown;

@@ -3,7 +3,8 @@
 !public/
 !scripts/
 !tests/
-!legacy-scripts/
+!geofs-v3.9/
+!geofs-v4.0/
 !agents.md
 !readme*.md
 !changelog.md

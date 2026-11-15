@@ -1,3 +1,4 @@
+import { AIRCRAFT_OVERRIDE_PREFIX, parseAircraftOverride, type AircraftOverride } from '../core/aircraft-profile';
 import { DEFAULT_SETTINGS, type ExtensionSettings, type LandingRecord } from '../types/settings';
 
 const SETTINGS_KEY = 'geofs_ext_settings';
@@ -18,16 +19,28 @@ function broadcastSettings(settings: ExtensionSettings): void {
   window.postMessage({ type: 'GEOFS_EXT_SETTINGS', settings }, '*');
 }
 
-chrome.storage.sync.get([SETTINGS_KEY], (res) => {
-  const settings = mergeSettings(res[SETTINGS_KEY] as Partial<ExtensionSettings> | undefined);
-  broadcastSettings(settings);
-});
+function refreshSettings(): void {
+  chrome.storage.sync.get(null, (items) => {
+    if (chrome.runtime.lastError) return;
+    const aircraftOverrides: Record<string, AircraftOverride> = Object.create(null);
+    for (const [key, value] of Object.entries(items)) {
+      if (!key.startsWith(AIRCRAFT_OVERRIDE_PREFIX)) continue;
+      try {
+        aircraftOverrides[key.slice(AIRCRAFT_OVERRIDE_PREFIX.length)] = parseAircraftOverride(value);
+      } catch {
+        // A malformed override must not prevent loading the other profiles.
+      }
+    }
+    broadcastSettings({ ...mergeSettings(items[SETTINGS_KEY]), aircraftOverrides });
+  });
+}
+
+refreshSettings();
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === 'sync' && changes[SETTINGS_KEY]) {
-    const settings = mergeSettings(changes[SETTINGS_KEY].newValue as Partial<ExtensionSettings> | undefined);
-    broadcastSettings(settings);
-  }
+  if (areaName === 'sync' && Object.keys(changes).some(
+    (key) => key === SETTINGS_KEY || key.startsWith(AIRCRAFT_OVERRIDE_PREFIX)
+  )) refreshSettings();
 });
 
 window.addEventListener('message', (event) => {
@@ -35,13 +48,12 @@ window.addEventListener('message', (event) => {
   const msg = event.data as { type?: string; patch?: Partial<ExtensionSettings>; record?: LandingRecord; telemetry?: unknown };
 
   if (msg.type === 'GEOFS_EXT_REQUEST_SETTINGS') {
-    chrome.storage.sync.get([SETTINGS_KEY], (res) => {
-      broadcastSettings(mergeSettings(res[SETTINGS_KEY] as Partial<ExtensionSettings> | undefined));
-    });
+    refreshSettings();
   } else if (msg.type === 'GEOFS_EXT_SETTINGS_PATCH' && msg.patch) {
     chrome.storage.sync.get([SETTINGS_KEY], (res) => {
       const current = mergeSettings(res[SETTINGS_KEY] as Partial<ExtensionSettings> | undefined);
       const next = mergeSettings({ ...current, ...msg.patch });
+      delete next.aircraftOverrides;
       chrome.storage.sync.set({ [SETTINGS_KEY]: next });
     });
   } else if (msg.type === 'GEOFS_EXT_LANDING_RECORD' && msg.record) {

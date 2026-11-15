@@ -1,3 +1,4 @@
+import { formatVSpeeds } from '../../core/aircraft-profile';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 
 export class InformationDisplayModule implements IModule {
@@ -30,8 +31,10 @@ export class InformationDisplayModule implements IModule {
         <div>GS: <strong data-field="gs">--</strong></div>
         <div>AOA: <strong data-field="aoa">--</strong></div>
         <div>G: <strong data-field="g">--</strong></div>
-        <div>THR: <strong data-field="thr">--</strong></div>
+        <div><span data-field="power-label">THR</span>: <strong data-field="thr">--</strong></div>
+        <div data-field="rotor-torque" hidden></div>
       </div>
+      <div data-field="v-speeds" style="font-size:10px;margin-top:6px;"></div>
     `;
 
     root.querySelectorAll<HTMLElement>('[data-field]').forEach((el) => {
@@ -70,6 +73,17 @@ export class InformationDisplayModule implements IModule {
 
     const gColor = telemetry.gForce > 3 || telemetry.gForce < -1 ? '#ef4444' : '';
     this.setText('g', telemetry.gForce.toFixed(2), gColor);
+
+    this.setText('v-speeds', formatVSpeeds(telemetry.aircraft?.vSpeeds, telemetry.aircraft?.machSpeeds));
+    const rotorcraft = telemetry.aircraft?.category === 'rotorcraft';
+    const torque = this.cells.get('rotor-torque');
+    if (torque) torque.hidden = !rotorcraft;
+    this.setText('power-label', rotorcraft ? 'COLL' : 'THR');
+    if (rotorcraft) {
+      this.setText('thr', telemetry.collective === null ? '—' : `${Math.round(telemetry.collective * 100)}%`);
+      this.setText('rotor-torque', `Torque: ${telemetry.rotorTorque ?? '—'}`);
+      return;
+    }
 
     const rev = telemetry.reverserActive ? '[REV] ' : '';
     const thrText = telemetry.throttles.map((t) => `${Math.round(t * 100)}%`).join('/');

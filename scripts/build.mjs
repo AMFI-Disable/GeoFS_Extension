@@ -32,7 +32,7 @@ await Promise.all([
     minify: true,
     format: 'iife',
     target: 'chrome120',
-    outfile: resolve(root, 'dist/content/main.js')
+    outfile: resolve(dist, 'content/main.js')
   })
 ]);
 
@@ -49,6 +49,20 @@ if (shouldZip) {
   rmSync(zipPath, { force: true });
   execFileSync('zip', ['-r', '-q', zipPath, '.'], { cwd: dist });
   console.log(`[build] Packaged release/${zipName}`);
+}
+
+if (process.argv.includes('--unpacked')) {
+  const unpacked = resolve(root, '..', 'GeoFS Extension');
+  mkdirSync(unpacked, { recursive: true });
+
+  // Replace only the entries produced by this build.
+  for (const entry of ['manifest.json', 'content', 'icons', 'popup']) {
+    const destination = resolve(unpacked, entry);
+    rmSync(destination, { recursive: true, force: true });
+    cpSync(resolve(dist, entry), destination, { recursive: true });
+  }
+
+  console.log('[build] Refreshed the sibling GeoFS Extension folder.');
 }
 
 console.log('[build] GeoFS Extension dist/ built successfully.');

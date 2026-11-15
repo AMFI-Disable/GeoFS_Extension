@@ -46,8 +46,22 @@ export class FuelSimulatorModule implements IModule {
       this.maxFuelKg = telemetry.aircraft.maxFuel;
       this.fuelKg = this.maxFuelKg;
       this.flameoutTriggered = false;
+    } else if (this.maxFuelKg !== telemetry.aircraft.maxFuel) {
+      const fraction = this.maxFuelKg > 0 ? this.fuelKg / this.maxFuelKg : 1;
+      this.maxFuelKg = telemetry.aircraft.maxFuel;
+      this.fuelKg = fraction * this.maxFuelKg;
+      if (this.fuelKg > 0) this.flameoutTriggered = false;
     }
-    if (telemetry.paused || this.maxFuelKg <= 0) return;
+    if (this.maxFuelKg <= 0) {
+      if (this.pctEl) this.pctEl.textContent = '—';
+      if (this.burnEl) this.burnEl.textContent = '—';
+    }
+    if (this.maxFuelKg <= 0) return;
+    if (telemetry.paused || telemetry.crashed) {
+      if (this.pctEl) this.pctEl.textContent = `${((this.fuelKg / this.maxFuelKg) * 100).toFixed(1)}%`;
+      if (this.burnEl) this.burnEl.textContent = '0 kg/h';
+      return;
+    }
 
     const avgThr = telemetry.throttles.reduce((a, b) => a + Math.abs(b), 0) / Math.max(1, telemetry.throttles.length);
     const altMult = Math.max(0.15, Math.pow(1 - Math.min(45000, telemetry.altitude) / 50000, 1.1));
@@ -58,12 +72,12 @@ export class FuelSimulatorModule implements IModule {
     if (this.fuelKg <= 0 && !this.flameoutTriggered) {
       this.flameoutTriggered = true;
       this.ctx?.emitEvent('fuel:exhausted', { aircraftId: this.currentAcId });
-      this.ctx?.anchors.showToast('FUEL EXHAUSTED — ENGINE FLAMEOUT', 'critical');
-      window.geofs?.aircraft?.instance?.stopEngines?.();
+      const stopped = this.ctx?.sim.stopEngines();
+      this.ctx?.anchors.showToast(stopped ? 'FUEL EXHAUSTED — ENGINE FLAMEOUT' : 'FUEL EXHAUSTED', 'critical');
     }
 
     if (this.pctEl) this.pctEl.textContent = `${((this.fuelKg / this.maxFuelKg) * 100).toFixed(1)}%`;
-    if (this.burnEl) this.burnEl.textContent = `${Math.round(baseRateKgHr).toLocaleString()} kg/h`;
+    if (this.burnEl) this.burnEl.textContent = `${Math.round(this.fuelKg > 0 ? baseRateKgHr : 0).toLocaleString()} kg/h`;
   }
 
   public destroy(): void {

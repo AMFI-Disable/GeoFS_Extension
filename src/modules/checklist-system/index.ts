@@ -1,3 +1,4 @@
+import { formatVSpeeds } from '../../core/aircraft-profile';
 import type { AircraftCategory, FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 
 type ChecklistPhase = 'preflight' | 'takeoff' | 'cruise' | 'approach' | 'emergency';
@@ -16,7 +17,33 @@ const PHASE_LABELS: Record<ChecklistPhase, string> = {
   emergency: 'EMERG'
 };
 
+const ROTORCRAFT_CHECKLISTS: Record<ChecklistPhase, ChecklistItem[]> = {
+  preflight: [
+    { id: 'rotor-clear', label: 'Rotor And Tail Area Clear' },
+    { id: 'collective-low', label: 'Collective Fully Lowered', autoCheck: (t) => t.collective !== null && t.collective <= 0.05 },
+    { id: 'flight-controls', label: 'Cyclic And Anti-Torque Controls Checked' }
+  ],
+  takeoff: [
+    { id: 'takeoff-clear', label: 'Departure Path Clear' },
+    { id: 'hover', label: 'Hover And Control Response Checked' }
+  ],
+  cruise: [
+    { id: 'cruise-rotor', label: 'Rotor RPM And Power Checked' },
+    { id: 'cruise-trim', label: 'Airspeed And Flight Path Confirmed' }
+  ],
+  approach: [
+    { id: 'landing-zone', label: 'Landing Zone And Escape Path Clear' },
+    { id: 'approach-power', label: 'Approach Power And Descent Checked' }
+  ],
+  emergency: [
+    { id: 'emergency-rotor', label: 'Rotor RPM Checked' },
+    { id: 'emergency-zone', label: 'Landing Site Identified' },
+    { id: 'emergency-procedure', label: 'Aircraft Emergency Procedure Reviewed' }
+  ]
+};
+
 function getPhaseChecklist(category: AircraftCategory, phase: ChecklistPhase): ChecklistItem[] {
+  if (category === 'rotorcraft') return ROTORCRAFT_CHECKLISTS[phase];
   if (phase === 'emergency') {
     return [
       { id: 'em-thr', label: 'Thrust / Mixture VERIFY', autoCheck: (t) => (t.throttles[0] ?? 0) <= 0.5 },
@@ -71,7 +98,8 @@ export class ChecklistSystemModule implements IModule {
   private rootEl: HTMLDivElement | null = null;
   private unmounts: Array<() => void> = [];
   private activePhase: ChecklistPhase = 'preflight';
-  private lastCategory: AircraftCategory | null = null;
+  private lastAircraftKey = '';
+  private lastRender = '';
   private manualDone = new Set<string>();
 
   public init(context: ModuleContext): void {
@@ -93,15 +121,29 @@ export class ChecklistSystemModule implements IModule {
   }
 
   public update(telemetry: FlightTelemetry): void {
-    if (!this.rootEl || !telemetry.aircraft) return;
+    if (!this.rootEl) return;
+    if (!telemetry.aircraft) {
+      if (this.lastRender) this.rootEl.replaceChildren();
+      this.lastRender = '';
+      this.lastAircraftKey = '';
+      return;
+    }
     const cat = telemetry.aircraft.category;
-    if (cat !== this.lastCategory) {
-      this.lastCategory = cat;
+    const key = JSON.stringify([telemetry.aircraft.id, cat]);
+    if (key !== this.lastAircraftKey) {
+      this.lastAircraftKey = key;
       this.manualDone.clear();
     }
 
-    const items = getPhaseChecklist(cat, this.activePhase);
-    this.rootEl.innerHTML = '';
+    const items = getPhaseChecklist(cat, this.activePhase).map((item) => ({
+      ...item,
+      checked: this.manualDone.has(item.id) || Boolean(item.autoCheck?.(telemetry))
+    }));
+    const speeds = formatVSpeeds(telemetry.aircraft.vSpeeds, telemetry.aircraft.machSpeeds);
+    const render = JSON.stringify([key, telemetry.aircraft.name, this.activePhase, speeds, items.map((item) => item.checked)]);
+    if (render === this.lastRender) return;
+    this.lastRender = render;
+    this.rootEl.replaceChildren();
 
     const title = document.createElement('div');
     title.style.cssText = 'font-weight:700;margin-bottom:6px;text-transform:uppercase;font-size:10px;';
@@ -122,14 +164,20 @@ export class ChecklistSystemModule implements IModule {
     });
     this.rootEl.appendChild(phaseBar);
 
+    const speedCard = document.createElement('div');
+    speedCard.style.cssText = 'margin-bottom:6px;font-size:10px;';
+    speedCard.textContent = speeds;
+    this.rootEl.appendChild(speedCard);
+
     for (const item of items) {
-      const checked = this.manualDone.has(item.id) || Boolean(item.autoCheck?.(telemetry));
+      const { checked } = item;
       const row = document.createElement('label');
       row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;font-size:11px;';
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.checked = checked;
       cb.addEventListener('change', () => {
+        this.lastRender = '';
         if (cb.checked) this.manualDone.add(item.id);
         else this.manualDone.delete(item.id);
       });
@@ -145,6 +193,8 @@ export class ChecklistSystemModule implements IModule {
     for (const u of this.unmounts) u();
     this.unmounts = [];
     this.rootEl = null;
+    this.lastRender = '';
+    this.lastAircraftKey = '';
     this.manualDone.clear();
   }
 }

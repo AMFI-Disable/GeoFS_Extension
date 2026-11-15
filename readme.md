@@ -2,9 +2,9 @@
 
 # GeoFS Extension
 
-**Unified Manifest V3 Chrome Extension For GeoFS V3.x And V4.x**
+**Manifest V3 Chrome Extension And Legacy Userscripts For GeoFS V3.x And V4.x**
 
-![Version](https://img.shields.io/badge/Version-v0.1.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v0.2.0-blue?style=flat-square)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-brightgreen?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-GeoFS%20V3%20%26%20V4-informational?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
@@ -25,6 +25,9 @@
 - **Centralized TelemetryBus**: Single `requestAnimationFrame` loop powering all active modules with zero global scope pollution and leak-free hot-toggling.
 - **Modular Addon Suite**: Includes Autothrottle (aircraft-class PID presets), Information Display (multi-engine `% THR` / `[REV]`), Fuel Simulator, Overpowered Engines, Type-Aware Checklist System, Realism Pack (adaptive GLSL 3.00 ES / 1.00 shaders), Failure Simulator, SVG Flight Path Vector, Landing Statistics + Logbook, and Configurable Satellite Imagery.
 - **Preact And TypeScript Popup**: Toggle modules live, calibrate HUD scaling (`1080p`, `1440p`, `4K`, `Ultrawide`, `Laptop`), customize OS-aware keybindings, and review your persistent landing logbook.
+- **Aircraft Profiles And V-Speeds**: Setup lets you save overrides for the active aircraft. INFO and CHK show reference speeds supplied by the simulator or entered in Setup. Rotorcraft have their own checklists, collective display, and torque display when the aircraft supplies torque.
+- **Landing Replay Export**: Logbook entries can export up to 30 seconds of approach and touchdown telemetry as JSON or CSV. Older entries export their touchdown summary.
+- **Popup Appearance**: In Setup, choose Light, Dark, or Auto (System). The panel inside GeoFS follows the simulator’s local time.
 
 ---
 
@@ -44,50 +47,25 @@
 ## Development And Build
 
 ```bash
-npm install
+npm ci
 npm run typecheck
 npm test
-npm run build
+npm run build:unpacked
 ```
 
 1. Open `chrome://extensions` in Chromium/Chrome.
 2. Enable **Developer mode**.
-3. Click **Load unpacked** and select the generated `dist/` folder.
-4. For packaged releases, see [GitHub Releases](https://github.com/AMFI-Disable/GeoFS_Extension/releases).
+3. Click **Load unpacked** and select the generated sibling `GeoFS Extension` folder.
+4. Reload any open GeoFS tab to activate the addons.
+5. For packaged releases, see [GitHub Releases](https://github.com/AMFI-Disable/GeoFS_Extension/releases).
+
+For each commit you want to test, run `npm run build:unpacked` from the checkout and click **Reload** on the extension card. The command also creates the standard `dist/` output.
 
 ---
 
 ## Legacy Userscripts
 
-All standalone Tampermonkey/Violentmonkey userscripts from the archived V3.9 and V4.0 repositories are preserved under `legacy-scripts/` so you can continue using them while upcoming aircraft profiles and modules on the [Roadmap](roadmap.md) are implemented.
+The GeoFS Extension monorepo contains the Manifest V3 Chrome extension and the archived userscripts for both simulator generations.
 
-### GeoFS V4.0 Userscripts
-
-- **All-In-One Bundle**: [addon-pack_standalone.user.js](legacy-scripts/v4.0/addon-pack_standalone.user.js)
-- **Foundations**: [core-library_standalone.user.js](legacy-scripts/v4.0/core-library_standalone.user.js) · [design-system_standalone.user.js](legacy-scripts/v4.0/design-system_standalone.user.js)
-- **Flight And HUD Modules**:
-  - [autothrottle_standalone.user.js](legacy-scripts/v4.0/autothrottle_standalone.user.js)
-  - [checklist-system_standalone.user.js](legacy-scripts/v4.0/checklist-system_standalone.user.js)
-  - [failure-simulator_standalone.user.js](legacy-scripts/v4.0/failure-simulator_standalone.user.js)
-  - [flight-path-vector_standalone.user.js](legacy-scripts/v4.0/flight-path-vector_standalone.user.js)
-  - [fuel-simulator_standalone.user.js](legacy-scripts/v4.0/fuel-simulator_standalone.user.js)
-  - [information-display_standalone.user.js](legacy-scripts/v4.0/information-display_standalone.user.js)
-  - [landing-statistics_standalone.user.js](legacy-scripts/v4.0/landing-statistics_standalone.user.js)
-  - [overpowered-engines_standalone.user.js](legacy-scripts/v4.0/overpowered-engines_standalone.user.js)
-  - [realism-pack_standalone.user.js](legacy-scripts/v4.0/realism-pack_standalone.user.js)
-
-### GeoFS V3.9 Userscripts
-
-- **All-In-One Bundle**: [addon-pack_standalone.user.js](legacy-scripts/v3.9/addon-pack_standalone.user.js)
-- **Foundations**: [core-library_standalone.user.js](legacy-scripts/v3.9/core-library_standalone.user.js) · [design-system_standalone.user.js](legacy-scripts/v3.9/design-system_standalone.user.js)
-- **Flight And HUD Modules**:
-  - [autothrottle_standalone.user.js](legacy-scripts/v3.9/autothrottle_standalone.user.js)
-  - [checklist-system_standalone.user.js](legacy-scripts/v3.9/checklist-system_standalone.user.js)
-  - [failure-simulator_standalone.user.js](legacy-scripts/v3.9/failure-simulator_standalone.user.js)
-  - [flight-path-vector_standalone.user.js](legacy-scripts/v3.9/flight-path-vector_standalone.user.js)
-  - [fuel-simulator_standalone.user.js](legacy-scripts/v3.9/fuel-simulator_standalone.user.js)
-  - [information-display_standalone.user.js](legacy-scripts/v3.9/information-display_standalone.user.js)
-  - [landing-statistics_standalone.user.js](legacy-scripts/v3.9/landing-statistics_standalone.user.js)
-  - [overpowered-engines_standalone.user.js](legacy-scripts/v3.9/overpowered-engines_standalone.user.js)
-  - [realism-pack_standalone.user.js](legacy-scripts/v3.9/realism-pack_standalone.user.js)
-  - [satellite-imagery_standalone.user.js](legacy-scripts/v3.9/satellite-imagery_standalone.user.js)
+- [GeoFS V3.9 Userscripts](geofs-v3.9/readme.md) · [Changelog](geofs-v3.9/changelog.md)
+- [GeoFS V4.0 Userscripts](geofs-v4.0/readme.md) · [Changelog](geofs-v4.0/changelog.md)

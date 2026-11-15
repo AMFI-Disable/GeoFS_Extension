@@ -1,3 +1,6 @@
+import type { LandingSample } from '../core/landing-replay';
+import type { AircraftOverride } from '../core/aircraft-profile';
+
 export type ThemeMode = 'auto' | 'dark' | 'light';
 export type CalibratorPreset = '1080p' | '1440p' | '4k' | 'ultrawide' | 'laptop';
 export type ImageryProviderMode = 'native' | 'esri' | 'osm' | 'custom';
@@ -22,10 +25,12 @@ export interface LandingRecord {
   rating: 'Butter' | 'Smooth' | 'Firm' | 'Hard' | 'Crash';
   lat: number;
   lon: number;
+  replay?: LandingSample[];
 }
 
 export interface ExtensionSettings {
   modules: Record<string, boolean>;
+  aircraftOverrides?: Record<string, AircraftOverride>;
   themeMode: ThemeMode;
   calibratorPreset: CalibratorPreset;
   keybindings: KeybindConfig;

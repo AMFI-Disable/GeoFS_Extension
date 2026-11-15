@@ -1,3 +1,4 @@
+import { LandingReplay } from '../../core/landing-replay';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 import type { LandingRecord } from '../../types/settings';
 
@@ -19,6 +20,8 @@ export class LandingStatisticsModule implements IModule {
 
   private ctx: ModuleContext | null = null;
   private wasAirborne = false;
+  private aircraftId: string | null = null;
+  private replay = new LandingReplay();
   private lastTouchdownMs = 0;
   private sessionRecords: LandingRecord[] = [];
   private listEl: HTMLDivElement | null = null;
@@ -39,16 +42,30 @@ export class LandingStatisticsModule implements IModule {
   public update(telemetry: FlightTelemetry): void {
     if (telemetry.paused || !this.ctx) return;
 
-    if (!telemetry.groundContact && telemetry.aglFeet > 25) {
-      this.wasAirborne = true;
+    const aircraftId = telemetry.aircraft?.id ?? null;
+    if (aircraftId !== this.aircraftId) {
+      this.aircraftId = aircraftId;
+      this.wasAirborne = false;
+      this.lastTouchdownMs = 0;
+      this.replay.reset();
+    }
+    if (!aircraftId) return;
+
+    if (!telemetry.groundContact && !telemetry.crashed) {
+      if (telemetry.aglFeet > 25) this.wasAirborne = true;
+      if (this.wasAirborne) this.replay.record(telemetry);
       return;
     }
 
-    if (this.wasAirborne && telemetry.groundContact && telemetry.timestamp - this.lastTouchdownMs > 6000) {
+    if (this.wasAirborne) {
       this.wasAirborne = false;
+      if (telemetry.timestamp - this.lastTouchdownMs <= 6000) {
+        this.replay.reset();
+        return;
+      }
       this.lastTouchdownMs = telemetry.timestamp;
 
-      const rating = rateLanding(telemetry.vs, telemetry.gForce);
+      const rating = telemetry.crashed ? 'Crash' : rateLanding(telemetry.vs, telemetry.gForce);
       const record: LandingRecord = {
         id: `${telemetry.timestamp}-${Math.random().toString(36).slice(2, 7)}`,
         timestamp: new Date(telemetry.timestamp).toISOString(),
@@ -60,7 +77,8 @@ export class LandingStatisticsModule implements IModule {
         groundSpeedKts: Math.round(telemetry.groundSpeed),
         rating,
         lat: Number(telemetry.lat.toFixed(4)),
-        lon: Number(telemetry.lon.toFixed(4))
+        lon: Number(telemetry.lon.toFixed(4)),
+        replay: this.replay.finish(telemetry)
       };
 
       this.sessionRecords = [record, ...this.sessionRecords].slice(0, 10);
@@ -94,6 +112,9 @@ export class LandingStatisticsModule implements IModule {
     this.unmountTab = null;
     this.listEl = null;
     this.wasAirborne = false;
+    this.aircraftId = null;
+    this.lastTouchdownMs = 0;
+    this.replay.reset();
     this.ctx = null;
   }
 }

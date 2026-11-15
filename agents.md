@@ -107,7 +107,7 @@ Every commit message must strictly match the format `type: word1 word2 word3`:
 
 ### Legacy Userscripts Preservation
 
-- Keep archived standalone `.user.js` scripts in `legacy-scripts/v3.9/` and `legacy-scripts/v4.0/` intact until the Chrome Extension reaches full feature parity and the user approves their removal.
+- Keep archived standalone `.user.js` scripts in `geofs-v3.9/` and `geofs-v4.0/` intact until the Chrome Extension reaches full feature parity and the user approves their removal.
 
 ---
 

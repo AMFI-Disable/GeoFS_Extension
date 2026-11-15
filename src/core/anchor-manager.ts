@@ -1,6 +1,6 @@
 import type { CalibratorPreset } from '../types/settings';
 
-export type AnchorZone = 'top' | 'bottom' | 'right' | 'corner';
+export type AnchorZone = 'top' | 'bottom' | 'right' | 'corner' | 'autopilot';
 
 const PRESET_SCALES: Record<CalibratorPreset, number> = {
   '1080p': 1.0,
@@ -106,7 +106,8 @@ export class AnchorManager {
   private resolveZoneHost(zone: AnchorZone): HTMLElement {
     const selectors: Record<AnchorZone, string[]> = {
       top: ['.geofs-ui-top', '#geofs-ui-top'],
-      bottom: ['.geofs-ui-bottom', '.geofs-autopilot-bar'],
+      bottom: ['.geofs-ui-bottom'],
+      autopilot: ['.geofs-autopilot-bar'],
       right: ['.geofs-ui-right', '.geofs-radio-stack'],
       corner: []
     };
@@ -115,6 +116,8 @@ export class AnchorManager {
       const found = document.querySelector(sel) as HTMLElement | null;
       if (found) return found;
     }
+
+    if (zone === 'autopilot') return this.resolveZoneHost('top');
 
     const fallbackId = `geofs-ext-zone-${zone}`;
     let fallback = document.getElementById(fallbackId);

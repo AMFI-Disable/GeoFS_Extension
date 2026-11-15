@@ -7,7 +7,7 @@ Only the latest release of `GeoFS_Extension` is actively supported with security
 | Version | Supported |
 | :--- | :--- |
 | `0.1.x` | Yes |
-| Legacy Userscripts (`legacy-scripts/`) | Archived (Read-Only) |
+| Legacy Userscripts (`geofs-v3.9/`, `geofs-v4.0/`) | Archived (Read-Only) |
 
 ## Reporting A Vulnerability
 

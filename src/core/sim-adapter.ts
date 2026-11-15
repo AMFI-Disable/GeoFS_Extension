@@ -1,3 +1,4 @@
+import { V_SPEEDS, type AircraftOverride, type VSpeeds } from './aircraft-profile';
 import type {
   AircraftCategory,
   AircraftProfile,
@@ -51,6 +52,9 @@ export function parseSimMajor(rawVersion: unknown): SimMajorVersion | null {
 
 export function classifyAircraft(name: string, mass: number, engineCount: number, maxThrust: number): AircraftCategory {
   const lower = name.toLowerCase();
+  if (/\b(?:helicopter|rotorcraft|robinson|alouette|ec135|h145|r[- ]?(?:22|44|66)|uh[- ]?60|mi[- ]?8|bo[- ]?105|bell[ -]?(?:206|407))\b/.test(lower)) {
+    return 'rotorcraft';
+  }
   if (lower.includes('concorde') || lower.includes('xb-70') || lower.includes('tu-144') || lower.includes('sr-71')) {
     return 'supersonic';
   }
@@ -74,13 +78,26 @@ export function classifyAircraft(name: string, mass: number, engineCount: number
 
 export class SimAdapter {
   private lastAcRef: GeoFSAircraftInstance | undefined;
+  private lastDefinition: GeoFSAircraftInstance['definition'];
   private cachedProfile: AircraftProfile | null = null;
+
+  private overrides: Record<string, AircraftOverride> = {};
+
+  public setAircraftOverrides(overrides: Record<string, AircraftOverride> | undefined): void {
+    this.overrides = overrides ?? {};
+    this.cachedProfile = null;
+  }
 
   public getMajorVersion(): SimMajorVersion | null {
     return parseSimMajor(window.geofs?.version);
   }
 
   public isNight(): boolean {
+    const simHour = window.weather?.localTime;
+    if (typeof simHour === 'number' && Number.isFinite(simHour)) {
+      const hour = ((simHour % 24) + 24) % 24;
+      return hour < 6 || hour >= 19;
+    }
     const env = window.geofs?.environment;
     if (env && typeof env.sunElevation === 'number') {
       return env.sunElevation < -0.02;
@@ -89,23 +106,23 @@ export class SimAdapter {
       const hour = ((env.time % 24) + 24) % 24;
       return hour < 6 || hour >= 19;
     }
-    const localHour = new Date().getHours();
-    return localHour < 6 || localHour >= 19;
+    return false;
   }
 
   public getAircraftProfile(): AircraftProfile | null {
     const ac = window.geofs?.aircraft?.instance;
-    if (!ac || ac.id == null) {
+    const rawId = ac?.id ?? ac?.aircraftRecord?.id;
+    if (!ac || rawId == null) {
       this.lastAcRef = undefined;
       this.cachedProfile = null;
       return null;
     }
-    if (ac === this.lastAcRef && this.cachedProfile) {
+    if (ac === this.lastAcRef && ac.definition === this.lastDefinition && this.cachedProfile?.id === String(rawId)) {
       return this.cachedProfile;
     }
 
-    const acId = String(ac.id);
-    const catalogSpec = AIRCRAFT_CATALOG[acId];
+    const acId = String(rawId);
+    const catalogSpec = Object.hasOwn(AIRCRAFT_CATALOG, acId) ? AIRCRAFT_CATALOG[acId] : undefined;
     const engineCount = Array.isArray(ac.engines) && ac.engines.length > 0 ? ac.engines.length : (catalogSpec?.engineCount ?? 1);
 
     let profile: AircraftProfile;
@@ -119,7 +136,7 @@ export class SimAdapter {
     } else {
       const def = ac.definition || {};
       const catalogEntry = window.geofs?.aircraftList?.[acId] || ac.aircraftRecord;
-      const name = String(catalogEntry?.name || def.externalName || def.name || `Aircraft ${acId}`);
+      const name = String(catalogEntry?.name || def.externalName || def.name || ac.name || `Aircraft ${acId}`);
       const mass = Number(def.mass || ac.setup?.mass || 1200);
       const maxThrust = Number(def.maxThrust || 0);
       const hasGear = def.hasGear !== undefined ? Boolean(def.hasGear) : (Boolean(def.gearPositions?.length) || ac.parts?.gear !== undefined);
@@ -141,7 +158,21 @@ export class SimAdapter {
       };
     }
 
+    const vSpeeds: VSpeeds = {};
+    const machSpeeds: VSpeeds = {};
+    const rawSpeeds = ac.definition?.Vspeeds;
+    for (const speed of V_SPEEDS) {
+      const value = rawSpeeds?.[speed.toUpperCase()] ?? rawSpeeds?.[speed];
+      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) continue;
+      // GeoFS aircraft definitions encode positive reference speeds below 10 in Mach.
+      if (value < 10) machSpeeds[speed] = value;
+      else vSpeeds[speed] = value;
+    }
+
+    const override = Object.hasOwn(this.overrides, acId) ? this.overrides[acId] : undefined;
+    profile = { ...profile, ...override, vSpeeds: { ...vSpeeds, ...override?.vSpeeds }, machSpeeds };
     this.lastAcRef = ac;
+    this.lastDefinition = ac.definition;
     this.cachedProfile = profile;
     return profile;
   }
@@ -183,6 +214,14 @@ export class SimAdapter {
     if (c.throttle4 !== undefined) c.throttle4 = clamped;
   }
 
+  public stopEngines(): boolean {
+    const aircraft = window.geofs?.aircraft?.instance;
+    if (typeof aircraft?.stopEngines === 'function') aircraft.stopEngines();
+    else if (typeof aircraft?.stopEngine === 'function') aircraft.stopEngine();
+    else return false;
+    return true;
+  }
+
   public setFlaps(step: number): void {
     const ac = window.geofs?.aircraft?.instance;
     const c = window.controls;
@@ -203,13 +242,18 @@ export class SimAdapter {
     const ac = window.geofs?.aircraft?.instance;
     const lla = ac?.llaLocation || [0, 0, 0];
 
+    const aircraft = this.getAircraftProfile();
+    const isRotorcraft = aircraft?.category === 'rotorcraft';
+    const collective = window.controls?.throttle;
+    const torque = v.rotorTorque ?? v.torque;
+
     return Object.freeze({
       timestamp: Date.now(),
       dt,
       simMajor,
       paused: Boolean(window.geofs?.isPaused?.()),
       isNight: this.isNight(),
-      aircraft: this.getAircraftProfile(),
+      aircraft,
       kias: Number.isFinite(v.kias) ? Number(v.kias) : 0,
       mach: Number.isFinite(v.mach) ? Number(v.mach) : 0,
       altitude: Number.isFinite(v.altitude) ? Number(v.altitude) : 0,
@@ -222,8 +266,13 @@ export class SimAdapter {
       pitch: Number.isFinite(v.pitch) ? Number(v.pitch) : 0,
       roll: Number.isFinite(v.roll) ? Number(v.roll) : 0,
       groundContact: Boolean(ac?.groundContact),
+      crashed: Boolean(ac?.crashed),
+      autopilotOn: Boolean(window.geofs?.autopilot?.on),
       reverserActive: Boolean(v.reverser || window.controls?.reversers),
       throttles: this.getThrottles(),
+      collective: isRotorcraft && typeof collective === 'number' && Number.isFinite(collective)
+        ? Math.min(1, Math.max(0, collective)) : null,
+      rotorTorque: isRotorcraft && typeof torque === 'number' && Number.isFinite(torque) ? torque : null,
       parkingBrake: Boolean(v.parkingBrake),
       gearDown: Number(v.gearPosition ?? 0) > 0.5,
       flapsTarget: Number(v.flapsTarget ?? 0),
