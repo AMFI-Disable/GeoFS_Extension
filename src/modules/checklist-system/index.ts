@@ -1,7 +1,16 @@
 import { formatVSpeeds } from '../../core/aircraft-profile';
 import type { AircraftCategory, FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 
-type ChecklistPhase = 'preflight' | 'takeoff' | 'cruise' | 'approach' | 'emergency';
+type ChecklistPhase =
+  | 'preflight'
+  | 'taxi'
+  | 'takeoff'
+  | 'climb'
+  | 'cruise'
+  | 'approach'
+  | 'landing'
+  | 'shutdown'
+  | 'emergency';
 
 interface ChecklistItem {
   id: string;
@@ -11,13 +20,17 @@ interface ChecklistItem {
 
 const PHASE_LABELS: Record<ChecklistPhase, string> = {
   preflight: 'PRE',
+  taxi: 'TAXI',
   takeoff: 'T/O',
+  climb: 'CLB',
   cruise: 'CRZ',
   approach: 'APP',
+  landing: 'LDG',
+  shutdown: 'SDN',
   emergency: 'EMERG'
 };
 
-const ROTORCRAFT_CHECKLISTS: Record<ChecklistPhase, ChecklistItem[]> = {
+const ROTORCRAFT_CHECKLISTS: Partial<Record<ChecklistPhase, ChecklistItem[]>> = {
   preflight: [
     { id: 'rotor-clear', label: 'Rotor And Tail Area Clear' },
     { id: 'collective-low', label: 'Collective Fully Lowered', autoCheck: (t) => t.collective !== null && t.collective <= 0.05 },
@@ -43,12 +56,69 @@ const ROTORCRAFT_CHECKLISTS: Record<ChecklistPhase, ChecklistItem[]> = {
 };
 
 function getPhaseChecklist(category: AircraftCategory, phase: ChecklistPhase): ChecklistItem[] {
-  if (category === 'rotorcraft') return ROTORCRAFT_CHECKLISTS[phase];
+  if (category === 'rotorcraft' && ROTORCRAFT_CHECKLISTS[phase]) {
+    return ROTORCRAFT_CHECKLISTS[phase]!;
+  }
+  if (category === 'rotorcraft') {
+    if (phase === 'emergency') {
+      return [
+        { id: 'heli-em-coll', label: 'Collective LOWER (Autorotation)', autoCheck: (t) => t.collective !== null && t.collective * 100 <= 25 },
+        { id: 'heli-em-spd', label: 'Best Glide / Auto 60-80 KTS', autoCheck: (t) => t.kias >= 55 && t.kias <= 85 },
+        { id: 'heli-em-flare', label: 'Flare & Level Before Touchdown', autoCheck: (t) => t.aglFeet < 50 && Math.abs(t.roll) < 8 }
+      ];
+    }
+    if (phase === 'taxi' || phase === 'takeoff') {
+      return [
+        { id: 'heli-to-coll', label: 'Collective RAISE Smoothly', autoCheck: (t) => t.collective !== null && t.collective * 100 > 45 },
+        { id: 'heli-to-hover', label: 'Hover Check (5-15 ft AGL)', autoCheck: (t) => !t.groundContact && t.aglFeet >= 3 },
+        { id: 'heli-to-etl', label: 'Effective Translational Lift > 20 KTS', autoCheck: (t) => t.kias >= 20 }
+      ];
+    }
+    if (phase === 'climb' || phase === 'cruise') {
+      return [
+        { id: 'heli-crz-trq', label: 'Torque Within Operating Limits' },
+        { id: 'heli-crz-alt', label: 'Cruise Altitude Stabilized', autoCheck: (t) => Math.abs(t.vs) < 250 }
+      ];
+    }
+    if (phase === 'approach' || phase === 'landing') {
+      return [
+        { id: 'heli-app-spd', label: 'Approach Decel < 70 KTS', autoCheck: (t) => t.kias < 70 },
+        { id: 'heli-app-lights', label: 'Landing Light ON', autoCheck: (t) => t.lightsOn },
+        { id: 'heli-app-hover', label: 'Stabilized Hover < 15 ft AGL', autoCheck: (t) => t.aglFeet <= 15 && t.kias < 15 }
+      ];
+    }
+    if (phase === 'shutdown') {
+      return [
+        { id: 'heli-sdn-coll', label: 'Collective FULL DOWN', autoCheck: (t) => t.collective !== null && t.collective * 100 <= 5 },
+        { id: 'heli-sdn-gnd', label: 'Skids / Gear Grounded', autoCheck: (t) => t.groundContact }
+      ];
+    }
+    return [
+      { id: 'heli-pre-coll', label: 'Collective FULL DOWN', autoCheck: (t) => t.collective !== null && t.collective * 100 <= 10 },
+      { id: 'heli-pre-lights', label: 'Anti-Collision / Nav Lights ON', autoCheck: (t) => t.lightsOn },
+      { id: 'heli-pre-ground', label: 'Skids / Gear Level On Ground', autoCheck: (t) => t.groundContact }
+    ];
+  }
+
   if (phase === 'emergency') {
     return [
       { id: 'em-thr', label: 'Thrust / Mixture VERIFY', autoCheck: (t) => (t.throttles[0] ?? 0) <= 0.5 },
       { id: 'em-spd', label: 'Best Glide / Safe Airspeed', autoCheck: (t) => t.kias > 70 && t.kias < 260 },
       { id: 'em-gear', label: 'Landing Gear AS REQUIRED', autoCheck: (t) => t.gearDown }
+    ];
+  }
+  if (phase === 'taxi') {
+    return [
+      { id: 'tx-brk', label: 'Parking Brake RELEASED', autoCheck: (t) => !t.parkingBrake },
+      { id: 'tx-spd', label: 'Taxi Speed < 25 KTS', autoCheck: (t) => t.groundSpeed < 25 },
+      { id: 'tx-flaps', label: 'Takeoff Flaps PRESET', autoCheck: (t) => category === 'supersonic' || t.flapsTarget >= 1 }
+    ];
+  }
+  if (phase === 'climb') {
+    return [
+      { id: 'clb-gear', label: 'Landing Gear UP', autoCheck: (t) => !t.gearDown },
+      { id: 'clb-flaps', label: 'Flaps RETRACTED (0)', autoCheck: (t) => t.flapsTarget === 0 },
+      { id: 'clb-vs', label: 'Positive Climb Rate', autoCheck: (t) => t.vs > 200 }
     ];
   }
   if (phase === 'cruise') {
@@ -64,6 +134,20 @@ function getPhaseChecklist(category: AircraftCategory, phase: ChecklistPhase): C
       { id: 'app-flaps', label: 'Landing Flaps CONFIG', autoCheck: (t) => t.flapsTarget >= 1 },
       { id: 'app-gear', label: 'Landing Gear DOWN & LOCKED', autoCheck: (t) => t.gearDown },
       { id: 'app-lights', label: 'Landing Lights ON', autoCheck: (t) => t.lightsOn }
+    ];
+  }
+  if (phase === 'landing') {
+    return [
+      { id: 'ldg-gear', label: 'Gear DOWN Three Green', autoCheck: (t) => t.gearDown },
+      { id: 'ldg-flaps', label: 'Full Landing Flaps', autoCheck: (t) => t.flapsTarget >= 1 },
+      { id: 'ldg-thr', label: 'Throttle IDLE On Touchdown', autoCheck: (t) => t.groundContact && (t.throttles[0] ?? 0) <= 0.1 }
+    ];
+  }
+  if (phase === 'shutdown') {
+    return [
+      { id: 'sdn-brk', label: 'Parking Brake SET', autoCheck: (t) => t.parkingBrake },
+      { id: 'sdn-thr', label: 'Throttles CUTOFF / IDLE', autoCheck: (t) => (t.throttles[0] ?? 0) <= 0.05 },
+      { id: 'sdn-lights', label: 'Landing Lights OFF', autoCheck: (t) => !t.lightsOn }
     ];
   }
   if (phase === 'takeoff') {
@@ -91,10 +175,11 @@ function getPhaseChecklist(category: AircraftCategory, phase: ChecklistPhase): C
 export class ChecklistSystemModule implements IModule {
   public readonly id = 'checklist-system';
   public readonly name = 'Checklist System';
-  public readonly description = 'Aircraft-category and flight-phase checklists with live switch verification.';
+  public readonly description = '9-phase aircraft-category checklists with live switch verification.';
   public readonly supportedMajors = [3, 4] as const;
   public readonly defaultEnabled = true;
 
+  private ctx: ModuleContext | null = null;
   private rootEl: HTMLDivElement | null = null;
   private unmounts: Array<() => void> = [];
   private activePhase: ChecklistPhase = 'preflight';
@@ -103,21 +188,31 @@ export class ChecklistSystemModule implements IModule {
   private manualDone = new Set<string>();
 
   public init(context: ModuleContext): void {
+    this.ctx = context;
     const root = document.createElement('div');
     this.rootEl = root;
     this.unmounts.push(context.anchors.registerHudTab('chk', 'CHK', root));
+
+    const cyclePhase = () => {
+      const phases = Object.keys(PHASE_LABELS) as ChecklistPhase[];
+      const nextIdx = (phases.indexOf(this.activePhase) + 1) % phases.length;
+      this.activePhase = phases[nextIdx];
+      context.anchors.showToast(`Checklist Phase: ${PHASE_LABELS[this.activePhase]}`);
+    };
 
     const rightBtn = document.createElement('button');
     rightBtn.type = 'button';
     rightBtn.className = 'geofs-ext-pad';
     rightBtn.textContent = 'CHK';
-    rightBtn.addEventListener('click', () => {
-      const phases: ChecklistPhase[] = ['preflight', 'takeoff', 'cruise', 'approach', 'emergency'];
-      const nextIdx = (phases.indexOf(this.activePhase) + 1) % phases.length;
-      this.activePhase = phases[nextIdx];
-      context.anchors.showToast(`Checklist Phase: ${PHASE_LABELS[this.activePhase]}`);
-    });
+    rightBtn.addEventListener('click', cyclePhase);
     this.unmounts.push(context.anchors.mountControl('checklist-right-pad', 'right', rightBtn));
+
+    const combo = context.getSettings().keybindings.toggleChecklist;
+    this.unmounts.push(context.keybinds.register('checklist-cycle', combo, cyclePhase));
+  }
+
+  public onSettingsChange(settings: import('../../types/settings').ExtensionSettings): void {
+    this.ctx?.keybinds.updateCombo('checklist-cycle', settings.keybindings.toggleChecklist);
   }
 
   public update(telemetry: FlightTelemetry): void {

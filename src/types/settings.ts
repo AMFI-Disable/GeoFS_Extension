@@ -3,7 +3,7 @@ import type { AircraftOverride } from '../core/aircraft-profile';
 
 export type ThemeMode = 'auto' | 'dark' | 'light';
 export type CalibratorPreset = '1080p' | '1440p' | '4k' | 'ultrawide' | 'laptop';
-export type ImageryProviderMode = 'native' | 'esri' | 'osm' | 'custom';
+export type ImageryProviderMode = 'native' | 'esri' | 'bing' | 'osm' | 'custom';
 
 export interface KeybindConfig {
   toggleAutothrottle: string;
@@ -30,7 +30,6 @@ export interface LandingRecord {
 
 export interface ExtensionSettings {
   modules: Record<string, boolean>;
-  aircraftOverrides?: Record<string, AircraftOverride>;
   themeMode: ThemeMode;
   calibratorPreset: CalibratorPreset;
   keybindings: KeybindConfig;
@@ -39,6 +38,7 @@ export interface ExtensionSettings {
   imageryProvider: ImageryProviderMode;
   customImageryUrl: string;
   customImageryToken: string;
+  aircraftOverrides: Record<string, AircraftOverride>;
 }
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
@@ -67,5 +67,6 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   failureProbabilitiesEnabled: false,
   imageryProvider: 'native',
   customImageryUrl: '',
-  customImageryToken: ''
+  customImageryToken: '',
+  aircraftOverrides: {}
 };

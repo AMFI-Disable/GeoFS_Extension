@@ -1,3 +1,4 @@
+import { parseAircraftOverrides } from '../core/aircraft-profile';
 import { landingReplayCsv } from '../core/landing-replay';
 import { AircraftEditor } from './aircraft-editor';
 import type { AircraftProfile } from '../types/module';
@@ -10,7 +11,9 @@ import {
   type LandingRecord,
   type ThemeMode
 } from '../types/settings';
-import { detectOsPlatform, formatComboForOs } from '../core/keybind-manager';
+import { detectGeoFSKeyCollision, detectOsPlatform, formatComboForOs } from '../core/keybind-manager';
+import { formatLogbookCsv, triggerDownload } from '../core/logbook-export';
+import type { AircraftCategory } from '../types/module';
 
 const SETTINGS_KEY = 'geofs_ext_settings';
 const LOGBOOK_KEY = 'geofs_ext_logbook';
@@ -41,6 +44,10 @@ export function App() {
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
   const [logbook, setLogbook] = useState<LandingRecord[]>([]);
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);
+  const [overrideKey, setOverrideKey] = useState('');
+  const [overrideCat, setOverrideCat] = useState<AircraftCategory>('airliner-twin');
+  const [overrideVref, setOverrideVref] = useState('135');
+  const [overrideVne, setOverrideVne] = useState('340');
   const os = detectOsPlatform();
 
   useEffect(() => {
@@ -51,7 +58,8 @@ export function App() {
           ...DEFAULT_SETTINGS,
           ...raw,
           modules: { ...DEFAULT_SETTINGS.modules, ...(raw.modules || {}) },
-          keybindings: { ...DEFAULT_SETTINGS.keybindings, ...(raw.keybindings || {}) }
+          keybindings: { ...DEFAULT_SETTINGS.keybindings, ...(raw.keybindings || {}) },
+          aircraftOverrides: parseAircraftOverrides(raw.aircraftOverrides)
         });
       }
     });
@@ -101,7 +109,16 @@ export function App() {
 
   const saveSettings = (next: ExtensionSettings) => {
     setSettings(next);
-    chrome.storage?.sync?.set({ [SETTINGS_KEY]: next });
+    chrome.storage?.sync?.set({ [SETTINGS_KEY]: next }, () => {
+      if (chrome.runtime.lastError) return;
+      chrome.tabs?.query({ active: true, currentWindow: true }, (tabs) => {
+        const tabId = tabs?.[0]?.id;
+        if (tabId === undefined) return;
+        chrome.tabs.sendMessage(tabId, { type: 'GEOFS_EXT_APPLY_SETTINGS' }, () => {
+          void chrome.runtime.lastError;
+        });
+      });
+    });
   };
 
   const toggleModule = (id: string) => {
@@ -190,6 +207,20 @@ export function App() {
       {tab === 'logbook' && (
         <div class="field-col">
           <div class="preset-row">
+            <button
+              class="btn-sm"
+              disabled={logbook.length === 0}
+              onClick={() => triggerDownload('geofs-landing-logbook.json', JSON.stringify(logbook, null, 2), 'application/json')}
+            >
+              Export JSON
+            </button>
+            <button
+              class="btn-sm"
+              disabled={logbook.length === 0}
+              onClick={() => triggerDownload('geofs-landing-logbook.csv', formatLogbookCsv(logbook), 'text/csv')}
+            >
+              Export CSV
+            </button>
             <button class="btn-sm" onClick={clearLogbook}>Clear History</button>
           </div>
           <div class="list">
@@ -281,13 +312,14 @@ export function App() {
                 <option value="native">GeoFS Native</option>
                 <option value="osm">OpenStreetMap</option>
                 <option value="esri">Esri (API Token)</option>
+                <option value="bing">Bing Maps Aerial (API Key)</option>
                 <option value="custom">Custom Tile URL</option>
               </select>
             </div>
-            {settings.imageryProvider === 'esri' && (
+            {(settings.imageryProvider === 'esri' || settings.imageryProvider === 'bing') && (
               <input
                 type="text"
-                placeholder="Esri ArcGIS API Token"
+                placeholder={settings.imageryProvider === 'bing' ? 'Bing Maps API Key' : 'Esri ArcGIS API Token'}
                 value={settings.customImageryToken}
                 onInput={(e) => saveSettings({ ...settings, customImageryToken: (e.target as HTMLInputElement).value })}
               />
@@ -304,18 +336,104 @@ export function App() {
 
           <div class="card field-col" style="align-items:stretch">
             <div style="font-weight:700">Keybindings ({os.toUpperCase()})</div>
-            {(Object.keys(settings.keybindings) as Array<keyof ExtensionSettings['keybindings']>).map((k) => (
-              <div class="field-row" key={k}>
-                <span style="font-size:10px;color:var(--muted)">{k}</span>
-                <input
-                  type="text"
-                  style="width:110px;text-align:right"
-                  value={formatComboForOs(settings.keybindings[k], os)}
-                  onChange={(e) => saveSettings({
+            {(Object.keys(settings.keybindings) as Array<keyof ExtensionSettings['keybindings']>).map((k) => {
+              const collision = detectGeoFSKeyCollision(settings.keybindings[k]);
+              return (
+                <div class="field-col" key={k} style="gap:2px">
+                  <div class="field-row">
+                    <span style="font-size:10px;color:var(--muted)">{k}</span>
+                    <input
+                      type="text"
+                      style={`width:110px;text-align:right;${collision ? 'border-color:#ef4444' : ''}`}
+                      value={formatComboForOs(settings.keybindings[k], os)}
+                      onChange={(e) => saveSettings({
+                        ...settings,
+                        keybindings: { ...settings.keybindings, [k]: (e.target as HTMLInputElement).value }
+                      })}
+                    />
+                  </div>
+                  {collision && <div style="font-size:9px;color:#ef4444;text-align:right">{collision}</div>}
+                </div>
+              );
+            })}
+          </div>
+
+          <div class="card field-col" style="align-items:stretch;gap:6px">
+            <div style="font-weight:700">Aircraft Profile Overrides</div>
+            <div class="field-row" style="gap:4px">
+              <input
+                type="text"
+                placeholder="ID or Name (e.g. 242)"
+                style="flex:1"
+                value={overrideKey}
+                onInput={(e) => setOverrideKey((e.target as HTMLInputElement).value)}
+              />
+              <select
+                value={overrideCat}
+                onChange={(e) => setOverrideCat((e.target as HTMLSelectElement).value as AircraftCategory)}
+              >
+                <option value="ga-piston">GA Piston</option>
+                <option value="turboprop">Turboprop</option>
+                <option value="airliner-twin">Airliner Twin</option>
+                <option value="airliner-quad">Airliner Quad</option>
+                <option value="fighter">Fighter</option>
+                <option value="supersonic">Supersonic</option>
+                <option value="rotorcraft">Rotorcraft</option>
+                <option value="specialized">Specialized</option>
+              </select>
+            </div>
+            <div class="field-row" style="gap:4px">
+              <input
+                type="number"
+                placeholder="Vref"
+                style="width:72px"
+                value={overrideVref}
+                onInput={(e) => setOverrideVref((e.target as HTMLInputElement).value)}
+              />
+              <input
+                type="number"
+                placeholder="Vne"
+                style="width:72px"
+                value={overrideVne}
+                onInput={(e) => setOverrideVne((e.target as HTMLInputElement).value)}
+              />
+              <button
+                class="btn-sm"
+                onClick={() => {
+                  const key = overrideKey.trim().toLowerCase();
+                  if (!key) return;
+                  saveSettings({
                     ...settings,
-                    keybindings: { ...settings.keybindings, [k]: (e.target as HTMLInputElement).value }
-                  })}
-                />
+                    aircraftOverrides: {
+                      ...settings.aircraftOverrides,
+                      [key]: {
+                        category: overrideCat,
+                        vSpeeds: {
+                          Vref: Number(overrideVref) || 130,
+                          Vne: Number(overrideVne) || 340
+                        }
+                      }
+                    }
+                  });
+                  setOverrideKey('');
+                }}
+              >
+                Save Override
+              </button>
+            </div>
+            {Object.entries(settings.aircraftOverrides).map(([key, ov]) => (
+              <div class="field-row" key={key} style="font-size:10px">
+                <span><strong>{key}</strong> • {ov.category || 'auto'} (Vref {ov.vSpeeds?.Vref ?? '--'} / Vne {ov.vSpeeds?.Vne ?? '--'})</span>
+                <button
+                  class="btn-sm"
+                  onClick={() => {
+                    const next = { ...settings.aircraftOverrides };
+                    delete next[key];
+                    saveSettings({ ...settings, aircraftOverrides: next });
+                  }}
+                >
+                  Remove
+                </button>
               </div>
             ))}
           </div>

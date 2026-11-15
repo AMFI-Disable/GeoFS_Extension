@@ -30,6 +30,10 @@ This document is the unified, mandatory specification for all AI agents working 
 - **Author Email**: `evengao6688@gmail.com`.
 - **Remote URL**: `https://github.com/AMFI-Disable/GeoFS_Extension.git` (strictly preserve `AMFI-Disable` casing).
 
+### Sync Completed Work
+
+After each completed task with repository changes, fetch the upstream branch, integrate any incoming work, run the verification checklist, and push the verified commits to the corresponding remote branch. Rebuild the local unpacked extension when its contents change. Preserve both histories when reconciling divergence.
+
 ### Strict Commit Message Structure
 
 Every commit message must strictly match the format `type: word1 word2 word3`:

@@ -119,6 +119,7 @@ Aircraft awaiting dedicated `AIRCRAFT_CATALOG` entries (OEW, MTOW, max fuel, fla
 ### Version `v0.2.0`
 
 - [x] Dedicated `rotorcraft` aircraft category in `SimAdapter` with collective and available torque telemetry and helicopter checklists.
-- [x] Per-aircraft V-speed reference cards (`V1`, `VR`, `V2`, `Vref`, `Vfe`, `Vne`) integrated into Information Display and Checklist System. Values come from GeoFS aircraft definitions or user overrides.
+- [x] Per-aircraft V-speed reference cards (`V1`, `VR`, `V2`, `Vref`, `Vfe`, `Vne`) integrated into Information Display and Checklist System. Values come from GeoFS aircraft definitions, aircraft catalog defaults when the definition has no speeds, or user overrides.
 - [x] Custom user-editable aircraft profile overrides stored in `chrome.storage.sync`.
 - [x] Landing replay capture and export (JSON/CSV) from the Logbook popup tab.
+- [x] Name-matched `NAMED_AIRCRAFT_SPECS` profiles for Airbus A320/A330/A340, Boeing 737-800/MAX 8/757/767, ATR 72-600, Dash 8 Q400, King Air 350i, F-16C, F-22A, F-35A, Eurofighter Typhoon, SR-71, Robinson R44, Bell 407, and UH-60 Black Hawk.

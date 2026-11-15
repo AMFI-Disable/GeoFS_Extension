@@ -135,6 +135,7 @@ export class AutothrottleModule implements IModule {
       this.ctx?.anchors.showToast('Autothrottle Disengaged');
     }
     this.renderControls();
+    this.ctx?.emitEvent('autothrottle:state', { engaged: this.engaged });
   }
 
   public update(telemetry: FlightTelemetry): void {
@@ -155,7 +156,9 @@ export class AutothrottleModule implements IModule {
       this.engaged = false;
       this.landingArmed = false;
       this.renderControls();
+      this.ctx.emitEvent('autothrottle:state', { engaged: false });
       this.ctx.anchors.showToast('Autothrottle Auto-Retard on Touchdown');
+      this.ctx.emitEvent('autothrottle:state', { engaged: false });
       return;
     }
 

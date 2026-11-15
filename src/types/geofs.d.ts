@@ -143,6 +143,7 @@ declare global {
     Cesium?: {
       PostProcessStage?: new (opts: { fragmentShader: string; uniforms?: Record<string, unknown> }) => unknown;
       UrlTemplateImageryProvider?: new (opts: { url: string; maximumLevel?: number; credit?: unknown }) => unknown;
+      BingMapsImageryProvider?: new (opts: { url?: string; key: string; mapStyle?: string }) => unknown;
       Credit?: new (text: string, showOnScreen?: boolean) => unknown;
       Cartesian3?: { fromDegrees?: (lon: number, lat: number, alt: number) => unknown };
       SceneTransforms?: { wgs84ToWindowCoordinates?: (scene: unknown, pos: unknown) => { x: number; y: number } | undefined };

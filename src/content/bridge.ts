@@ -1,4 +1,4 @@
-import { AIRCRAFT_OVERRIDE_PREFIX, parseAircraftOverride, type AircraftOverride } from '../core/aircraft-profile';
+import { AIRCRAFT_OVERRIDE_PREFIX, parseAircraftOverride, parseAircraftOverrides } from '../core/aircraft-profile';
 import { DEFAULT_SETTINGS, type ExtensionSettings, type LandingRecord } from '../types/settings';
 
 const SETTINGS_KEY = 'geofs_ext_settings';
@@ -11,7 +11,8 @@ function mergeSettings(raw: Partial<ExtensionSettings> | undefined): ExtensionSe
     ...DEFAULT_SETTINGS,
     ...raw,
     modules: { ...DEFAULT_SETTINGS.modules, ...(raw?.modules || {}) },
-    keybindings: { ...DEFAULT_SETTINGS.keybindings, ...(raw?.keybindings || {}) }
+    keybindings: { ...DEFAULT_SETTINGS.keybindings, ...(raw?.keybindings || {}) },
+    aircraftOverrides: parseAircraftOverrides(raw?.aircraftOverrides)
   };
 }
 
@@ -22,7 +23,8 @@ function broadcastSettings(settings: ExtensionSettings): void {
 function refreshSettings(): void {
   chrome.storage.sync.get(null, (items) => {
     if (chrome.runtime.lastError) return;
-    const aircraftOverrides: Record<string, AircraftOverride> = Object.create(null);
+    const settings = mergeSettings(items[SETTINGS_KEY]);
+    const { aircraftOverrides } = settings;
     for (const [key, value] of Object.entries(items)) {
       if (!key.startsWith(AIRCRAFT_OVERRIDE_PREFIX)) continue;
       try {
@@ -31,7 +33,7 @@ function refreshSettings(): void {
         // A malformed override must not prevent loading the other profiles.
       }
     }
-    broadcastSettings({ ...mergeSettings(items[SETTINGS_KEY]), aircraftOverrides });
+    broadcastSettings(settings);
   });
 }
 
@@ -52,8 +54,7 @@ window.addEventListener('message', (event) => {
   } else if (msg.type === 'GEOFS_EXT_SETTINGS_PATCH' && msg.patch) {
     chrome.storage.sync.get([SETTINGS_KEY], (res) => {
       const current = mergeSettings(res[SETTINGS_KEY] as Partial<ExtensionSettings> | undefined);
-      const next = mergeSettings({ ...current, ...msg.patch });
-      delete next.aircraftOverrides;
+      const next = mergeSettings({ ...current, ...msg.patch, aircraftOverrides: current.aircraftOverrides });
       chrome.storage.sync.set({ [SETTINGS_KEY]: next });
     });
   } else if (msg.type === 'GEOFS_EXT_LANDING_RECORD' && msg.record) {
@@ -70,6 +71,9 @@ window.addEventListener('message', (event) => {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'GET_LIVE_TELEMETRY') {
     sendResponse({ telemetry: latestTelemetry });
+  } else if (msg?.type === 'GEOFS_EXT_APPLY_SETTINGS') {
+    refreshSettings();
+    sendResponse({ ok: true });
   }
   return false;
 });

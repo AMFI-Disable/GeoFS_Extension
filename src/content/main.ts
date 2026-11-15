@@ -107,6 +107,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
       }
     });
 
+    sim.setAircraftOverrides(settings.aircraftOverrides);
     applyGlobalVisuals(settings, sim.isNight());
     manager.applySettings(settings);
     bus.start();

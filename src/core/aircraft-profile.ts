@@ -41,7 +41,7 @@ export function parseAircraftOverride(raw: unknown): AircraftOverride {
     const speeds = input.vSpeeds as Record<string, unknown>;
     result.vSpeeds = {};
     for (const speed of V_SPEEDS) {
-      const value = speeds?.[speed];
+      const value = speeds?.[speed] ?? speeds?.[speed.toLowerCase()];
       if (value === undefined) continue;
       if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
         throw new Error(`Enter a positive KIAS value for ${speed}.`);
@@ -50,6 +50,20 @@ export function parseAircraftOverride(raw: unknown): AircraftOverride {
     }
   }
   return result;
+}
+
+export function parseAircraftOverrides(raw: unknown): Record<string, AircraftOverride> {
+  const overrides: Record<string, AircraftOverride> = Object.create(null);
+  if (raw && typeof raw === 'object') {
+    for (const [key, value] of Object.entries(raw)) {
+      try {
+        overrides[key.trim().toLowerCase()] = parseAircraftOverride(value);
+      } catch {
+        // Keep other profiles available if an older saved entry is invalid.
+      }
+    }
+  }
+  return overrides;
 }
 
 export function formatVSpeeds(speeds: VSpeeds | undefined, machSpeeds?: VSpeeds): string {

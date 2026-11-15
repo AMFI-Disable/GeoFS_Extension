@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { formatVSpeeds, parseAircraftOverride } from '../src/core/aircraft-profile';
+import { formatVSpeeds, parseAircraftOverride, parseAircraftOverrides } from '../src/core/aircraft-profile';
 import { LandingReplay, landingReplayCsv } from '../src/core/landing-replay';
 import { SimAdapter } from '../src/core/sim-adapter';
 import type { LandingRecord } from '../src/types/settings';
@@ -56,6 +56,18 @@ describe('Aircraft Profiles', () => {
     vi.stubGlobal('window', { geofs: { aircraft: { instance } } });
     expect(new SimAdapter().stopEngines()).toBe(true);
     expect(stop).toHaveBeenCalledOnce();
+  });
+
+  it('normalizes older saved profiles keyed by aircraft name', () => {
+    vi.stubGlobal('window', { geofs: { aircraft: {
+      instance: { id: 1234, aircraftRecord: { name: 'Boeing 737-800' } }
+    } } });
+    const adapter = new SimAdapter();
+    adapter.setAircraftOverrides(parseAircraftOverrides({
+      ' Boeing 737-800 ': { vSpeeds: { vref: 142 } },
+      '1234': { category: 'invalid' }
+    }));
+    expect(adapter.getAircraftProfile()?.vSpeeds?.Vref).toBe(142);
   });
 
   it('keeps valid partial overrides and rejects invalid profile values', () => {

@@ -35,6 +35,33 @@ export function matchesKeyEvent(event: KeyboardEvent, combo: string): boolean {
   );
 }
 
+const GEOFS_DEFAULT_KEYS: Record<string, string> = {
+  a: 'Autopilot',
+  b: 'Airbrakes / Spoilers',
+  c: 'Cycle Camera',
+  e: 'Engine Start/Stop',
+  f: 'Flaps',
+  g: 'Landing Gear',
+  m: 'Map',
+  p: 'Pause Simulator',
+  s: 'Toggle Sound',
+  v: 'Cockpit View',
+  space: 'Wheel Brakes'
+};
+
+export function detectGeoFSKeyCollision(combo: string): string | null {
+  if (!combo) return null;
+  const parts = combo.split('+').map((p) => p.trim().toLowerCase()).filter(Boolean);
+  if (parts.length === 0) return null;
+  const hasModifier = parts.some((p) => p === 'shift' || p === 'ctrl' || p === 'alt' || p === 'cmd' || p === 'meta');
+  const key = parts[parts.length - 1];
+  if (!hasModifier) {
+    if (GEOFS_DEFAULT_KEYS[key]) return `Conflicts with GeoFS "${GEOFS_DEFAULT_KEYS[key]}" (${key.toUpperCase()})`;
+    if (/^[0-9]$/.test(key)) return `Conflicts with GeoFS Throttle / Preset (${key})`;
+  }
+  return null;
+}
+
 export class KeybindManager {
   public readonly os: OsPlatform = detectOsPlatform();
   private bindings = new Map<string, { combo: string; handler: () => void }>();

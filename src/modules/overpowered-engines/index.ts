@@ -9,6 +9,7 @@ export class OverpoweredEnginesModule implements IModule {
 
   private ctx: ModuleContext | null = null;
   private active = false;
+  private atEngaged = false;
   private multiplier = 2.5;
   private origMaxThrust: number | null = null;
   private origAcId: string | null = null;
@@ -27,6 +28,20 @@ export class OverpoweredEnginesModule implements IModule {
     this.unmounts.push(context.anchors.mountControl('op-engines-pad', 'bottom', btn));
     const combo = context.getSettings().keybindings.toggleOpEngines;
     this.unmounts.push(context.keybinds.register('op-toggle', combo, () => this.toggle()));
+    this.unmounts.push(
+      context.onEvent<{ engaged: boolean }>('autothrottle:state', (detail) => {
+        this.atEngaged = Boolean(detail?.engaged);
+        if (this.atEngaged) {
+          this.restoreOriginal();
+        } else if (this.active) {
+          this.ctx?.anchors.showToast(`OP ${this.multiplier}x Re-Engaged`);
+        }
+      })
+    );
+  }
+
+  public onSettingsChange(settings: import('../../types/settings').ExtensionSettings): void {
+    this.ctx?.keybinds.updateCombo('op-toggle', settings.keybindings.toggleOpEngines);
   }
 
   public toggle(): void {
@@ -47,7 +62,7 @@ export class OverpoweredEnginesModule implements IModule {
       this.origAcId = telemetry.aircraft.id;
       this.origMaxThrust = typeof def.maxThrust === 'number' ? def.maxThrust : null;
     }
-    if (this.active && this.origMaxThrust !== null) {
+    if (this.active && !this.atEngaged && this.origMaxThrust !== null) {
       def.maxThrust = this.origMaxThrust * this.multiplier;
     }
   }
