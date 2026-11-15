@@ -1,5 +1,5 @@
 import type { FlightTelemetry, SimMajorVersion } from '../types/module';
-import type { SimAdapter } from './SimAdapter';
+import type { SimAdapter } from './sim-adapter';
 
 export type TelemetryListener = (telemetry: FlightTelemetry) => void;
 

@@ -7,7 +7,7 @@ import {
   type LandingRecord,
   type ThemeMode
 } from '../types/settings';
-import { detectOsPlatform, formatComboForOs } from '../core/KeybindManager';
+import { detectOsPlatform, formatComboForOs } from '../core/keybind-manager';
 
 const SETTINGS_KEY = 'geofs_ext_settings';
 const LOGBOOK_KEY = 'geofs_ext_logbook';
