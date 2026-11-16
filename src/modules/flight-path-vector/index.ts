@@ -21,6 +21,7 @@ export class FlightPathVectorModule implements IModule {
   public readonly supportedMajors = [3, 4] as const;
   public readonly defaultEnabled = true;
 
+  private ctx: ModuleContext | null = null;
   private visible = true;
   private lastSample: { aircraft: GeoFSAircraftInstance; position: GeoFSCartesian; time: number } | undefined;
   private svgEl: SVGSVGElement | null = null;
@@ -30,6 +31,7 @@ export class FlightPathVectorModule implements IModule {
 
   public init(context: ModuleContext): void {
     this.visible = true;
+    this.ctx = context;
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 100 100');
     svg.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147482000;';
@@ -58,6 +60,10 @@ export class FlightPathVectorModule implements IModule {
     this.unmounts.push(context.anchors.mountControl('fpv-pad', 'corner', btn));
     const combo = context.getSettings().keybindings.toggleFpv;
     this.unmounts.push(context.keybinds.register('fpv-toggle', combo, () => this.toggle()));
+  }
+
+  public onSettingsChange(settings: import('../../types/settings').ExtensionSettings): void {
+    this.ctx?.keybinds.updateCombo('fpv-toggle', settings.keybindings.toggleFpv);
   }
 
   public toggle(): void {
@@ -127,5 +133,6 @@ export class FlightPathVectorModule implements IModule {
     this.svgEl = null;
     this.birdEl = null;
     this.btnEl = null;
+    this.ctx = null;
   }
 }
