@@ -1,4 +1,4 @@
-import { installAircraftSounds } from './aircraft-sounds';
+import { BOEING_777_IDS, installAircraftSounds } from './aircraft-sounds';
 import type { ExtensionSettings, RealismOptions } from '../../types/settings';
 import type { GeoFSAircraftInstance } from '../../types/geofs.d';
 import type { FlightTelemetry, IModule, ModuleContext, SimMajorVersion } from '../../types/module';
@@ -294,6 +294,83 @@ export class RealismPackModule implements IModule {
       if (now >= this.nextSpin) {
         this.nextSpin = now + 1000;
         this.spinSample = { time: now, pitch };
+      }
+    }
+
+    if (BOEING_777_IDS.has(id) && isEnabled(options, 'engineInertia')) {
+      this.update777Effects(aircraft, values, telemetry);
+    }
+  }
+
+  private update777Effects(
+    aircraft: GeoFSAircraftInstance,
+    values: NonNullable<NonNullable<typeof window.geofs>['animation']>['values'] & object,
+    telemetry: FlightTelemetry
+  ): void {
+    const hagl = telemetry.aglFeet;
+    const kias = telemetry.kias;
+    const rigid = aircraft.rigidBody;
+    if (hagl <= 100) {
+      rigid?.applyCentralImpulse?.([0, 0, (-hagl + 100) * kias]);
+    }
+    if (telemetry.aoa > 7) {
+      const headingRad = (Number(values.heading360) || telemetry.heading) * (Math.PI / 180);
+      const force = Math.random() * telemetry.aoa * 1000;
+      rigid?.applyTorqueImpulse?.([force * Math.sin(headingRad), force * Math.cos(headingRad), 0]);
+    }
+
+    const yaw = Number(values.yaw) || 0;
+    this.setValue(values, 'tiller', kias >= 50 ? yaw / (kias / 5) : yaw);
+    this.setValue(
+      values,
+      'spoilersShake',
+      values.airbrakesPosition === 1 ? 1 - (Math.random() / 20) * (kias / 200) : values.airbrakesPosition
+    );
+    this.setValue(
+      values,
+      'flapsShake',
+      values.flapsPosition === 6 ? (Math.random() / 20) * (kias / 100) : 0
+    );
+
+    const accZ = Number(values.accZ) || 0;
+    const wingLeftLift = aircraft.parts?.wingleft?.lift ?? 0;
+    const wingRightLift = aircraft.parts?.wingright?.lift ?? 0;
+    this.setValue(values, 'liftLeftWing', (-wingLeftLift / 200000) + accZ / 20);
+    this.setValue(values, 'liftRightWing', (-wingRightLift / 200000) + accZ / 20);
+    if (hagl <= 18) {
+      const rawTilt = (16.152139372973117 * hagl) / 15;
+      this.setValue(values, 'gearTilt', Math.max(18.5, Math.min(20, rawTilt)));
+    }
+
+    const setupParts = aircraft.setup?.parts;
+    if (setupParts) {
+      const tillerAnim = setupParts[106]?.animations?.[1];
+      if (tillerAnim) this.setValue(tillerAnim, 'value', 'tiller');
+      for (let i = 60; i <= 73; i++) {
+        const anim = setupParts[i]?.animations?.[0];
+        if (anim) this.setValue(anim, 'value', 'spoilersShake');
+      }
+      const leftWingAnims: Array<[number, number]> = [[3, 1], [4, 1], [5, 0], [6, 0], [7, 1]];
+      for (const [partIdx, animIdx] of leftWingAnims) {
+        const anim = setupParts[partIdx]?.animations?.[animIdx];
+        if (anim) this.setValue(anim, 'value', 'liftLeftWing');
+      }
+      const rightWingAnims: Array<[number, number]> = [[8, 1], [9, 0], [10, 0]];
+      for (const [partIdx, animIdx] of rightWingAnims) {
+        const anim = setupParts[partIdx]?.animations?.[animIdx];
+        if (anim) this.setValue(anim, 'value', 'liftRightWing');
+      }
+    }
+
+    const defParts = aircraft.definition?.parts;
+    if (defParts) {
+      for (const idx of [87, 98]) {
+        const anim = defParts[idx]?.animations?.[0];
+        if (anim) {
+          this.setValue(anim, 'value', 'gearTilt');
+          this.setValue(anim, 'offset', -27);
+          if ('lt' in anim) this.setValue(anim, 'lt', undefined);
+        }
       }
     }
   }

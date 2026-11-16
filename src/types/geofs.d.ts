@@ -55,6 +55,7 @@ export interface GeoFSAircraftDefinition {
   zeroRPMAltitude?: number;
   inertiaTensor?: unknown;
   tensorFactor?: unknown;
+  parts?: Array<{ animations?: Array<{ value?: string; offset?: number; lt?: unknown; [key: string]: unknown }>; [key: string]: unknown }>;
   [key: string]: unknown;
 }
 
@@ -63,6 +64,7 @@ export interface GeoFSEnginePart {
   afterBurnerThrust?: number;
   reverseThrust?: number;
   torque?: number;
+  lift?: number;
   [key: string]: unknown;
 }
 
@@ -97,11 +99,21 @@ export interface GeoFSAircraftInstance {
   engine?: GeoFSEngine;
   parts?: Record<string, GeoFSEnginePart>;
   definition?: GeoFSAircraftDefinition;
-  setup?: { mass?: number; parts?: Array<{ centerOfMass?: [number, number, number] }>; [key: string]: unknown };
+  setup?: {
+    mass?: number;
+    parts?: Array<{
+      centerOfMass?: [number, number, number];
+      animations?: Array<{ value?: string; offset?: number; [key: string]: unknown }>;
+      [key: string]: unknown;
+    }>;
+    [key: string]: unknown;
+  };
   aircraftRecord?: { id?: string | number; name?: string; [key: string]: unknown };
   rigidBody?: {
     mass?: number;
     applyTorque?: (torque: [number, number, number]) => void;
+    applyTorqueImpulse?: (torque: [number, number, number]) => void;
+    applyCentralImpulse?: (impulse: [number, number, number]) => void;
     getAngularVelocity?: () => [number, number, number];
     setAngularVelocity?: (velocity: [number, number, number]) => void;
     setMassProps?: (mass: number, inertia: unknown) => void;
@@ -236,10 +248,14 @@ declare global {
   interface Window {
     geofs?: GeoFSGlobal;
     audio?: {
+      on?: boolean;
       sounds?: Record<string, GeoFSSound>;
       soundplayer?: { stopSound?: (sound: GeoFSSound) => void };
     };
-    weather?: { localTime?: number; definition?: { turbulences?: number } };
+    weather?: { localTime?: number; currentWindSpeed?: number; definition?: { turbulences?: number } };
+    multiplayer?: {
+      visibleUsers?: Record<string, { distance?: number; referencePoint?: { lla?: [number, number, number] } }>;
+    };
     instruments?: GeoFSInstruments;
     controls?: GeoFSControls;
     Cesium?: {

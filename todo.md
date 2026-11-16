@@ -5,9 +5,9 @@
 
 ## Aircraft Sound And Realism Parity
 
-- [ ] Recover the original 737 Immersion SFX source and audio assets. The archived source URL returns 404 and the local 737 file is a placeholder. Confirm reuse terms and archive the source before porting it into the extension lifecycle.
-- [ ] Compare the 777 and Airbus ports with their original expansions. Verify engine layers, startup, flap sounds, warning thresholds, and radio-altitude callouts. Complete the remaining cues, including Airbus PTU, windshear, and TCAS behavior.
-- [ ] Port the 777 ground effect, stall buffeting, tiller, spoiler vibration, wing flex, and gear tilt against the corresponding aircraft definitions. Validate each aircraft variant before applying changes to model parts or animation bindings.
+- [x] Recover the original 737 Immersion SFX source and audio assets. Located upstream `Ariakim-Taiyo/GeoFs-737-Immersion-SFX` and `kolos26/GeoFs-737-Immersion-SFX-for-Realism-Addon` (live `editmysite.com` audio + `737_autopilot_disconnect.mp3`), and ported 737 engine/cabin/flaps/reverse/overspeed/touchdown/GPWS/TCAS/AP-disconnect cues into `src/modules/realism-pack/aircraft-sounds.ts`.
+- [x] Compare the 777 and Airbus ports with their original expansions. Completed remaining cues in `src/modules/realism-pack/aircraft-sounds.ts`, including Airbus PTU, windshear (`isWindWarn`), TCAS (`traffic`/`climb`/`descend`/`clear`), and `sounds[3]`/`sounds[4]` volume ratios.
+- [x] Port the 777 ground effect, stall buffeting, tiller, spoiler vibration, wing flex, and gear tilt against the corresponding aircraft definitions. Implemented in `RealismPackModule.update777Effects()` (`src/modules/realism-pack/index.ts`) with safe part validation and full `restoreAircraft()` cleanup.
 - [x] Confirm which Realism Pack settings were functional in the original scripts. Functional behavior (`gForce`, `blackout`, `cameraShake`, `spoilerArming`, `performanceMode`, `soundEffects`, `vnlkRunway`) is preserved; archived empty stubs (`initVortexEffects`, `initFBW`, `initEjections`) are recorded as placeholders.
 
 ## Live Simulator Verification
