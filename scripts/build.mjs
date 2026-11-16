@@ -67,7 +67,7 @@ if (process.argv.includes('--unpacked')) {
   mkdirSync(unpacked, { recursive: true });
 
   // Replace only the entries produced by this build.
-  for (const entry of ['manifest.json', 'content', 'icons', 'audio', 'popup']) {
+  for (const entry of ['manifest.json', 'background', 'content', 'icons', 'audio', 'popup']) {
     const destination = resolve(unpacked, entry);
     rmSync(destination, { recursive: true, force: true });
     cpSync(resolve(dist, entry), destination, { recursive: true });
