@@ -143,6 +143,7 @@ export interface GeoFSInstruments {
 }
 
 export interface GeoFSControls {
+  axisSetters?: { throttle?: { process?: (...args: unknown[]) => unknown } };
   throttle?: number;
   throttleLeft?: number;
   throttleRight?: number;
@@ -176,7 +177,15 @@ export interface GeoFSThrottlePid {
 export interface GeoFSGlobal {
   version?: string | number;
   isPaused?: () => boolean;
-  autopilot?: { on?: boolean; turnOff?: () => void; PIDs?: { throttle?: GeoFSThrottlePid } };
+  autopilot?: {
+    on?: boolean;
+    turnOff?: () => void;
+    speedMode?: string;
+    values?: { speed?: number };
+    setSpeed?: (speed: number) => void;
+    setSpeedMode?: (mode: string) => void;
+    PIDs?: { throttle?: GeoFSThrottlePid };
+  };
   aircraft?: {
     instance?: GeoFSAircraftInstance;
   };

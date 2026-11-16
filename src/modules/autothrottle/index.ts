@@ -1,3 +1,4 @@
+import { controlMarkup, controlStyles } from './controls';
 import type { GeoFSAircraftDefinition } from '../../types/geofs.d';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 
@@ -16,86 +17,70 @@ export class AutothrottleModule implements IModule {
 
   private ctx: ModuleContext | null = null;
   private engaged = false;
+  private hasEngaged = false;
   private machMode = false;
   private landingArmed = false;
-  private wasAirborne = false;
   private aircraftId: string | null = null;
   private targetKias = 250;
   private targetMach = 0.78;
   private reverse?: { definition: GeoFSAircraftDefinition; original: boolean | undefined };
-  private previousKias: number | null = null;
+  private previousSpeed: number | null = null;
   private acceleration = 0;
   private electricalFailure = false;
 
-  private toggleBtn: HTMLButtonElement | null = null;
-  private speedLabel: HTMLInputElement | null = null;
-  private modeBtn: HTMLButtonElement | null = null;
-  private armBtn: HTMLButtonElement | null = null;
+  private bar: HTMLElement | null = null;
+  private disengageTimer: ReturnType<typeof setTimeout> | undefined;
+  private restoreThrottleAxis?: () => void;
   private unmounts: Array<() => void> = [];
 
   public init(context: ModuleContext): void {
     this.ctx = context;
-
     const bar = document.createElement('div');
-    bar.style.cssText = 'display:inline-flex;align-items:center;gap:4px;';
+    bar.className = 'ext-autothrottle-bar';
+    bar.innerHTML = controlMarkup;
+    const style = document.createElement('style');
+    style.textContent = controlStyles;
+    document.head.append(style);
+    this.unmounts.push(() => style.remove());
+    this.bar = bar;
 
-    const toggleBtn = document.createElement('button');
-    toggleBtn.type = 'button';
-    toggleBtn.className = 'geofs-ext-pad';
-    toggleBtn.addEventListener('click', () => this.toggle());
+    for (const control of bar.querySelectorAll<HTMLElement>('a, [role="button"]')) {
+      control.tabIndex = 0;
+      control.setAttribute('role', 'button');
+      control.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        if (!event.repeat) control.click();
+      });
+      control.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (control.id === 'autothrottle-button') this.toggle();
+        else if (control.dataset.step) this.adjustSpeed(control.dataset.step === '1' ? 1 : -1);
+        else if (control.dataset.speedMode) this.setMode(control.dataset.speedMode === 'mach');
+        else if (control.dataset.arm) {
+          this.landingArmed = control.dataset.arm === 'on';
+          this.renderControls();
+        }
+      });
+    }
 
-    const downBtn = document.createElement('button');
-    downBtn.type = 'button';
-    downBtn.className = 'geofs-ext-pad';
-    downBtn.textContent = '-';
-    downBtn.addEventListener('click', () => this.adjustSpeed(-1));
-
-    const speedLabel = document.createElement('input');
-    speedLabel.type = 'number';
-    speedLabel.className = 'geofs-ext-pad';
-    speedLabel.style.width = '5em';
-    speedLabel.setAttribute('aria-label', 'Autothrottle target speed');
-    speedLabel.addEventListener('focus', () => speedLabel.select());
-    speedLabel.addEventListener('change', () => {
-      const speed = speedLabel.valueAsNumber;
-      if (Number.isFinite(speed) && speed > 0) {
-        if (this.machMode) this.targetMach = Math.min(10, speed);
-        else this.targetKias = Math.min(9999, Math.round(speed));
-      }
+    const speed = bar.querySelector<HTMLInputElement>('input')!;
+    speed.addEventListener('focus', () => speed.select());
+    speed.addEventListener('click', () => speed.select());
+    const readSpeed = () => {
+      const value = Number.parseFloat(speed.value);
+      if (!Number.isFinite(value) || value <= 0) return;
+      this.setTarget(value);
+    };
+    speed.addEventListener('input', readSpeed);
+    speed.addEventListener('change', () => {
+      readSpeed();
       this.renderControls();
     });
-
-    const upBtn = document.createElement('button');
-    upBtn.type = 'button';
-    upBtn.className = 'geofs-ext-pad';
-    upBtn.textContent = '+';
-    upBtn.addEventListener('click', () => this.adjustSpeed(1));
-
-    const modeBtn = document.createElement('button');
-    modeBtn.type = 'button';
-    modeBtn.className = 'geofs-ext-pad';
-    modeBtn.addEventListener('click', () => {
-      this.machMode = !this.machMode;
-      this.previousKias = null;
-      this.renderControls();
-    });
-
-    const armBtn = document.createElement('button');
-    armBtn.type = 'button';
-    armBtn.className = 'geofs-ext-pad';
-    armBtn.addEventListener('click', () => {
-      this.landingArmed = !this.landingArmed;
-      this.renderControls();
-    });
-
-    bar.append(toggleBtn, downBtn, speedLabel, upBtn, modeBtn, armBtn);
-    this.toggleBtn = toggleBtn;
-    this.speedLabel = speedLabel;
-    this.modeBtn = modeBtn;
-    this.armBtn = armBtn;
-    this.renderControls();
 
     this.unmounts.push(context.anchors.mountControl('autothrottle-pad', 'autopilot', bar));
+    this.attachToAutopilotBar();
+    this.renderControls();
     const combo = context.getSettings().keybindings.toggleAutothrottle;
     this.unmounts.push(context.keybinds.register('autothrottle-toggle', combo, () => this.toggle()));
     this.unmounts.push(context.onEvent<{ type: string }>('failure:triggered', ({ type }) => {
@@ -109,13 +94,54 @@ export class AutothrottleModule implements IModule {
     context.emitEvent('failure:request-active');
   }
 
-  public adjustSpeed(dir: -1 | 1): void {
-    if (this.machMode) {
-      this.targetMach = clamp(Number((this.targetMach + dir * 0.01).toFixed(2)), 0.01, 10);
-    } else {
-      this.targetKias = clamp(this.targetKias + dir * (this.targetKias < 100 ? 5 : 10), 1, 9999);
+  private attachToAutopilotBar(): void {
+    if (!this.bar || (this.bar.isConnected && this.bar.parentElement?.matches('.geofs-autopilot-bar'))) return;
+    const host = document.querySelector('.geofs-autopilot-bar');
+    if (host) host.append(this.bar);
+    this.bar.hidden = !host;
+  }
+
+  private setTarget(value: number): void {
+    if (this.machMode) this.targetMach = clamp(value, 0.01, 10);
+    else this.targetKias = clamp(Math.round(value), 1, 9999);
+    window.geofs?.autopilot?.setSpeed?.(this.machMode ? this.targetMach : this.targetKias);
+  }
+
+  private setMode(mach: boolean): void {
+    if (mach !== this.machMode) {
+      const values = window.geofs?.animation?.values;
+      const kias = values?.kias ?? 0;
+      const currentMach = values?.mach ?? 0;
+      const ratio = kias > 50 && currentMach > 0 ? kias / currentMach : 661.47;
+      this.machMode = mach;
+      this.previousSpeed = null;
+      this.applyNativeMode();
+      this.setTarget(mach ? this.targetKias / ratio : this.targetMach * ratio);
     }
     this.renderControls();
+  }
+
+  private applyNativeMode(): void {
+    window.geofs?.autopilot?.setSpeedMode?.(this.machMode ? 'mach' : this.ctx?.sim.getMajorVersion() === 3 ? 'knots' : 'kias');
+  }
+
+  public adjustSpeed(dir: -1 | 1): void {
+    const target = this.machMode
+      ? Number((this.targetMach + dir * 0.01).toFixed(6))
+      : this.targetKias + dir * (this.targetKias < 100 ? 5 : 10);
+    this.setTarget(target);
+    this.renderControls();
+  }
+
+  private suppressThrottleAxis(): void {
+    const setter = window.controls?.axisSetters?.throttle;
+    const original = setter?.process;
+    if (!setter || !original) return;
+    const suppressed = () => {};
+    setter.process = suppressed;
+    this.restoreThrottleAxis = () => {
+      if (setter.process === suppressed) setter.process = original;
+    };
   }
 
   public toggle(): void {
@@ -134,13 +160,24 @@ export class AutothrottleModule implements IModule {
       this.ctx.anchors.showToast('Autothrottle unavailable for the current aircraft or aircraft state.', 'warn');
       return;
     }
-    autopilot?.turnOff?.();
+    if (autopilot?.on) autopilot.turnOff?.();
     if (autopilot?.on) return;
+    clearTimeout(this.disengageTimer);
+    this.bar?.querySelector('#autothrottle-button')?.classList.remove('red-pad');
+    if (!this.hasEngaged) {
+      this.machMode = autopilot?.speedMode === 'mach';
+      const nativeTarget = autopilot?.values?.speed;
+      const current = this.machMode ? (snap.mach || 0.8) : (snap.kias || 250);
+      this.setTarget(nativeTarget && nativeTarget > 0 ? nativeTarget : current);
+      this.hasEngaged = true;
+    }
+    this.applyNativeMode();
+    this.setTarget(this.machMode ? this.targetMach : this.targetKias);
+    this.suppressThrottleAxis();
     this.engaged = true;
     this.aircraftId = snap.aircraft.id;
-    this.wasAirborne = !snap.groundContact;
     this.landingArmed = false;
-    this.previousKias = null;
+    this.previousSpeed = null;
     this.acceleration = 0;
     pid.initialize?.(snap.throttles[0] ?? 0, snap.kias);
     this.ctx.audio.playChime();
@@ -150,6 +187,7 @@ export class AutothrottleModule implements IModule {
   }
 
   public update(telemetry: FlightTelemetry): void {
+    this.attachToAutopilotBar();
     if (!this.engaged || !this.ctx) return;
     const sim = window.geofs;
     const instance = sim?.aircraft?.instance;
@@ -162,9 +200,7 @@ export class AutothrottleModule implements IModule {
       return;
     }
     if (telemetry.paused) return;
-    const touchdown = this.wasAirborne && telemetry.groundContact;
-    this.wasAirborne = !telemetry.groundContact;
-    if (this.landingArmed && touchdown) {
+    if (this.landingArmed && telemetry.groundContact) {
       this.ctx.sim.setThrottle(0);
       this.stop();
       this.ctx.anchors.showToast('Autothrottle Auto-Retard on Touchdown');
@@ -184,6 +220,8 @@ export class AutothrottleModule implements IModule {
       this.restoreReverse();
     }
 
+    this.bar?.querySelector<HTMLElement>('.ext-autothrottle-reverse')?.toggleAttribute('hidden', !this.reverse);
+
     const error = Math.abs(target - speed);
     const boostLimit = (instance?.setup?.mass ?? 1000) < 10_000 ? 200 : 500;
     const wantsBoost = target > boostLimit || Boolean(this.reverse && speed > boostLimit);
@@ -193,8 +231,8 @@ export class AutothrottleModule implements IModule {
     this.ctx.emitEvent('autothrottle:boost', { desired, report: (value: number) => { multiplier = value; } });
 
     const dt = clamp(telemetry.dt, 0.001, 0.1);
-    const acceleration = this.previousKias === null ? 0 : (telemetry.kias - this.previousKias) / dt;
-    this.previousKias = telemetry.kias;
+    const acceleration = this.previousSpeed === null ? 0 : (speed - this.previousSpeed) / dt;
+    this.previousSpeed = speed;
     if (Math.abs(acceleration * dt) < 2000) this.acceleration = this.acceleration * 0.8 + acceleration * 0.2;
 
     const ratio = clamp(error / 1000, 0, 1);
@@ -225,27 +263,38 @@ export class AutothrottleModule implements IModule {
     this.engaged = false;
     this.landingArmed = false;
     this.restoreReverse();
+    this.restoreThrottleAxis?.();
+    this.restoreThrottleAxis = undefined;
+    const button = this.bar?.querySelector('#autothrottle-button');
+    button?.classList.add('red-pad');
+    clearTimeout(this.disengageTimer);
+    this.disengageTimer = setTimeout(() => button?.classList.remove('red-pad'), 3000);
     this.renderControls();
     this.ctx?.emitEvent('autothrottle:state', { engaged: false });
   }
 
   private renderControls(): void {
-    if (this.toggleBtn) {
-      this.toggleBtn.classList.toggle('is-active', this.engaged);
-      this.toggleBtn.textContent = this.engaged ? 'A/T ON' : 'A/T OFF';
-    }
-    if (this.speedLabel) {
-      this.speedLabel.min = this.machMode ? '0.01' : '1';
-      this.speedLabel.max = this.machMode ? '10' : '9999';
-      this.speedLabel.step = this.machMode ? '0.01' : '1';
-      this.speedLabel.value = this.machMode ? this.targetMach.toFixed(2) : String(this.targetKias);
-    }
-    if (this.modeBtn) {
-      this.modeBtn.textContent = this.machMode ? 'MACH' : 'KTS';
-    }
-    if (this.armBtn) {
-      this.armBtn.classList.toggle('is-active', this.landingArmed);
-      this.armBtn.textContent = this.landingArmed ? 'ARM' : 'RET';
+    const bar = this.bar;
+    if (!bar) return;
+    const button = bar.querySelector('#autothrottle-button')!;
+    button.classList.toggle('green-pad', this.engaged);
+    button.setAttribute('aria-pressed', String(this.engaged));
+    bar.querySelector('.ext-autothrottle-controls')?.toggleAttribute('hidden', !this.engaged);
+    bar.querySelector('.ext-autothrottle-reverse')?.toggleAttribute('hidden', !this.reverse);
+
+    const speed = bar.querySelector<HTMLInputElement>('input')!;
+    speed.value = this.machMode ? this.targetMach.toFixed(6) : String(this.targetKias);
+    speed.removeAttribute('maxlength');
+    if (!this.machMode) speed.maxLength = 4;
+
+    for (const control of bar.querySelectorAll<HTMLElement>('[data-speed-mode], [data-arm]')) {
+      const off = control.dataset.arm === 'off';
+      const selected = control.dataset.arm
+        ? this.landingArmed !== off : this.machMode === (control.dataset.speedMode === 'mach');
+      control.classList.toggle('active', selected);
+      control.classList.toggle('green-pad', selected && !off);
+      control.classList.toggle('landing-selected', selected && off);
+      control.setAttribute('aria-pressed', String(selected));
     }
   }
 
@@ -258,10 +307,10 @@ export class AutothrottleModule implements IModule {
     this.electricalFailure = false;
     for (const u of this.unmounts) u();
     this.unmounts = [];
-    this.toggleBtn = null;
-    this.speedLabel = null;
-    this.modeBtn = null;
-    this.armBtn = null;
+    clearTimeout(this.disengageTimer);
+    this.disengageTimer = undefined;
+    this.bar = null;
+    this.hasEngaged = false;
     this.ctx = null;
   }
 }
