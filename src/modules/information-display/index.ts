@@ -17,9 +17,12 @@ export class InformationDisplayModule implements IModule {
   public init(context: ModuleContext): void {
     const root = document.createElement('div');
     root.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px;">
         <span data-field="ac-name" style="font-weight:700;">Loading Aircraft...</span>
-        <span data-field="ac-cat" style="font-size:9px;opacity:0.7;text-transform:uppercase;">--</span>
+        <span style="display:inline-flex;gap:4px;align-items:center;">
+          <span data-field="ac-id" style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(128,128,128,0.25);font-weight:700;">ID --</span>
+          <span data-field="ac-cat" style="font-size:9px;opacity:0.7;text-transform:uppercase;">--</span>
+        </span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;font-size:11px;">
         <div>KIAS: <strong data-field="kias">--</strong></div>
@@ -32,6 +35,10 @@ export class InformationDisplayModule implements IModule {
         <div>GS DEV: <strong data-field="glideslope">--</strong></div>
         <div>AOA: <strong data-field="aoa">--</strong></div>
         <div>G: <strong data-field="g">--</strong></div>
+        <div>FLAPS: <strong data-field="flaps">--</strong></div>
+        <div>GEAR: <strong data-field="gear">--</strong></div>
+        <div>BRK: <strong data-field="brk">--</strong></div>
+        <div>POS: <strong data-field="pos">--</strong></div>
         <div><span data-field="power-label">THR</span>: <strong data-field="thr">--</strong></div>
         <div data-field="rotor-torque" hidden></div>
       </div>
@@ -56,7 +63,8 @@ export class InformationDisplayModule implements IModule {
       this.trend = '';
     }
 
-    this.setText('ac-name', telemetry.aircraft ? `${telemetry.aircraft.name} (${telemetry.aircraft.id})` : 'No Aircraft');
+    this.setText('ac-name', telemetry.aircraft ? telemetry.aircraft.name : 'No Aircraft');
+    this.setText('ac-id', telemetry.aircraft ? `ID ${telemetry.aircraft.id}` : 'ID --');
     this.setText('ac-cat', telemetry.aircraft?.category ?? '--');
     this.setText('kias', `${telemetry.kias.toFixed(1)}${this.trend}`);
     this.setText('mach', telemetry.mach.toFixed(2));
@@ -76,6 +84,11 @@ export class InformationDisplayModule implements IModule {
 
     const gColor = telemetry.gForce > 3 || telemetry.gForce < -1 ? '#ef4444' : '';
     this.setText('g', telemetry.gForce.toFixed(1), gColor);
+
+    this.setText('flaps', `${telemetry.flapsTarget}/${telemetry.aircraft?.maxFlaps ?? 0}`);
+    this.setText('gear', telemetry.gearDown ? 'DOWN' : 'UP', telemetry.gearDown ? '#22c55e' : '');
+    this.setText('brk', telemetry.parkingBrake ? 'PARK' : 'OFF', telemetry.parkingBrake ? '#eab308' : '');
+    this.setText('pos', `${telemetry.lat.toFixed(2)}, ${telemetry.lon.toFixed(2)}`);
 
     this.setText('v-speeds', formatVSpeeds(telemetry.aircraft?.vSpeeds, telemetry.aircraft?.machSpeeds));
     const rotorcraft = telemetry.aircraft?.category === 'rotorcraft';

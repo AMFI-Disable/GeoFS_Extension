@@ -130,6 +130,7 @@ export class ChecklistSystemModule implements IModule {
   private rootEl: HTMLDivElement | null = null;
   private unmounts: Array<() => void> = [];
   private activePhase = 0;
+  private autoAdvance = false;
   private phaseTitles: string[] = [];
   private emergencies = new Map<string, ChecklistProcedure>();
   private lastAircraftKey = '';
@@ -206,15 +207,43 @@ export class ChecklistSystemModule implements IModule {
       ...item,
       checked: this.manualDone.has(item.id) || Boolean(item.autoCheck?.(telemetry))
     }));
+    if (this.autoAdvance && items.length > 0 && items.every((i) => i.checked) && this.activePhase < this.phaseTitles.length - 1) {
+      this.activePhase += 1;
+      this.lastRender = '';
+      return;
+    }
     const speeds = formatVSpeeds(telemetry.aircraft.vSpeeds, telemetry.aircraft.machSpeeds);
-    const render = JSON.stringify([key, telemetry.aircraft.name, this.activePhase, this.phaseTitles, speeds, items.map((item) => [item.id, item.checked])]);
+    const render = JSON.stringify([key, telemetry.aircraft.name, this.activePhase, this.autoAdvance, this.phaseTitles, speeds, items.map((item) => [item.id, item.checked])]);
     if (render === this.lastRender) return;
     this.lastRender = render;
     this.rootEl.replaceChildren();
 
     const title = document.createElement('div');
-    title.style.cssText = 'font-weight:700;margin-bottom:6px;text-transform:uppercase;font-size:10px;';
-    title.textContent = `${telemetry.aircraft.name} • ${cat}`;
+    title.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:6px;text-transform:uppercase;font-size:10px;gap:4px;';
+    const titleText = document.createElement('span');
+    titleText.textContent = `${telemetry.aircraft.name} • ${cat}`;
+    const actions = document.createElement('span');
+    actions.style.cssText = 'display:inline-flex;gap:3px;';
+    const autoBtn = document.createElement('button');
+    autoBtn.type = 'button';
+    autoBtn.className = `geofs-ext-hud-tab ${this.autoAdvance ? 'is-active' : ''}`;
+    autoBtn.textContent = 'AUTO';
+    autoBtn.title = 'Auto-advance phase when all items checked';
+    autoBtn.addEventListener('click', () => {
+      this.autoAdvance = !this.autoAdvance;
+      this.lastRender = '';
+    });
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.className = 'geofs-ext-hud-tab';
+    resetBtn.textContent = 'RST';
+    resetBtn.title = 'Reset manual ticks';
+    resetBtn.addEventListener('click', () => {
+      this.manualDone.clear();
+      this.lastRender = '';
+    });
+    actions.append(autoBtn, resetBtn);
+    title.append(titleText, actions);
     this.rootEl.appendChild(title);
 
     const phaseBar = document.createElement('div');

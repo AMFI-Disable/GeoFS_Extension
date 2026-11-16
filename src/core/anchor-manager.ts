@@ -221,7 +221,24 @@ export class AnchorManager {
 
     const header = document.createElement('div');
     header.className = 'geofs-ext-hud-header';
-    header.textContent = 'GEOFS FLIGHT SUITE';
+
+    const title = document.createElement('span');
+    title.textContent = 'GEOFS FLIGHT SUITE';
+
+    const minBtn = document.createElement('button');
+    minBtn.type = 'button';
+    minBtn.className = 'geofs-ext-hud-min';
+    minBtn.title = 'Minimize / Restore HUD';
+    minBtn.textContent = '−';
+    minBtn.addEventListener('click', () => {
+      const minimized = root.classList.toggle('is-minimized');
+      minBtn.textContent = minimized ? 'HUD' : '−';
+      title.style.display = minimized ? 'none' : '';
+      tabs.style.display = minimized ? 'none' : '';
+      body.style.display = minimized ? 'none' : '';
+    });
+
+    header.append(title, minBtn);
 
     const tabs = document.createElement('div');
     tabs.className = 'geofs-ext-hud-tabs';
@@ -310,11 +327,46 @@ export class AnchorManager {
       }
       .geofs-ext-landing-report dd { margin: 0; text-align: right; }
       .geofs-ext-hud-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         font-size: 10px;
         font-weight: 700;
         letter-spacing: 0.8px;
         color: var(--geofs-ext-muted);
         margin-bottom: 6px;
+        cursor: move;
+        user-select: none;
+      }
+      .geofs-ext-hud-min {
+        background: transparent;
+        color: var(--geofs-ext-fg);
+        border: 1px solid var(--geofs-ext-border);
+        border-radius: 6px;
+        padding: 1px 6px;
+        font-size: 10px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      #geofs-ext-hud.is-minimized {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: move;
+      }
+      #geofs-ext-hud.is-minimized .geofs-ext-hud-header {
+        margin-bottom: 0;
+      }
+      #geofs-ext-hud.is-minimized .geofs-ext-hud-min {
+        border: none;
+        padding: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
       }
       .geofs-ext-hud-tabs {
         display: flex;
