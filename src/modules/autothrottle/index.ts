@@ -29,6 +29,7 @@ export class AutothrottleModule implements IModule {
   private electricalFailure = false;
 
   private bar: HTMLElement | null = null;
+  private reverseIndicator: HTMLElement | null = null;
   private disengageTimer: ReturnType<typeof setTimeout> | undefined;
   private restoreThrottleAxis?: () => void;
   private unmounts: Array<() => void> = [];
@@ -37,14 +38,16 @@ export class AutothrottleModule implements IModule {
     this.ctx = context;
     const bar = document.createElement('div');
     bar.className = 'ext-autothrottle-bar';
-    bar.innerHTML = controlMarkup;
+    const major = context.sim.getMajorVersion() ?? 4;
+    bar.innerHTML = controlMarkup(major);
+    this.reverseIndicator = bar.querySelector(major === 3 ? '#V39-at-rev' : '#V40-at-rev');
     const style = document.createElement('style');
     style.textContent = controlStyles;
     document.head.append(style);
     this.unmounts.push(() => style.remove());
     this.bar = bar;
 
-    for (const control of bar.querySelectorAll<HTMLElement>('a, [role="button"]')) {
+    for (const control of bar.querySelectorAll<HTMLElement>('a, #autothrottle-button')) {
       control.tabIndex = 0;
       control.setAttribute('role', 'button');
       control.addEventListener('keydown', (event) => {
@@ -55,10 +58,10 @@ export class AutothrottleModule implements IModule {
       control.addEventListener('click', (event) => {
         event.stopPropagation();
         if (control.id === 'autothrottle-button') this.toggle();
-        else if (control.dataset.step) this.adjustSpeed(control.dataset.step === '1' ? 1 : -1);
-        else if (control.dataset.speedMode) this.setMode(control.dataset.speedMode === 'mach');
-        else if (control.dataset.arm) {
-          this.landingArmed = control.dataset.arm === 'on';
+        else if (control.matches('.numberDown, .numberUp')) this.adjustSpeed(control.matches('.numberUp') ? 1 : -1);
+        else if (control.dataset.method === 'setAutothrottleSpeedMode') this.setMode(control.id === 'machMode');
+        else if (control.dataset.method === 'setArm') {
+          this.landingArmed = control.id === 'armOn';
           this.renderControls();
         }
       });
@@ -80,6 +83,12 @@ export class AutothrottleModule implements IModule {
 
     this.unmounts.push(context.anchors.mountControl('autothrottle-pad', 'autopilot', bar));
     this.attachToAutopilotBar();
+    const tooltips = Array.from(bar.querySelectorAll('.mdl-tooltip'));
+    const components = window.componentHandler;
+    if (components) {
+      for (const tooltip of tooltips) components.upgradeElement(tooltip);
+      this.unmounts.push(() => components.downgradeElements?.(tooltips));
+    }
     this.renderControls();
     const combo = context.getSettings().keybindings.toggleAutothrottle;
     this.unmounts.push(context.keybinds.register('autothrottle-toggle', combo, () => this.toggle()));
@@ -98,7 +107,7 @@ export class AutothrottleModule implements IModule {
     if (!this.bar || (this.bar.isConnected && this.bar.parentElement?.matches('.geofs-autopilot-bar'))) return;
     const host = document.querySelector('.geofs-autopilot-bar');
     if (host) host.append(this.bar);
-    this.bar.hidden = !host;
+    this.bar.style.display = host ? '' : 'none';
   }
 
   private setTarget(value: number): void {
@@ -220,7 +229,7 @@ export class AutothrottleModule implements IModule {
       this.restoreReverse();
     }
 
-    this.bar?.querySelector<HTMLElement>('.ext-autothrottle-reverse')?.toggleAttribute('hidden', !this.reverse);
+    if (this.reverseIndicator) this.reverseIndicator.style.display = this.reverse ? 'block' : 'none';
 
     const error = Math.abs(target - speed);
     const boostLimit = (instance?.setup?.mass ?? 1000) < 10_000 ? 200 : 500;
@@ -279,18 +288,18 @@ export class AutothrottleModule implements IModule {
     const button = bar.querySelector('#autothrottle-button')!;
     button.classList.toggle('green-pad', this.engaged);
     button.setAttribute('aria-pressed', String(this.engaged));
-    bar.querySelector('.ext-autothrottle-controls')?.toggleAttribute('hidden', !this.engaged);
-    bar.querySelector('.ext-autothrottle-reverse')?.toggleAttribute('hidden', !this.reverse);
+    bar.querySelector<HTMLElement>('.ext-autothrottle-controls')!.style.display = this.engaged ? 'block' : 'none';
+    if (this.reverseIndicator) this.reverseIndicator.style.display = this.reverse ? 'block' : 'none';
 
     const speed = bar.querySelector<HTMLInputElement>('input')!;
-    speed.value = this.machMode ? this.targetMach.toFixed(6) : String(this.targetKias);
+    if (this.hasEngaged) speed.value = this.machMode ? this.targetMach.toFixed(6) : String(this.targetKias);
     speed.removeAttribute('maxlength');
     if (!this.machMode) speed.maxLength = 4;
 
-    for (const control of bar.querySelectorAll<HTMLElement>('[data-speed-mode], [data-arm]')) {
-      const off = control.dataset.arm === 'off';
-      const selected = control.dataset.arm
-        ? this.landingArmed !== off : this.machMode === (control.dataset.speedMode === 'mach');
+    for (const control of bar.querySelectorAll<HTMLElement>('.ext-autothrottle-switch a')) {
+      const off = control.id === 'armOff';
+      const selected = control.dataset.method === 'setArm'
+        ? this.landingArmed !== off : this.machMode === (control.id === 'machMode');
       control.classList.toggle('active', selected);
       control.classList.toggle('green-pad', selected && !off);
       control.classList.toggle('landing-selected', selected && off);
@@ -310,6 +319,7 @@ export class AutothrottleModule implements IModule {
     clearTimeout(this.disengageTimer);
     this.disengageTimer = undefined;
     this.bar = null;
+    this.reverseIndicator = null;
     this.hasEngaged = false;
     this.ctx = null;
   }

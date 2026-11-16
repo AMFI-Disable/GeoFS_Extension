@@ -256,6 +256,10 @@ export interface GeoFSCartesian {
 declare global {
   interface Window {
     geofs?: GeoFSGlobal;
+    componentHandler?: {
+      upgradeElement: (element: Element) => void;
+      downgradeElements?: (elements: Element[]) => void;
+    };
     audio?: {
       on?: boolean;
       sounds?: Record<string, GeoFSSound>;
