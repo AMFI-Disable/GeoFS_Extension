@@ -58,11 +58,17 @@ window.addEventListener('message', (event) => {
       chrome.storage.sync.set({ [SETTINGS_KEY]: next });
     });
   } else if (msg.type === 'GEOFS_EXT_LANDING_RECORD' && msg.record) {
-    chrome.storage.local.get([LOGBOOK_KEY], (res) => {
-      const list = Array.isArray(res[LOGBOOK_KEY]) ? (res[LOGBOOK_KEY] as LandingRecord[]) : [];
-      const updated = [msg.record!, ...list].slice(0, 100);
-      chrome.storage.local.set({ [LOGBOOK_KEY]: updated });
-    });
+    if (chrome.runtime?.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'GEOFS_EXT_APPEND_LOGBOOK', record: msg.record }, () => {
+        void chrome.runtime.lastError;
+      });
+    } else {
+      chrome.storage.local.get([LOGBOOK_KEY], (res) => {
+        const list = Array.isArray(res[LOGBOOK_KEY]) ? (res[LOGBOOK_KEY] as LandingRecord[]) : [];
+        const updated = [msg.record!, ...list.filter((r) => r.id !== msg.record!.id)].slice(0, 100);
+        chrome.storage.local.set({ [LOGBOOK_KEY]: updated });
+      });
+    }
   } else if (msg.type === 'GEOFS_EXT_LIVE_TELEMETRY') {
     latestTelemetry = msg.telemetry;
   }

@@ -4,6 +4,7 @@ import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-ada
 import { ModuleManager } from '../src/core/module-manager';
 import { detectGeoFSKeyCollision, formatComboForOs } from '../src/core/keybind-manager';
 import { formatLogbookCsv } from '../src/core/logbook-export';
+import { SerializedLogbookStore } from '../src/background/logbook-store';
 import { hasAircraftCallouts, installAircraftSounds } from '../src/modules/realism-pack/aircraft-sounds';
 import { buildGForceShader } from '../src/modules/realism-pack';
 import { rateLanding, scoreLanding } from '../src/modules/landing-statistics';
@@ -245,5 +246,40 @@ describe('Archived Engine and Flight Path Behavior', () => {
     expect(projectFlightPath(previous, current, camera, 0.5)).toEqual({ x: 65, y: 90, z: 64 });
     expect(projectFlightPath(previous, current, camera, 6)).toBeNull();
     expect(projectFlightPath(current, current, camera, 0.5)).toBeNull();
+  });
+
+  it('serializes concurrent logbook writes without dropping records', async () => {
+    let mem: import('../src/types/settings').LandingRecord[] = [];
+    const store = new SerializedLogbookStore({
+      get: async () => {
+        await new Promise((r) => setTimeout(r, 5));
+        return mem;
+      },
+      set: async (_k, next) => {
+        await new Promise((r) => setTimeout(r, 5));
+        mem = next;
+      }
+    });
+
+    const base = {
+      timestamp: '2026-11-16T00:00:00Z',
+      aircraftId: '24',
+      aircraftName: 'Airbus A350-900',
+      vsFpm: -80,
+      gForce: 1.05,
+      rollDeg: 0.4,
+      groundSpeedKts: 135,
+      rating: 'Butter' as const,
+      lat: 37.62,
+      lon: -122.38
+    };
+
+    await Promise.all([
+      store.append({ ...base, id: 'stable-tab-1' }),
+      store.append({ ...base, id: 'beta-tab-2' }),
+      store.append({ ...base, id: 'stable-tab-1' })
+    ]);
+
+    expect(mem.map((r) => r.id)).toEqual(['stable-tab-1', 'beta-tab-2']);
   });
 });

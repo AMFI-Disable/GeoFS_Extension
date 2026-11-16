@@ -12,12 +12,21 @@ const shouldZip = process.argv.includes('--zip');
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(resolve(dist, 'content'), { recursive: true });
+mkdirSync(resolve(dist, 'background'), { recursive: true });
 
 // 1. Build Preact popup UI via Vite
 await viteBuild({ configFile: resolve(root, 'vite.config.ts') });
 
-// 2. Bundle self-contained MV3 content scripts (ISOLATED + MAIN)
+// 2. Bundle self-contained MV3 scripts (background + ISOLATED + MAIN)
 await Promise.all([
+  esbuild({
+    entryPoints: [resolve(root, 'src/background/service-worker.ts')],
+    bundle: true,
+    minify: true,
+    format: 'iife',
+    target: 'chrome120',
+    outfile: resolve(dist, 'background/service-worker.js')
+  }),
   esbuild({
     entryPoints: [resolve(root, 'src/content/bridge.ts')],
     bundle: true,
