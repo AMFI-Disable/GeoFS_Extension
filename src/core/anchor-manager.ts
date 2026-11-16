@@ -20,6 +20,7 @@ export class AnchorManager {
   private currentTheme: 'dark' | 'light' = 'dark';
   private currentPreset: CalibratorPreset = '1080p';
   private mountedControls = new Map<string, HTMLElement>();
+  private dragCleanups = new Set<() => void>();
 
   public init(): void {
     if (typeof document === 'undefined') return;
@@ -137,6 +138,82 @@ export class AnchorManager {
     return fallback;
   }
 
+  public makeDraggable(card: HTMLElement, storageKey: string): () => void {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return () => {};
+    let isDragging = false;
+    let dragMoved = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const { left, top } = JSON.parse(saved) as { left?: string; top?: string };
+        if (left && top) {
+          card.style.left = left;
+          card.style.top = top;
+          card.style.bottom = 'auto';
+          card.style.right = 'auto';
+        }
+      }
+    } catch {
+      // ignore invalid saved coordinates
+    }
+
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && ['BUTTON', 'INPUT', 'A', 'SELECT', 'TEXTAREA', 'LABEL'].includes(target.tagName)) return;
+      isDragging = true;
+      dragMoved = false;
+      const rect = card.getBoundingClientRect();
+      dragOffsetX = e.clientX - rect.left;
+      dragOffsetY = e.clientY - rect.top;
+      card.style.left = `${rect.left}px`;
+      card.style.top = `${rect.top}px`;
+      card.style.bottom = 'auto';
+      card.style.right = 'auto';
+      card.style.cursor = 'grabbing';
+      e.preventDefault();
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      dragMoved = true;
+      const maxX = Math.max(0, window.innerWidth - card.offsetWidth);
+      const maxY = Math.max(0, window.innerHeight - card.offsetHeight);
+      const newLeft = Math.max(0, Math.min(e.clientX - dragOffsetX, maxX));
+      const newTop = Math.max(0, Math.min(e.clientY - dragOffsetY, maxY));
+      card.style.left = `${newLeft}px`;
+      card.style.top = `${newTop}px`;
+    };
+
+    const onMouseUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      card.style.cursor = 'default';
+      if (dragMoved) {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify({ left: card.style.left, top: card.style.top }));
+        } catch {
+          // ignore storage quota errors
+        }
+      }
+    };
+
+    card.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    const cleanup = () => {
+      card.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      this.dragCleanups.delete(cleanup);
+    };
+    this.dragCleanups.add(cleanup);
+    return cleanup;
+  }
+
   private ensureHud(): void {
     if (typeof document === 'undefined' || this.hudRoot || !document.body) return;
     const root = document.createElement('div');
@@ -154,6 +231,7 @@ export class AnchorManager {
 
     root.append(header, tabs, body);
     document.body.appendChild(root);
+    this.makeDraggable(root, 'geofs_ext_hud_pos');
 
     this.hudRoot = root;
     this.hudTabsEl = tabs;
@@ -310,6 +388,7 @@ export class AnchorManager {
   }
 
   public destroy(): void {
+    for (const cleanup of Array.from(this.dragCleanups)) cleanup();
     for (const el of this.mountedControls.values()) el.remove();
     this.mountedControls.clear();
     this.hudRoot?.remove();

@@ -263,6 +263,7 @@ export class LandingStatisticsModule implements IModule {
     passenger.textContent = record.passengerFeedback ?? '';
     report.append(close, title, stats, quality, passenger);
     document.body.append(report);
+    this.ctx?.anchors.makeDraggable(report, 'geofs_ext_landing_report_pos');
     this.report = report;
     this.reportOpen = true;
     this.scheduleReportClose();
