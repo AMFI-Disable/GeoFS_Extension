@@ -20,14 +20,12 @@
 
 ## Key Features
 
-- **Unified V3 And V4 SimAdapter**: Automatically detects GeoFS major version (`3` or `4`, ignoring minor updates) and normalizes throttle channels, flaps, gear, aircraft classification, and day/night lighting.
-- **Dual-World Manifest V3 Bridge**: Executes simulator hooks in the `MAIN` world (`src/content/main.ts`) while isolating `chrome.storage` persistence in the `ISOLATED` world (`src/content/bridge.ts`).
-- **Centralized TelemetryBus**: Single `requestAnimationFrame` loop powering all active modules with zero global scope pollution and leak-free hot-toggling.
-- **Modular Addon Suite**: Includes Autothrottle (GeoFS PID with KIAS and Mach modes), Information Display (multi-engine `% THR` / `[REV]`), Fuel Simulator, Overpowered Engines, Type-Aware Checklist System, Realism Pack (adaptive GLSL 3.00 ES / 1.00 shaders), Failure Simulator, SVG Flight Path Vector, Landing Statistics + Logbook, and Configurable Satellite Imagery.
-- **Preact And TypeScript Popup**: Toggle modules live, calibrate HUD scaling (`1080p`, `1440p`, `4K`, `Ultrawide`, `Laptop`), customize OS-aware keybindings, and review your persistent landing logbook.
-- **Aircraft Profiles And V-Speeds**: Setup lets you save overrides for the active aircraft. INFO and CHK show reference speeds supplied by the simulator or entered in Setup. Rotorcraft have their own checklists, collective display, and torque display when the aircraft supplies torque.
-- **Landing Replay Export**: Logbook entries can export up to 30 seconds of approach and touchdown telemetry as JSON or CSV. Older entries export their touchdown summary.
-- **Popup Appearance**: In Setup, choose Light, Dark, or Auto (System). The panel inside GeoFS follows the simulator’s local time.
+- **Unified V3 And V4 SimAdapter**: Automatically detects GeoFS major version (`3` or `4`, ignoring minor updates) and normalizes multi-channel throttles, flaps, gear, spoilers, rotorcraft collective/torque, V-speeds, and `AIRCRAFT_CATALOG` profiles.
+- **Separated Storage And Multi-Surface Chrome UI**: Splits extension configuration (`geofs_ext_config`) from in-sim behavior (`geofs_script_config`) across three coordinated MV3 surfaces: a compact **Toolbar Popup**, a docked **Chrome Side Panel** (`[GeoFS-EXT][DIAG]` stream + Realism Pack switches with V4 `UNAVAILABLE` guards), and a 4-tab **Full Settings Page** in a new tab.
+- **Titleless Four-Tab Shared HUD (`#flightDataDisplay`)**: Uses Native GeoFS dark glass styling (`rgba(0, 0, 0, 0.8)`, `1px solid #888`, `15px` radius, zero blur), hosting `INFO`, `CHECKS`, `FUEL`, and `LAND` with a `40×40` `HUD` circle minimize toggle and a `24×40` left-edge handle.
+- **Autothrottle, Overpowered Engines, And Effective SAS**: Combines GeoFS PID speed hold (`'LCD-Bold'` `LANDING` label and upgraded `.mdl-tooltip` hints), configurable **OP-SYNC** high-delta confirmation (`Ask`, `Allow`, `Never`), Native-styled `#opEngineCard`, and closed-loop `EffectiveSasController` attitude hold and rate damping.
+- **Four-Gate Aircraft Checklists And Failure QRH Overrides**: Provides `PRE-T/O`, `PRE-CRZ`, `PRE-LDG`, and `CHOCKS` tailored per aircraft with hardware actuation and live telemetry auto-checks, expandable situational reference guides, plus standalone `#geofs-failure-menu` fault injection, emergency QRH overrides, and recovery/contingency branching.
+- **Fuel Weight Physics, Realism SFX, 3D FPV, And Logbook**: Supports multi-throttle `ALTITUDE BURN` (`1.35x` reverse scaling), `REAL TANKS` center/wing imbalance and `rigidBody.setMassProps` mass updates, background V3/V4 shaders and 737/777/A320 immersion audio, bundled `512×512` `fpv_hires.png` Cesium 3D billboard + `#flightDataDisplay0` glideslope box, slide-in `#statsCard`, and serialized JSON/CSV replay exports.
 
 ---
 
@@ -36,11 +34,12 @@
 | Action | Default Shortcut (Windows / Linux) | Default Shortcut (macOS) |
 | :--- | :--- | :--- |
 | Toggle Autothrottle | `Shift + A` | `Shift + A` |
-| Toggle Flight Path Vector | `Shift + V` | `Shift + V` |
-| Cycle Checklist Phase | `Shift + C` | `Shift + C` |
-| Trigger Failure Drill | `Shift + F` | `Shift + F` |
+| Toggle Overpowered Engines Card | `Shift + O` | `Shift + O` |
+| Toggle Shared HUD | `Shift + H` | `Shift + H` |
+| Toggle Flight Path Vector | `Shift + F` | `Shift + F` |
+| Open Checklists Tab / Advance Gate | `Shift + C` | `Shift + C` |
 
-*(All keybindings can be inspected and customized in the extension popup.)*
+*(All keybindings can be inspected and customized in the Full Settings Page with GeoFS hotkey collision detection.)*
 
 ---
 
@@ -51,15 +50,16 @@ npm ci
 npm run typecheck
 npm test
 npm run build:unpacked
+npm run test:e2e
 ```
 
-1. Open `chrome://extensions` in Chromium/Chrome.
+1. Open `chrome://extensions` in Chromium or Chrome.
 2. Enable **Developer mode**.
-3. Click **Load unpacked** and select the generated sibling `GeoFS Extension` folder.
-4. Reload any open GeoFS tab to activate the addons.
+3. Click **Load unpacked** and select the generated sibling `GeoFS Extension` folder (or run `npm run test:e2e` for automated Chromium verification).
+4. Reload any open GeoFS V3.9 (`www.geo-fs.com`) or V4.0 (`beta.geo-fs.com`) tab and follow the [Live Verification Guide](docs/live-verification-guide.md).
 5. For packaged releases, see [GitHub Releases](https://github.com/AMFI-Disable/GeoFS_Extension/releases).
 
-For each commit you want to test, run `npm run build:unpacked` from the checkout and click **Reload** on the extension card. The command also creates the standard `dist/` output.
+For each commit you want to test, run `npm run build:unpacked` from the checkout and click **Reload** on the extension card. The command also refreshes `dist/`.
 
 ---
 

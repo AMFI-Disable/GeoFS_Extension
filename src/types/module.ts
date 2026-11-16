@@ -71,6 +71,8 @@ export interface ModuleContext {
   anchors: AnchorManager;
   keybinds: KeybindManager;
   getAudioUrl?: (file: string) => string | undefined;
+  getAssetUrl?: (file: string) => string | undefined;
+  emitDiag?: (code: string, payload?: unknown) => void;
   getSettings: () => ExtensionSettings;
   updateSettings: (patch: Partial<ExtensionSettings>) => void;
   emitEvent: <T = unknown>(event: string, detail?: T) => void;

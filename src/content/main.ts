@@ -25,32 +25,68 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
 
   const startSuite = (simMajor: 3 | 4) => {
     let settings: ExtensionSettings = { ...DEFAULT_SETTINGS };
-
     let audioBase: string | undefined;
+    let assetBase: string | undefined;
+
+    const emitDiag = (code: string, payload?: unknown) => {
+      const entry = { time: new Date().toISOString(), code, payload };
+      if (!Array.isArray(window.__geofsExtDiag)) window.__geofsExtDiag = [];
+      window.__geofsExtDiag.push(entry);
+      if (window.__geofsExtDiag.length > 100) window.__geofsExtDiag.shift();
+      console.info(`[GeoFS-EXT][DIAG] ${code}`, payload ?? '');
+      window.postMessage({ type: 'GEOFS_EXT_DIAG', entry }, '*');
+    };
+
     const sim = new SimAdapter();
     const audio = new AudioEngine();
     const keybinds = new KeybindManager();
     const anchors = new AnchorManager();
     const bus = new TelemetryBus(sim, simMajor);
 
+    const mergePatch = (patch: Partial<ExtensionSettings>): ExtensionSettings => ({
+      ...settings,
+      ...patch,
+      modules: patch.modules ? { ...settings.modules, ...patch.modules } : settings.modules,
+      keybindings: patch.keybindings ? { ...settings.keybindings, ...patch.keybindings } : settings.keybindings,
+      failureSystemChances: patch.failureSystemChances
+        ? { ...settings.failureSystemChances, ...patch.failureSystemChances }
+        : settings.failureSystemChances,
+      realismOptions: patch.realismOptions
+        ? { ...settings.realismOptions, ...patch.realismOptions }
+        : settings.realismOptions
+    });
+
     const manager = new ModuleManager(simMajor, {
       sim,
       audio,
       anchors,
       keybinds,
-      getAudioUrl: (file) => audioBase && audioBase + file,
+      getAudioUrl: (file) => (audioBase ? audioBase + file : undefined),
+      getAssetUrl: (file) => (assetBase ? assetBase + file : undefined),
+      emitDiag,
       getSettings: () => settings,
       updateSettings: (patch) => {
-        settings = { ...settings, ...patch };
+        settings = mergePatch(patch);
         window.postMessage({ type: 'GEOFS_EXT_SETTINGS_PATCH', patch }, '*');
-        applyGlobalVisuals(settings, sim.isNight());
-        manager.applySettings(settings);
+        applyGlobalVisuals(settings);
+        void manager.applySettings(settings);
       }
     });
 
-    const applyGlobalVisuals = (cfg: ExtensionSettings, simIsNight: boolean) => {
-      anchors.setTheme(simIsNight ? 'dark' : 'light');
+    const applyGlobalVisuals = (cfg: ExtensionSettings) => {
+      // Keep native GeoFS dark translucent glass styling in auto/dark mode; allow explicit light theme.
+      anchors.setTheme(cfg.themeMode === 'light' ? 'light' : 'dark');
       anchors.setCalibratorPreset(cfg.calibratorPreset);
+    };
+
+    const liveState = {
+      fuelPct: 100,
+      burnKgHr: 0,
+      activeFailures: new Set<string>(),
+      opSyncActive: false,
+      sasActive: false,
+      checklistPhase: 'PRE-TAKEOFF',
+      checklistPending: 0
     };
 
     anchors.init();
@@ -74,9 +110,40 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
       manager.register(mod);
     }
 
+    const subscribe = (manager as unknown as { on: <T = unknown>(e: string, h: (d: T) => void) => () => void }).on.bind(manager);
+    subscribe<{ pct: number; burnKgHr: number }>('fuel:state', (d) => {
+      if (d && Number.isFinite(d.pct)) liveState.fuelPct = d.pct;
+      if (d && Number.isFinite(d.burnKgHr)) liveState.burnKgHr = d.burnKgHr;
+    });
+    subscribe<{ type: string }>('failure:triggered', ({ type }) => {
+      if (type) liveState.activeFailures.add(type);
+    });
+    subscribe<{ type: string }>('failure:cleared', ({ type }) => {
+      if (type) liveState.activeFailures.delete(type);
+    });
+    subscribe<{ active: boolean }>('autothrottle:opsync-state', ({ active }) => {
+      liveState.opSyncActive = Boolean(active);
+    });
+    subscribe<{ active: boolean }>('overpowered:sas-state', ({ active }) => {
+      liveState.sasActive = Boolean(active);
+    });
+    subscribe<{ phase: string; pending: number }>('checklist:phase', ({ phase, pending }) => {
+      if (phase) liveState.checklistPhase = phase;
+      if (Number.isFinite(pending)) liveState.checklistPending = pending;
+    });
+
+    window.__geofsExt = {
+      manager,
+      sim,
+      bus,
+      anchors,
+      emitDiag,
+      getSettings: () => settings
+    };
+
     let lastBridgeSyncMs = 0;
     bus.subscribe((telemetry) => {
-      applyGlobalVisuals(settings, telemetry.isNight);
+      applyGlobalVisuals(settings);
       manager.dispatchTelemetry(telemetry);
 
       if (telemetry.timestamp - lastBridgeSyncMs >= 500) {
@@ -89,7 +156,16 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
               aircraftProfile: telemetry.aircraft,
               kias: Math.round(telemetry.kias),
               altitude: Math.round(telemetry.altitude),
-              vs: Math.round(telemetry.vs)
+              vs: Math.round(telemetry.vs),
+              agl: Math.round(telemetry.aglFeet),
+              mach: Number(telemetry.mach.toFixed(2)),
+              fuelPct: Number(liveState.fuelPct.toFixed(1)),
+              burnKgHr: Math.round(liveState.burnKgHr),
+              activeFailures: Array.from(liveState.activeFailures),
+              opSyncActive: liveState.opSyncActive,
+              sasActive: liveState.sasActive || Boolean(settings.opStability),
+              checklistPhase: liveState.checklistPhase,
+              checklistPending: liveState.checklistPending
             }
           },
           '*'
@@ -97,27 +173,50 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
       }
     });
 
+    let mountReported = false;
     window.addEventListener('message', (event) => {
       if (event.source !== window || !event.data || typeof event.data !== 'object') return;
-      const msg = event.data as { type?: string; settings?: ExtensionSettings; audioBase?: string };
+      const msg = event.data as {
+        type?: string;
+        settings?: ExtensionSettings;
+        audioBase?: string;
+        assetBase?: string;
+      };
       if (msg.type === 'GEOFS_EXT_SETTINGS' && msg.settings) {
         if (typeof msg.audioBase === 'string' && /^chrome-extension:\/\/[a-p]{32}\/audio\/$/.test(msg.audioBase)) {
           audioBase = msg.audioBase;
         }
+        if (typeof msg.assetBase === 'string' && /^chrome-extension:\/\/[a-p]{32}\/assets\/$/.test(msg.assetBase)) {
+          assetBase = msg.assetBase;
+        }
         settings = msg.settings;
         sim.setAircraftOverrides(settings.aircraftOverrides);
         keybinds.updateCombo('hud-toggle', settings.keybindings.toggleHud);
-        applyGlobalVisuals(settings, sim.isNight());
-        manager.applySettings(settings);
+        applyGlobalVisuals(settings);
+        void manager.applySettings(settings).then(() => {
+          if (!mountReported) {
+            mountReported = true;
+            emitDiag('UI_MOUNT', {
+              simMajor,
+              activeModules: manager.getModules().filter((m) => manager.isActive(m.id)).map((m) => m.id)
+            });
+            if (settings.showStartupDiagnostics) {
+              anchors.showToast(`GeoFS Extension Active (GeoFS V${simMajor})`);
+            }
+          }
+        });
       }
     });
 
     sim.setAircraftOverrides(settings.aircraftOverrides);
-    applyGlobalVisuals(settings, sim.isNight());
-    manager.applySettings(settings);
+    applyGlobalVisuals(settings);
+    void manager.applySettings(settings).then(() => {
+      if (!mountReported) {
+        emitDiag('UI_BOOT', { simMajor });
+      }
+    });
     bus.start();
     window.postMessage({ type: 'GEOFS_EXT_REQUEST_SETTINGS' }, '*');
-    anchors.showToast(`GeoFS Extension Active (GeoFS V${simMajor})`);
   };
 
   waitForSim();

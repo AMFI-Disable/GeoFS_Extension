@@ -8,7 +8,7 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "tabs", "sidePanel"],
   "host_permissions": ["*://*.geo-fs.com/*"],
   "action": {
     "default_popup": "popup/index.html",
@@ -19,11 +19,18 @@
       "128": "icons/icon128.png"
     }
   },
+  "side_panel": {
+    "default_path": "sidepanel/index.html"
+  },
+  "options_ui": {
+    "page": "options/index.html",
+    "open_in_tab": true
+  },
   "background": {
     "service_worker": "background/service-worker.js"
   },
   "web_accessible_resources": [{
-    "resources": ["audio/*"],
+    "resources": ["audio/*", "assets/*"],
     "matches": ["https://www.geo-fs.com/*", "https://beta.geo-fs.com/*"]
   }],
   "content_scripts": [

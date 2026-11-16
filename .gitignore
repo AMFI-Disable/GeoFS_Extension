@@ -9,6 +9,8 @@
 !readme*.md
 !changelog.md
 !roadmap.md
+!todo.md
+!docs/
 !security.md
 !license
 !.gitignore

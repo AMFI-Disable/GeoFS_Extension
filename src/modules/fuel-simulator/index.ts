@@ -2,7 +2,7 @@ import type { GeoFSAircraftInstance } from '../../types/geofs.d';
 import type { ExtensionSettings } from '../../types/settings';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 
-// Both archived Fuel Simulator scripts derive fuel consumption from engine thrust.
+// Both archived Fuel Simulator scripts derive fuel consumption from engine thrust across active throttles.
 export function fuelBurnKgHr(aircraft: GeoFSAircraftInstance, telemetry: FlightTelemetry, dynamicSfc = false): number {
   if (aircraft.engine?.on === false) return 0;
   const profile = telemetry.aircraft;
@@ -11,29 +11,39 @@ export function fuelBurnKgHr(aircraft: GeoFSAircraftInstance, telemetry: FlightT
 
   const ratedThrust = Number(aircraft.definition?.maxThrust) || 0;
   const engines = aircraft.engines;
-  const thrustOf = (engine: { thrust?: number }) =>
-    typeof engine.thrust === 'number' && Number.isFinite(engine.thrust) ? Math.max(0, engine.thrust) : 0;
+  const thrustOf = (engine: { thrust?: number; on?: boolean }) =>
+    engine.on !== false && typeof engine.thrust === 'number' && Number.isFinite(engine.thrust)
+      ? Math.max(0, engine.thrust)
+      : 0;
   let thrust = engines?.reduce((sum, engine) => sum + thrustOf(engine), 0) ?? 0;
-  if (telemetry.simMajor === 4) {
-    if (!engines?.length) {
-      thrust = Object.values(aircraft.parts ?? {}).reduce((sum, part) => sum + thrustOf(part), 0);
-    }
-    if (thrust <= 0 && ratedThrust > 0) thrust = ratedThrust * Math.abs(telemetry.throttles[0] ?? 0);
+
+  if (telemetry.simMajor === 4 && !engines?.length) {
+    thrust = Object.values(aircraft.parts ?? {}).reduce((sum, part) => sum + thrustOf(part), 0);
+  }
+  if (thrust <= 0 && ratedThrust > 0) {
+    const throttles = telemetry.throttles.length ? telemetry.throttles : [0];
+    const avgThrottle = throttles.reduce((sum, t) => sum + Math.abs(t), 0) / throttles.length;
+    thrust = ratedThrust * avgThrottle;
   }
 
   const sfc = /shuttle|rocket|x-15/i.test(name) ? 0.85 : ratedThrust > 50_000 ? 0.0075 : 0.0095;
   const altitudeFactor = dynamicSfc ? Math.max(0.1, 1 - telemetry.altitude / 50_000) ** 1.1 : 1;
-  const reverseFactor = telemetry.simMajor === 4 && telemetry.reverserActive ? 1.35 : 1;
+  const reverseActive = telemetry.reverserActive || telemetry.throttles.some((t) => t < -0.05);
+  const reverseFactor = telemetry.simMajor === 4 && reverseActive ? 1.35 : 1;
   return thrust * sfc * altitudeFactor * reverseFactor;
 }
 
-const FUEL_OPTIONS = [
-  ['fuelDynamicSfc', 'Dynamic SFC'],
-  ['fuelRealisticTanks', 'Realistic Tanks'],
-  ['fuelAutoRefuel', 'Auto-Refuel']
-] as const;
+const FUEL_OPTIONS: ReadonlyArray<readonly [keyof Pick<ExtensionSettings, 'fuelDynamicSfc' | 'fuelRealisticTanks' | 'fuelAutoRefuel'>, string, string]> = [
+  ['fuelDynamicSfc', 'ALTITUDE BURN', 'Scales fuel consumption with air density, altitude, and multi-throttle reverse thrust'],
+  ['fuelRealisticTanks', 'REAL TANKS', 'Drains center tank first, then wing tanks with roll imbalance physics'],
+  ['fuelAutoRefuel', 'AUTO-REFUEL', 'Automatically maintains 100% fuel load']
+];
 
-export interface FuelTanks { left: number; center: number; right: number }
+export interface FuelTanks {
+  left: number;
+  center: number;
+  right: number;
+}
 
 export function drainFuelTanks(tanks: FuelTanks, drain: number): FuelTanks {
   const center = Math.max(0, tanks.center - drain);
@@ -41,23 +51,68 @@ export function drainFuelTanks(tanks: FuelTanks, drain: number): FuelTanks {
   return { center, left: Math.max(0, tanks.left - wingDrain), right: Math.max(0, tanks.right - wingDrain) };
 }
 
+const FUEL_STYLES = `
+  .geofs-ext-fuel-root {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+  .geofs-ext-fuel-bar-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 3px;
+  }
+  .geofs-ext-fuel-bar-fill {
+    height: 100%;
+    background: #4caf50;
+    transition: width 0.2s ease, background 0.2s ease;
+  }
+  .geofs-ext-fuel-btn {
+    background: #000000;
+    color: #cccccc;
+    border: 1px solid #888888;
+    border-radius: 15px;
+    padding: 5px 7px;
+    font-size: 9.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .geofs-ext-fuel-btn.is-active {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: #4caf50;
+    color: #ffffff;
+  }
+`;
+
 export class FuelSimulatorModule implements IModule {
   public readonly id = 'fuel-simulator';
   public readonly name = 'Fuel Simulator';
-  public readonly description = 'Multi-engine specific fuel consumption physics with tank burn and mass sync.';
+  public readonly description = 'Multi-engine specific fuel consumption physics with tank burn, flameout lock, and mass sync.';
   public readonly supportedMajors = [3, 4] as const;
   public readonly defaultEnabled = true;
 
   private ctx: ModuleContext | null = null;
   private unmountTab: (() => void) | null = null;
+  private styleEl: HTMLStyleElement | null = null;
   private aircraft: GeoFSAircraftInstance | undefined;
-  private massTarget: {
-    definition: NonNullable<GeoFSAircraftInstance['definition']>;
-    originalDefinitionMass: number | undefined;
-    body: NonNullable<GeoFSAircraftInstance['rigidBody']>;
-    originalMass: number;
-    inertia: unknown;
-  } | undefined;
+  private massTarget:
+    | {
+        definition: NonNullable<GeoFSAircraftInstance['definition']>;
+        originalDefinitionMass: number | undefined;
+        body: NonNullable<GeoFSAircraftInstance['rigidBody']>;
+        originalMass: number;
+        inertia: unknown;
+      }
+    | undefined;
   private massSyncElapsed = 0;
   private fuelKg = 0;
   private maxFuelKg = 0;
@@ -67,47 +122,95 @@ export class FuelSimulatorModule implements IModule {
   private bingoAlert = false;
   private panel: HTMLElement | null = null;
   private weightEl: HTMLElement | null = null;
+  private tanksEl: HTMLElement | null = null;
+  private statusEl: HTMLElement | null = null;
   private slider: HTMLInputElement | null = null;
+  private sliderLabelEl: HTMLElement | null = null;
+  private barFillEl: HTMLElement | null = null;
   private pctEl: HTMLElement | null = null;
   private burnEl: HTMLElement | null = null;
 
   public init(context: ModuleContext): void {
     this.ctx = context;
+
+    if (typeof document !== 'undefined') {
+      const style = document.createElement('style');
+      style.id = 'geofs-ext-fuel-styles';
+      style.textContent = FUEL_STYLES;
+      document.head?.appendChild(style);
+      this.styleEl = style;
+    }
+
     const el = document.createElement('div');
+    el.className = 'geofs-ext-fuel-root';
     el.innerHTML = `
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-        <span>Fuel Remaining</span><strong data-role="pct">--%</strong>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <span style="font-size:10px;color:#aaaaaa;text-transform:uppercase;">Fuel Quantity</span>
+          <strong data-role="pct" style="font-size:18px;font-weight:700;color:#ffffff;">--%</strong>
+        </div>
+        <div class="geofs-ext-fuel-bar-track"><div data-role="bar-fill" class="geofs-ext-fuel-bar-fill" style="width:100%;"></div></div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-        <span>Burn Rate</span><strong data-role="burn">0 kg/h</strong>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">
+        <div>
+          <div style="font-size:9px;color:#aaaaaa;text-transform:uppercase;">Burn Rate</div>
+          <strong data-role="burn" style="font-size:12px;">0 kg/h</strong>
+        </div>
+        <div>
+          <div style="font-size:9px;color:#aaaaaa;text-transform:uppercase;">Gross Weight</div>
+          <strong data-role="weight" style="font-size:12px;">—</strong>
+        </div>
       </div>
-      <div>Gross Weight <strong data-role="weight">—</strong></div>
-      <label>Set Fuel <input type="range" min="0" max="100" value="100" data-role="slider"></label>
-      ${FUEL_OPTIONS.map(([key, label]) => `<button type="button" class="geofs-ext-pad" data-role="${key}">${label}</button>`).join('')}
-      <button type="button" data-role="refuel" class="geofs-ext-pad" style="width:100%;">Refuel 100%</button>
+      <div data-role="tanks" style="font-size:9px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Tanks L/C/R: —</div>
+      <div>
+        <input type="range" min="0" max="100" step="1" value="100" data-role="slider" style="width:100%;accent-color:#4caf50;cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#aaaaaa;margin-top:2px;">
+          <span>SET FUEL</span><span data-role="slider-label">100%</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+        <button type="button" class="geofs-ext-fuel-btn" data-role="fuelDynamicSfc" title="${FUEL_OPTIONS[0][2]}">${FUEL_OPTIONS[0][1]}</button>
+        <button type="button" class="geofs-ext-fuel-btn" data-role="fuelRealisticTanks" title="${FUEL_OPTIONS[1][2]}">${FUEL_OPTIONS[1][1]}</button>
+      </div>
+      <button type="button" class="geofs-ext-fuel-btn" data-role="fuelAutoRefuel" title="${FUEL_OPTIONS[2][2]}">${FUEL_OPTIONS[2][1]}</button>
+      <button type="button" class="geofs-ext-fuel-btn" data-role="refuel" style="border-color:#4caf50;color:#ffffff;">REFUEL 100%</button>
+      <div data-role="status" style="font-size:9px;font-weight:700;color:#4caf50;text-align:center;letter-spacing:0.6px;">SYSTEMS LIVE</div>
     `;
+
     this.pctEl = el.querySelector('[data-role="pct"]');
+    this.barFillEl = el.querySelector('[data-role="bar-fill"]');
     this.burnEl = el.querySelector('[data-role="burn"]');
-    this.panel = el;
     this.weightEl = el.querySelector('[data-role="weight"]');
+    this.tanksEl = el.querySelector('[data-role="tanks"]');
     this.slider = el.querySelector('[data-role="slider"]');
+    this.sliderLabelEl = el.querySelector('[data-role="slider-label"]');
+    this.statusEl = el.querySelector('[data-role="status"]');
+    this.panel = el;
+
     const setPercent = (percent: number) => {
       if (!this.aircraft || this.maxFuelKg <= 0) return;
-      this.fuelKg = percent / 100 * this.maxFuelKg;
+      const clamped = Math.max(0, Math.min(100, percent));
+      this.fuelKg = (clamped / 100) * this.maxFuelKg;
       if (this.fuelKg > 0) this.restoreFuelEngine();
       this.distributeFuel();
       this.massSyncElapsed = 1;
-      context.anchors.showToast(`Fuel set to ${percent}%`);
+      if (this.sliderLabelEl) this.sliderLabelEl.textContent = `${Math.round(clamped)}%`;
+      context.anchors.showToast(`Fuel set to ${Math.round(clamped)}%`);
     };
+
+    this.slider?.addEventListener('input', () => {
+      if (this.sliderLabelEl) this.sliderLabelEl.textContent = `${Math.round(this.slider?.valueAsNumber ?? 100)}%`;
+    });
     this.slider?.addEventListener('change', () => setPercent(this.slider?.valueAsNumber ?? 100));
     el.querySelector('[data-role="refuel"]')?.addEventListener('click', () => setPercent(100));
+
     for (const [key] of FUEL_OPTIONS) {
       el.querySelector(`[data-role="${key}"]`)?.addEventListener('click', () => {
         context.updateSettings({ [key]: !context.getSettings()[key] });
       });
     }
-    this.onSettingsChange(context.getSettings());
 
+    this.onSettingsChange(context.getSettings());
     this.unmountTab = context.anchors.registerHudTab('fuel', 'FUEL', el);
   }
 
@@ -149,6 +252,7 @@ export class FuelSimulatorModule implements IModule {
       if (this.pctEl) this.pctEl.textContent = '—';
       if (this.burnEl) this.burnEl.textContent = '—';
       if (this.weightEl) this.weightEl.textContent = '—';
+      if (this.tanksEl) this.tanksEl.textContent = 'Tanks: N/A';
       return;
     }
     if (telemetry.paused || telemetry.crashed) {
@@ -160,8 +264,9 @@ export class FuelSimulatorModule implements IModule {
     const settings = this.ctx?.getSettings();
     const burnRate = fuelBurnKgHr(aircraft, telemetry, Boolean(settings?.fuelDynamicSfc));
     const drain = Math.min(this.fuelKg, (burnRate * telemetry.dt) / 3600);
-    this.fuelKg -= drain;
+    this.fuelKg = Math.max(0, this.fuelKg - drain);
     const atlantis = profile.id === '2953' || /atlantis/i.test(profile.name);
+
     if (settings?.fuelAutoRefuel || atlantis) {
       this.fuelKg = this.maxFuelKg;
       this.restoreFuelEngine();
@@ -174,13 +279,21 @@ export class FuelSimulatorModule implements IModule {
         const torque = imbalance * 0.000001;
         aircraft.rigidBody?.applyTorque?.([axis[0] * torque, axis[1] * torque, axis[2] * torque]);
       }
-    } else this.distributeFuel();
+    } else {
+      this.distributeFuel();
+    }
 
-    if (this.fuelKg === 0 && !this.flameoutTriggered && aircraft.engine?.on !== false) {
-      this.flameoutTriggered = this.ctx?.sim.stopEngines() ?? false;
+    if (this.fuelKg <= 0) {
+      this.fuelKg = 0;
+      if (!this.flameoutTriggered && aircraft.engine?.on !== false) {
+        this.flameoutTriggered = this.ctx?.sim.stopEngines() ?? false;
+        if (this.flameoutTriggered) {
+          this.ctx?.emitEvent('fuel:exhausted', { aircraftId: profile.id });
+          this.ctx?.anchors.showToast('FUEL EXHAUSTED — ENGINE FLAMEOUT', 'critical');
+        }
+      }
       if (this.flameoutTriggered) {
-        this.ctx?.emitEvent('fuel:exhausted', { aircraftId: profile.id });
-        this.ctx?.anchors.showToast('FUEL EXHAUSTED — ENGINE FLAMEOUT', 'critical');
+        this.ctx?.sim.setThrottle(0);
       }
     }
 
@@ -195,7 +308,7 @@ export class FuelSimulatorModule implements IModule {
       }
     }
 
-    const percent = this.fuelKg / this.maxFuelKg * 100;
+    const percent = (this.fuelKg / this.maxFuelKg) * 100;
     if (percent < 5 && !this.bingoAlert) {
       this.ctx?.anchors.showToast('Bingo Fuel — Emergency Declared', 'critical');
       this.bingoAlert = true;
@@ -205,29 +318,70 @@ export class FuelSimulatorModule implements IModule {
     } else if (percent > 16) {
       this.lowAlert = this.bingoAlert = false;
     }
-    if (this.slider && document.activeElement !== this.slider) this.slider.value = String(Math.round(percent));
-    if (this.pctEl) this.pctEl.textContent = `${((this.fuelKg / this.maxFuelKg) * 100).toFixed(1)}%`;
-    if (this.burnEl) this.burnEl.textContent = `${Math.round(this.fuelKg > 0 ? burnRate : 0).toLocaleString()} kg/h`;
+
+    if (this.slider && (typeof document === 'undefined' || document.activeElement !== this.slider)) {
+      this.slider.value = String(Math.round(percent));
+      if (this.sliderLabelEl) this.sliderLabelEl.textContent = `${Math.round(percent)}%`;
+    }
+    if (this.pctEl) this.pctEl.textContent = `${percent.toFixed(1)}%`;
+    if (this.barFillEl) {
+      this.barFillEl.style.width = `${Math.max(0, Math.min(100, percent)).toFixed(1)}%`;
+      this.barFillEl.style.background = percent < 5 ? '#ef4444' : percent < 15 ? '#eab308' : '#4caf50';
+    }
+    const displayedBurn = Math.round(this.fuelKg > 0 ? burnRate : 0);
+    if (this.burnEl) this.burnEl.textContent = `${displayedBurn.toLocaleString()} kg/h`;
+    if (this.tanksEl) {
+      this.tanksEl.textContent = `Tanks L/C/R: ${Math.round(this.tanks.left)} / ${Math.round(this.tanks.center)} / ${Math.round(this.tanks.right)} kg`;
+    }
+    if (this.statusEl) {
+      if (this.fuelKg <= 0) {
+        this.statusEl.textContent = 'EMPTY — THROTTLE LOCKED';
+        this.statusEl.style.color = '#ef4444';
+      } else if (percent < 5) {
+        this.statusEl.textContent = 'BINGO FUEL EMERGENCY';
+        this.statusEl.style.color = '#ef4444';
+      } else if (percent < 15) {
+        this.statusEl.textContent = 'LOW FUEL ADVISORY';
+        this.statusEl.style.color = '#eab308';
+      } else {
+        this.statusEl.textContent = 'SYSTEMS LIVE';
+        this.statusEl.style.color = '#4caf50';
+      }
+    }
+
+    this.ctx?.emitEvent('fuel:state', { pct: percent, burnKgHr: displayedBurn });
   }
 
   private syncMass(aircraft: GeoFSAircraftInstance, mass: number): void {
     const body = aircraft.rigidBody;
     const definition = aircraft.definition;
     if (body !== this.massTarget?.body || definition !== this.massTarget?.definition) this.restoreMass();
-    if (!definition || !body?.setMassProps || !Number.isFinite(mass) || mass <= 0) return;
-    if (!this.massTarget) {
-      const originalMass = body.mass ?? definition.mass;
-      if (typeof originalMass !== 'number' || !Number.isFinite(originalMass) || originalMass <= 0) return;
-      this.massTarget = {
-        body,
-        definition,
-        originalDefinitionMass: definition.mass,
-        originalMass,
-        inertia: definition.inertiaTensor ?? definition.tensorFactor
-      };
-    }
+    if (!definition || !Number.isFinite(mass) || mass <= 0) return;
+
+    const changed = Math.abs((definition.mass ?? 0) - mass) > 5;
     definition.mass = mass;
-    body.setMassProps(mass, this.massTarget.inertia);
+
+    if (body?.setMassProps) {
+      if (!this.massTarget) {
+        const originalMass = body.mass ?? definition.mass;
+        if (typeof originalMass === 'number' && Number.isFinite(originalMass) && originalMass > 0) {
+          this.massTarget = {
+            body,
+            definition,
+            originalDefinitionMass: definition.mass,
+            originalMass,
+            inertia: definition.inertiaTensor ?? definition.tensorFactor
+          };
+        }
+      }
+      if (this.massTarget) {
+        body.setMassProps(mass, this.massTarget.inertia);
+      }
+    }
+
+    if (changed) {
+      this.ctx?.emitDiag?.('FUEL_MASS_SYNC', { massKg: Math.round(mass), fuelKg: Math.round(this.fuelKg) });
+    }
   }
 
   private restoreMass(): void {
@@ -253,10 +407,16 @@ export class FuelSimulatorModule implements IModule {
     this.aircraft = undefined;
     this.unmountTab?.();
     this.unmountTab = null;
+    this.styleEl?.remove();
+    this.styleEl = null;
     this.pctEl = null;
+    this.barFillEl = null;
     this.burnEl = null;
     this.weightEl = null;
+    this.tanksEl = null;
+    this.statusEl = null;
     this.slider = null;
+    this.sliderLabelEl = null;
     this.panel = null;
     this.ctx = null;
   }

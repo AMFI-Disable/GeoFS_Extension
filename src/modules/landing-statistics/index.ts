@@ -38,10 +38,27 @@ function isInTouchdownZone(): boolean {
   }
 }
 
+function badgeClassFor(rating: LandingRecord['rating']): string {
+  if (rating === 'Butter' || rating === 'Silky') return 'badge-butter';
+  if (rating === 'Great' || rating === 'Smooth' || rating === 'Firm') return 'badge-acceptable';
+  if (rating === 'Crash') return 'badge-crash';
+  return 'badge-hard';
+}
+
+function feedbackBorderColor(record: LandingRecord): string {
+  const sink = Math.abs(record.vsFpm);
+  const bounces = record.bounces ?? 0;
+  if (record.rating === 'Crash' || sink >= 800 || bounces >= 3) return '#7f1d1d';
+  if (sink >= 500 || bounces === 2) return '#ef4444';
+  if (sink >= 300 || bounces === 1) return '#eab308';
+  if (sink < 160) return '#22c55e';
+  return '#84cc16';
+}
+
 export class LandingStatisticsModule implements IModule {
   public readonly id = 'landing-statistics';
   public readonly name = 'Landing Statistics';
-  public readonly description = 'Touchdown telemetry analysis, rating, audio cue, and persistent flight logbook.';
+  public readonly description = 'Slide-in touchdown score card, GPWS callouts, rating badges, and Chrome logbook sync.';
   public readonly supportedMajors = [3, 4] as const;
   public readonly defaultEnabled = true;
 
@@ -51,6 +68,7 @@ export class LandingStatisticsModule implements IModule {
   private replay = new LandingReplay();
   private reportTimer: ReturnType<typeof setTimeout> | undefined;
   private report: HTMLElement | null = null;
+  private reportDragCleanup: (() => void) | null = null;
   private reportOpen = false;
   private reportDuration: number | null = null;
   private lastGroundHeight: { feet: number; time: number } | undefined;
@@ -62,37 +80,226 @@ export class LandingStatisticsModule implements IModule {
   private sessionRecords: LandingRecord[] = [];
   private sounds: Record<'soft' | 'hard' | 'crash', HTMLAudioElement> | undefined;
   private listEl: HTMLDivElement | null = null;
+  private timerCheckboxEl: HTMLInputElement | null = null;
+  private secondsInputEl: HTMLInputElement | null = null;
   private unmountTab: (() => void) | null = null;
+  private styleEl: HTMLStyleElement | null = null;
 
   public init(context: ModuleContext): void {
     this.ctx = context;
+    this.injectStyles();
+    if (typeof document === 'undefined') return;
+
     const root = document.createElement('div');
-    root.innerHTML = '<div style="font-weight:700;margin-bottom:6px;font-size:11px;">Session Touchdowns</div>';
-    const list = document.createElement('div');
-    list.style.cssText = 'display:flex;flex-direction:column;gap:4px;font-size:10px;max-height:150px;overflow-y:auto;';
-    list.textContent = 'No landings recorded in this session.';
-    root.appendChild(list);
-    this.listEl = list;
-    this.unmountTab = context.anchors.registerHudTab('land', 'LAND', root);
+    root.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+
+    const controls = document.createElement('div');
+    controls.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:10px;';
+
     const timer = document.createElement('input');
     timer.type = 'checkbox';
     timer.checked = context.getSettings().landingReportAutoClose ?? true;
     timer.addEventListener('change', () => context.updateSettings({ landingReportAutoClose: timer.checked }));
+    this.timerCheckboxEl = timer;
+
     const timerLabel = document.createElement('label');
-    timerLabel.append(timer, ' Auto-close report');
+    timerLabel.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;';
+    timerLabel.append(timer, ' Auto-close');
+
+    const rightBox = document.createElement('div');
+    rightBox.style.cssText = 'display:flex;align-items:center;gap:3px;white-space:nowrap;';
     const seconds = document.createElement('input');
     seconds.type = 'number';
     seconds.min = '1';
     seconds.max = '3600';
     seconds.value = String(context.getSettings().landingReportSeconds ?? 15);
-    seconds.style.width = '4em';
+    seconds.style.cssText = 'width:44px;background:#000;color:#fff;border:1px solid #888;border-radius:6px;padding:1px 4px;font-size:10px;';
     seconds.setAttribute('aria-label', 'Landing report duration in seconds');
     seconds.addEventListener('change', () => {
       const duration = Math.max(1, Math.min(3600, seconds.valueAsNumber || 15));
       seconds.value = String(duration);
       context.updateSettings({ landingReportSeconds: duration });
     });
-    root.prepend(timerLabel, seconds, ' s');
+    this.secondsInputEl = seconds;
+    const sSuffix = document.createElement('span');
+    sSuffix.textContent = 's';
+    rightBox.append(seconds, sSuffix);
+
+    controls.append(timerLabel, rightBox);
+
+    const header = document.createElement('div');
+    header.style.cssText = 'font-weight:700;font-size:11px;letter-spacing:0.4px;text-transform:uppercase;color:#ddd;';
+    header.textContent = 'Session Touchdowns';
+
+    const list = document.createElement('div');
+    list.style.cssText = 'display:flex;flex-direction:column;gap:4px;font-size:10px;max-height:175px;overflow-y:auto;';
+    list.textContent = 'No landings recorded in this session.';
+    this.listEl = list;
+
+    root.append(controls, header, list);
+    this.unmountTab = context.anchors.registerHudTab('land', 'LAND', root);
+  }
+
+  private injectStyles(): void {
+    if (this.styleEl || typeof document === 'undefined' || !document.head) return;
+    if (document.getElementById('geofs-ext-landing-stats-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'geofs-ext-landing-stats-styles';
+    style.textContent = `
+      #statsCard.addonpack-card {
+        box-sizing: border-box;
+        position: fixed;
+        left: 20px;
+        bottom: 60px;
+        width: 330px;
+        max-width: calc(100vw - 40px);
+        background: var(--geofs-ext-bg, rgba(0, 0, 0, 0.8));
+        color: var(--geofs-ext-fg, #ffffff);
+        border: 1px solid var(--geofs-ext-border, #888888);
+        border-radius: 15px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 12px;
+        z-index: 2147483000;
+        display: flex;
+        flex-direction: column;
+        transform: translateX(-120%);
+        transition: transform 0.35s ease, opacity 0.3s ease;
+        opacity: 0;
+        pointer-events: none;
+      }
+      #statsCard.addonpack-card * { box-sizing: border-box; }
+      #statsCard.addonpack-card.active {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #statsCard .addonpack-card-header {
+        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.04);
+        border-bottom: 1px solid rgba(136, 136, 136, 0.45);
+        border-radius: 15px 15px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: move;
+        user-select: none;
+      }
+      #statsCard .addonpack-card-header span {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #dddddd;
+      }
+      #statsCard .addonpack-close-btn {
+        background: #000000;
+        color: #ffffff;
+        border: 1px solid #888888;
+        border-radius: 15px;
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        line-height: 20px;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      #statsCard .addonpack-card-content {
+        padding: 12px 14px 14px;
+      }
+      #statsCard .stats-main-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        gap: 10px;
+      }
+      #statsCard .addonpack-score-circle {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2px solid #dddddd;
+        background: rgba(0, 0, 0, 0.55);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      #statsCard .score-value {
+        font-size: 18px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.1;
+      }
+      #statsCard .score-label {
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.78);
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      #statsCard .addonpack-badge {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 8px;
+        border-radius: 12px;
+        text-align: center;
+        font-weight: 900;
+        font-size: 13px;
+        letter-spacing: 0.7px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #statsCard .badge-butter { background: linear-gradient(135deg, #22c55e, #16a34a); color: #ffffff; }
+      #statsCard .badge-acceptable { background: linear-gradient(135deg, #eab308, #ca8a04); color: #000000; }
+      #statsCard .badge-hard { background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff; }
+      #statsCard .badge-crash { background: linear-gradient(135deg, #7f1d1d, #450a0a); color: #ffffff; }
+      #statsCard .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 10px;
+        margin-bottom: 10px;
+      }
+      #statsCard .stat-item {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      #statsCard .stat-label {
+        font-size: 9px;
+        color: rgba(100, 200, 255, 0.7);
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #statsCard .stat-value {
+        font-size: 12px;
+        color: #ffffff;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #statsCard .feedback-box {
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.35);
+        border-left: 4px solid #22c55e;
+        font-size: 10px;
+        line-height: 1.35;
+        color: #e2e8f0;
+      }
+    `;
+    document.head.appendChild(style);
+    this.styleEl = style;
   }
 
   public update(telemetry: FlightTelemetry): void {
@@ -194,7 +401,7 @@ export class LandingStatisticsModule implements IModule {
       this.showReport(record, isBounce);
 
       const base = this.ctx.getAudioUrl?.('');
-      if (base && !this.sounds) {
+      if (base && !this.sounds && typeof Audio !== 'undefined') {
         this.sounds = {
           soft: new Audio(base + 'soft_landing.wav'),
           hard: new Audio(base + 'hard_landing.wav'),
@@ -217,59 +424,126 @@ export class LandingStatisticsModule implements IModule {
         `${isBounce ? `Bounce #${this.bounces}` : 'Touchdown'}: ${record.vsFpm} fpm | ${record.gForce}G | ${rating}`,
         rating === 'Crash' ? 'critical' : rating === 'Hard' || rating === 'Bone Shaker' ? 'warn' : 'info'
       );
+      this.ctx.emitDiag?.('LANDING_RECORDED', {
+        rating: record.rating,
+        vsFpm: record.vsFpm,
+        gForce: record.gForce,
+        score: record.score,
+        bounces: record.bounces
+      });
 
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && typeof window.postMessage === 'function') {
         window.postMessage({ type: 'GEOFS_EXT_LANDING_RECORD', record }, '*');
       }
     }
   }
 
   private showReport(record: LandingRecord, bounce: boolean): void {
+    if (typeof document === 'undefined' || !document.body) return;
     this.closeReport();
-    const report = document.createElement('section');
-    report.className = 'geofs-ext-landing-report';
-    report.setAttribute('aria-label', 'Landing Statistics');
-    const title = document.createElement('strong');
-    title.textContent = `Landing Statistics · ${record.rating}${bounce ? ' (Bounce)' : ''} · ${record.score?.toFixed(1)}/10`;
+
+    const card = document.createElement('section');
+    card.id = 'statsCard';
+    card.className = 'addonpack-card';
+    card.setAttribute('aria-label', 'Landing Statistics');
+
+    const header = document.createElement('div');
+    header.className = 'addonpack-card-header';
+    const title = document.createElement('span');
+    title.textContent = `Landing Statistics · ${record.aircraftName}`;
     const close = document.createElement('button');
     close.type = 'button';
-    close.className = 'geofs-ext-pad';
+    close.className = 'addonpack-close-btn';
     close.textContent = '×';
     close.setAttribute('aria-label', 'Close landing report');
-    close.addEventListener('click', () => this.closeReport());
-    const stats = document.createElement('dl');
+    close.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.closeReport();
+    });
+    header.append(title, close);
+
+    const content = document.createElement('div');
+    content.className = 'addonpack-card-content';
+
+    const mainRow = document.createElement('div');
+    mainRow.className = 'stats-main-row';
+
+    const circle = document.createElement('div');
+    circle.className = 'addonpack-score-circle';
+    const scoreVal = document.createElement('span');
+    scoreVal.className = 'score-value';
+    scoreVal.textContent = record.score !== undefined ? record.score.toFixed(1) : '—';
+    const scoreLbl = document.createElement('span');
+    scoreLbl.className = 'score-label';
+    scoreLbl.textContent = '/ 10';
+    circle.append(scoreVal, scoreLbl);
+
+    const badge = document.createElement('div');
+    badge.className = `addonpack-badge ${badgeClassFor(record.rating)}`;
+    badge.textContent = `${record.rating.toUpperCase()}${bounce ? ' (BOUNCE)' : ''}`;
+
+    mainRow.append(circle, badge);
+
+    const grid = document.createElement('div');
+    grid.className = 'stats-grid';
     const entries: Array<[string, string]> = [
       ['Pre-Impact V/S', `${record.vsFpm} fpm`],
       ['Touchdown G-Force', `${record.gForce.toFixed(2)} G`],
       ['Calibrated V/S', record.calibratedVsFpm === undefined ? '—' : `${record.calibratedVsFpm.toFixed(1)} fpm`],
-      ['Indicated Airspeed', `${record.indicatedAirspeedKts?.toFixed(1)} kt`],
+      ['Indicated Airspeed', record.indicatedAirspeedKts === undefined ? '—' : `${record.indicatedAirspeedKts.toFixed(1)} kt`],
       ['True Airspeed', record.trueAirspeedKts === undefined ? '—' : `${record.trueAirspeedKts.toFixed(1)} kt`],
       ['Ground Speed', `${record.groundSpeedKts} kt`],
       ['Roll', `${record.rollDeg.toFixed(1)}°`],
-      ['Pitch', `${record.pitchDeg?.toFixed(1)}°`],
+      ['Pitch', record.pitchDeg === undefined ? '—' : `${record.pitchDeg.toFixed(1)}°`],
       ['Touchdown Zone', record.inTouchdownZone ? 'On Target' : 'Off Target'],
-      ['Bounces', String(record.bounces)]
+      ['Bounces', String(record.bounces ?? 0)]
     ];
     for (const [label, value] of entries) {
-      const term = document.createElement('dt');
-      term.textContent = label;
-      const detail = document.createElement('dd');
-      detail.textContent = value;
-      stats.append(term, detail);
+      const item = document.createElement('div');
+      item.className = 'stat-item';
+      const lbl = document.createElement('span');
+      lbl.className = 'stat-label';
+      lbl.textContent = label;
+      const val = document.createElement('span');
+      val.className = 'stat-value';
+      val.textContent = value;
+      item.append(lbl, val);
+      grid.appendChild(item);
     }
-    const quality = document.createElement('p');
-    quality.textContent = record.qualityFeedback ?? '';
-    const passenger = document.createElement('p');
-    passenger.textContent = record.passengerFeedback ?? '';
-    report.append(close, title, stats, quality, passenger);
-    document.body.append(report);
-    this.ctx?.anchors.makeDraggable(report, 'geofs_ext_landing_report_pos');
-    this.report = report;
+
+    const feedback = document.createElement('div');
+    feedback.className = 'feedback-box';
+    feedback.style.borderLeftColor = feedbackBorderColor(record);
+    const qLine = document.createElement('div');
+    qLine.style.fontWeight = '700';
+    qLine.textContent = record.qualityFeedback ?? '';
+    const pLine = document.createElement('div');
+    pLine.style.marginTop = '2px';
+    pLine.textContent = record.passengerFeedback ?? '';
+    feedback.append(qLine, pLine);
+
+    content.append(mainRow, grid, feedback);
+    card.append(header, content);
+    document.body.appendChild(card);
+
+    this.reportDragCleanup = this.ctx?.anchors.makeDraggable(card, 'geofs_ext_landing_report_pos', header) ?? null;
+    this.report = card;
     this.reportOpen = true;
+    void card.offsetWidth;
+    card.classList.add('active');
+    this.ctx?.anchors.bringToFront(card);
+    this.ctx?.anchors.clampElementToViewport(card);
     this.scheduleReportClose();
   }
 
   public onSettingsChange(): void {
+    const settings = this.ctx?.getSettings();
+    if (this.timerCheckboxEl && settings) {
+      this.timerCheckboxEl.checked = settings.landingReportAutoClose ?? true;
+    }
+    if (this.secondsInputEl && settings) {
+      this.secondsInputEl.value = String(settings.landingReportSeconds ?? 15);
+    }
     if (this.reportOpen) this.scheduleReportClose();
   }
 
@@ -286,6 +560,8 @@ export class LandingStatisticsModule implements IModule {
   private closeReport(): void {
     clearTimeout(this.reportTimer);
     this.reportTimer = undefined;
+    this.reportDragCleanup?.();
+    this.reportDragCleanup = null;
     this.report?.remove();
     this.report = null;
     this.reportDuration = null;
@@ -297,8 +573,9 @@ export class LandingStatisticsModule implements IModule {
     this.listEl.innerHTML = '';
     for (const r of this.sessionRecords) {
       const row = document.createElement('div');
-      row.style.cssText = 'border-bottom:1px solid rgba(136,136,136,0.3);padding-bottom:3px;';
+      row.style.cssText = 'border-bottom:1px solid rgba(136,136,136,0.3);padding-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
       row.textContent = `${r.rating} • ${r.vsFpm} fpm • ${r.gForce}G • ${r.groundSpeedKts} kt • ${r.score?.toFixed(1) ?? '—'}/10`;
+      row.title = row.textContent;
       this.listEl.appendChild(row);
     }
   }
@@ -307,9 +584,13 @@ export class LandingStatisticsModule implements IModule {
     this.unmountTab?.();
     this.unmountTab = null;
     this.listEl = null;
+    this.timerCheckboxEl = null;
+    this.secondsInputEl = null;
     this.wasAirborne = false;
     this.aircraftId = null;
     this.closeReport();
+    this.styleEl?.remove();
+    this.styleEl = null;
     this.lastGroundHeight = undefined;
     this.calibratedVsFpm = undefined;
     this.lastApproach = null;

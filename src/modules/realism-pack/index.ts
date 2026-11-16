@@ -40,10 +40,43 @@ const PROPWASH_IDS = new Set(['21', '2', '2808', '1', '8', '12', '13', '40', '10
 const SPIN_IDS = new Set(['2948', '2581', '2808', '3460', '2988']);
 const ROTOR_IDS = new Set(['9', '52', '2840', '4090']);
 
-const OPTION_LABELS: Record<keyof RealismOptions, string> = {
-  gBreath: 'G Breathing', windAudio: 'Wind Audio', soundExpansion: 'Aircraft Sounds', blackout: 'Blackout', cameraShake: 'Camera Shake',
-  propwash: 'Propwash', spinFix: 'Spin Recovery', bladeCollisions: 'Blade Collisions',
-  engineInertia: 'Engine Inertia', spoilerArming: 'Spoiler Arming', performanceMode: 'Performance Mode'
+export interface RealismOptionMeta {
+  key: keyof RealismOptions;
+  label: string;
+  group: 'physics' | 'systems' | 'performance';
+  v4Unavailable?: boolean;
+}
+
+export const REALISM_OPTION_META: readonly RealismOptionMeta[] = [
+  { key: 'gBreath', label: 'G Breathing', group: 'physics' },
+  { key: 'blackout', label: 'Blackout', group: 'physics' },
+  { key: 'windAudio', label: 'Wind Audio', group: 'physics' },
+  { key: 'cameraShake', label: 'Camera Shake', group: 'physics' },
+  { key: 'propwash', label: 'Propwash', group: 'physics' },
+  { key: 'vortexEffects', label: 'Vortex Effects', group: 'physics', v4Unavailable: true },
+  { key: 'spinFix', label: 'Spin Fix', group: 'systems' },
+  { key: 'bladeCollisions', label: 'Blade X', group: 'systems' },
+  { key: 'engineInertia', label: 'Engine Inertia', group: 'systems' },
+  { key: 'spoilerArming', label: 'Spoiler Arming', group: 'systems' },
+  { key: 'carrierOps', label: 'Carrier Ops', group: 'systems', v4Unavailable: true },
+  { key: 'soundExpansion', label: 'Aircraft Sounds', group: 'systems' },
+  { key: 'performanceMode', label: 'Perf Mode', group: 'performance' }
+] as const;
+
+export const OPTION_LABELS: Record<keyof RealismOptions, string> = {
+  gBreath: 'G Breathing',
+  windAudio: 'Wind Audio',
+  soundExpansion: 'Aircraft Sounds',
+  blackout: 'Blackout',
+  cameraShake: 'Camera Shake',
+  propwash: 'Propwash',
+  vortexEffects: 'Vortex Effects',
+  spinFix: 'Spin Recovery',
+  bladeCollisions: 'Blade Collisions',
+  engineInertia: 'Engine Inertia',
+  spoilerArming: 'Spoiler Arming',
+  carrierOps: 'Carrier Ops',
+  performanceMode: 'Performance Mode'
 };
 
 function isEnabled(options: Partial<RealismOptions> | undefined, key: keyof RealismOptions): boolean {
@@ -53,16 +86,13 @@ function isEnabled(options: Partial<RealismOptions> | undefined, key: keyof Real
 export class RealismPackModule implements IModule {
   public readonly id = 'realism-pack';
   public readonly name = 'Realism Pack';
-  public readonly description = 'Archived G-force, camera, handling and aircraft physics effects.';
+  public readonly description = 'Background G-force shaders, camera shake, 777/A320/737 SFX, and flight physics.';
   public readonly supportedMajors = [3, 4] as const;
   public readonly defaultEnabled = true;
 
   private ctx: ModuleContext | null = null;
   private optionKey = '';
-  private gMeter?: HTMLMeterElement;
-  private gReadout?: HTMLOutputElement;
-  private panel: HTMLElement | null = null;
-  private unmount: (() => void) | undefined;
+  private lastSimMajor: SimMajorVersion | null = null;
   private stage: unknown = null;
   private removeStage: (() => void) | undefined;
   private uniforms = { strength: 0 };
@@ -87,7 +117,7 @@ export class RealismPackModule implements IModule {
 
   private onKeyDown = (event: KeyboardEvent) => {
     if (!isEnabled(this.ctx?.getSettings().realismOptions, 'spoilerArming') || event.key !== 'Shift' || event.repeat || event.defaultPrevented ||
-        (event.target instanceof HTMLElement && event.target.matches('input, textarea, select, [contenteditable]'))) return;
+        (typeof HTMLElement !== 'undefined' && event.target instanceof HTMLElement && event.target.matches('input, textarea, select, [contenteditable]'))) return;
     const aircraft = window.geofs?.aircraft?.instance;
     if (aircraft && !aircraft.groundContact && window.controls?.airbrakes?.position === 0) {
       this.spoilerArmed = true;
@@ -97,39 +127,10 @@ export class RealismPackModule implements IModule {
 
   public init(context: ModuleContext): void {
     this.ctx = context;
-    const panel = document.createElement('div');
-    for (const [key, label] of Object.entries(OPTION_LABELS) as Array<[keyof RealismOptions, string]>) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'geofs-ext-pad';
-      button.textContent = label;
-      button.dataset.effect = key;
-      button.addEventListener('click', () => {
-        const options = context.getSettings().realismOptions;
-        context.updateSettings({ realismOptions: { ...options, [key]: !isEnabled(options, key) } });
-      });
-      panel.append(button);
-    }
-    const label = document.createElement('label');
-    label.textContent = 'G-Force ';
-    const meter = document.createElement('meter');
-    meter.min = 0;
-    meter.max = 9;
-    meter.optimum = 1;
-    meter.high = 6;
-    meter.value = 1;
-    const readout = document.createElement('output');
-    readout.textContent = '1.0 G';
-    label.append(meter, ' ', readout);
-    const telemetryRow = document.createElement('div');
-    telemetryRow.append(label);
-    panel.append(telemetryRow);
-    this.gMeter = meter;
-    this.gReadout = readout;
-    this.panel = panel;
-    this.unmount = context.anchors.registerHudTab('realism', 'REALISM', panel);
     this.onSettingsChange(context.getSettings());
-    document.addEventListener('keydown', this.onKeyDown);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', this.onKeyDown);
+    }
   }
 
   public onSettingsChange(settings: ExtensionSettings): void {
@@ -146,11 +147,19 @@ export class RealismPackModule implements IModule {
       this.overGSeconds = 0;
       this.blackoutActive = false;
     }
-    for (const button of this.panel?.querySelectorAll<HTMLButtonElement>('[data-effect]') ?? []) {
-      const enabled = isEnabled(options, button.dataset.effect as keyof RealismOptions);
-      button.classList.toggle('is-active', enabled);
-      button.setAttribute('aria-pressed', String(enabled));
-    }
+    this.emitRealismDiag(options);
+  }
+
+  private emitRealismDiag(options: Partial<RealismOptions> | undefined): void {
+    const major = this.lastSimMajor;
+    const v4Unavailable = major === 4;
+    this.ctx?.emitDiag?.('REALISM_STATE', {
+      simMajor: major,
+      blackout: isEnabled(options, 'blackout'),
+      soundExpansion: isEnabled(options, 'soundExpansion'),
+      vortexStatus: v4Unavailable ? 'UNAVAILABLE' : isEnabled(options, 'vortexEffects') ? 'ACTIVE' : 'OFF',
+      carrierStatus: v4Unavailable ? 'UNAVAILABLE' : isEnabled(options, 'carrierOps') ? 'ACTIVE' : 'OFF'
+    });
   }
 
   private ensureStage(major: SimMajorVersion): void {
@@ -186,6 +195,10 @@ export class RealismPackModule implements IModule {
     const sim = window.geofs;
     const aircraft = sim?.aircraft?.instance;
     const values = sim?.animation?.values;
+    if (this.lastSimMajor !== telemetry.simMajor) {
+      this.lastSimMajor = telemetry.simMajor;
+      this.emitRealismDiag(this.ctx?.getSettings().realismOptions);
+    }
     if (this.aircraft !== aircraft) {
       this.resetAircraftSounds();
       this.restoreAircraft();
@@ -206,7 +219,7 @@ export class RealismPackModule implements IModule {
     if (now >= this.nextWind) {
       this.nextWind = now + 1000;
       const base = this.ctx?.getAudioUrl?.('');
-      if (base && !this.breath) {
+      if (base && !this.breath && typeof Audio !== 'undefined') {
         this.breath = new Audio(base + 'cutgbreath.mp3');
         this.wind = new Audio(base + 'wind.mp3');
         this.breath.preload = this.wind.preload = 'none';
@@ -256,8 +269,6 @@ export class RealismPackModule implements IModule {
 
     if (now >= this.nextPhysics) {
       this.nextPhysics = now + 100;
-      if (this.gMeter) this.gMeter.value = g;
-      if (this.gReadout) this.gReadout.textContent = `${g.toFixed(1)} G`;
       if (PROPWASH_IDS.has(id) && isEnabled(options, 'propwash')) {
         for (const foil of aircraft.airfoils ?? []) this.setValue(foil, 'propwash', foil.forceDirection === 2 ? 0.005 : 0.01);
         const part = aircraft.setup?.parts?.[0];
@@ -390,12 +401,11 @@ export class RealismPackModule implements IModule {
   }
 
   public destroy(): void {
-    document.removeEventListener('keydown', this.onKeyDown);
-    this.unmount?.();
-    this.unmount = undefined;
-    this.panel = null;
-    this.gMeter = this.gReadout = undefined;
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('keydown', this.onKeyDown);
+    }
     this.optionKey = '';
+    this.lastSimMajor = null;
     this.resetAircraftSounds();
     this.restoreRunwayVisibility?.();
     this.restoreRunwayVisibility = undefined;

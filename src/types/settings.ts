@@ -1,9 +1,16 @@
 import type { LandingSample } from '../core/landing-replay';
-import type { AircraftOverride } from '../core/aircraft-profile';
+import { parseAircraftOverrides, type AircraftOverride } from '../core/aircraft-profile';
+
+export const EXTENSION_CONFIG_KEY = 'geofs_ext_config';
+export const SCRIPT_CONFIG_KEY = 'geofs_script_config';
+export const LEGACY_SETTINGS_KEY = 'geofs_ext_settings';
+export const LOGBOOK_KEY = 'geofs_ext_logbook';
 
 export type ThemeMode = 'auto' | 'dark' | 'light';
 export type CalibratorPreset = '1080p' | '1440p' | '4k' | 'ultrawide' | 'laptop';
 export type ImageryProviderMode = 'native' | 'esri' | 'bing' | 'osm' | 'custom';
+export type OpSyncPolicy = 'ask' | 'allow' | 'never';
+export type FpvResolutionMode = 'auto' | 'hires' | 'lowres';
 
 export interface KeybindConfig {
   toggleAutothrottle: string;
@@ -44,36 +51,72 @@ export interface RealismOptions {
   blackout: boolean;
   cameraShake: boolean;
   propwash: boolean;
+  vortexEffects: boolean;
   spinFix: boolean;
   bladeCollisions: boolean;
   engineInertia: boolean;
   spoilerArming: boolean;
+  carrierOps: boolean;
   performanceMode: boolean;
 }
 
-export interface ExtensionSettings {
+export const DEFAULT_REALISM_OPTIONS: RealismOptions = {
+  gBreath: true,
+  windAudio: true,
+  soundExpansion: true,
+  blackout: true,
+  cameraShake: true,
+  propwash: true,
+  vortexEffects: true,
+  spinFix: true,
+  bladeCollisions: true,
+  engineInertia: true,
+  spoilerArming: true,
+  carrierOps: true,
+  performanceMode: false
+};
+
+export interface ExtensionConfig {
   modules: Record<string, boolean>;
   themeMode: ThemeMode;
   calibratorPreset: CalibratorPreset;
   keybindings: KeybindConfig;
-  autothrottleResponsiveness: number; // 0.5 to 2.0
-  failureProbabilitiesEnabled: boolean;
   imageryProvider: ImageryProviderMode;
-  opThrustMultiplier?: number;
-  opCeilingFeet?: number;
-  opStability?: boolean;
-  fuelAutoRefuel?: boolean;
-  fuelDynamicSfc?: boolean;
-  fuelRealisticTanks?: boolean;
-  landingReportAutoClose?: boolean;
-  landingReportSeconds?: number;
-  realismOptions?: Partial<RealismOptions>;
   customImageryUrl: string;
   customImageryToken: string;
   aircraftOverrides: Record<string, AircraftOverride>;
+  showStartupDiagnostics: boolean;
+  sidePanelAutoTelemetry: boolean;
+  hudPositionFallback: boolean;
 }
 
-export const DEFAULT_SETTINGS: ExtensionSettings = {
+export interface ScriptConfig {
+  autothrottleResponsiveness: number; // 0.5 to 2.0
+  opSyncPolicy: OpSyncPolicy;
+  opDeltaThresholdKts: number;
+  opThrustMultiplier: number;
+  opCeilingFeet: number;
+  opStability: boolean;
+  sasStrength: number; // 0.5 to 2.0
+  checklistAutoAdvance: boolean;
+  checklistEnforceMandatoryGates: boolean;
+  fuelDynamicSfc: boolean;
+  fuelRealisticTanks: boolean;
+  fuelAutoRefuel: boolean;
+  failureProbabilitiesEnabled: boolean;
+  failureProbabilityIntervalSec: number;
+  failureSystemChances: Record<string, number>;
+  failureRecoveryChancePct: number;
+  landingReportAutoClose: boolean;
+  landingReportSeconds: number;
+  fpvProjectionFactor: number;
+  fpvResolutionMode: FpvResolutionMode;
+  realismOptions: RealismOptions;
+}
+
+export type ExtensionSettings = ExtensionConfig & ScriptConfig;
+
+export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
   modules: {
     'autothrottle': true,
     'information-display': true,
@@ -95,10 +138,120 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
     toggleFpv: 'Shift+F',
     toggleChecklist: 'Shift+C'
   },
-  autothrottleResponsiveness: 1.0,
-  failureProbabilitiesEnabled: false,
   imageryProvider: 'native',
   customImageryUrl: '',
   customImageryToken: '',
-  aircraftOverrides: {}
+  aircraftOverrides: {},
+  showStartupDiagnostics: true,
+  sidePanelAutoTelemetry: true,
+  hudPositionFallback: true
 };
+
+export const DEFAULT_SCRIPT_CONFIG: ScriptConfig = {
+  autothrottleResponsiveness: 1.0,
+  opSyncPolicy: 'ask',
+  opDeltaThresholdKts: 150,
+  opThrustMultiplier: 1,
+  opCeilingFeet: 3_000_000,
+  opStability: false,
+  sasStrength: 1.0,
+  checklistAutoAdvance: false,
+  checklistEnforceMandatoryGates: true,
+  fuelDynamicSfc: false,
+  fuelRealisticTanks: false,
+  fuelAutoRefuel: false,
+  failureProbabilitiesEnabled: false,
+  failureProbabilityIntervalSec: 60,
+  failureSystemChances: {},
+  failureRecoveryChancePct: 60,
+  landingReportAutoClose: true,
+  landingReportSeconds: 15,
+  fpvProjectionFactor: 15,
+  fpvResolutionMode: 'auto',
+  realismOptions: { ...DEFAULT_REALISM_OPTIONS }
+};
+
+export const DEFAULT_SETTINGS: ExtensionSettings = {
+  ...DEFAULT_EXTENSION_CONFIG,
+  ...DEFAULT_SCRIPT_CONFIG
+};
+
+export function splitSettings(settings: ExtensionSettings): {
+  extensionConfig: ExtensionConfig;
+  scriptConfig: ScriptConfig;
+} {
+  return {
+    extensionConfig: {
+      modules: { ...DEFAULT_EXTENSION_CONFIG.modules, ...settings.modules },
+      themeMode: settings.themeMode,
+      calibratorPreset: settings.calibratorPreset,
+      keybindings: { ...DEFAULT_EXTENSION_CONFIG.keybindings, ...settings.keybindings },
+      imageryProvider: settings.imageryProvider,
+      customImageryUrl: settings.customImageryUrl,
+      customImageryToken: settings.customImageryToken,
+      aircraftOverrides: parseAircraftOverrides(settings.aircraftOverrides),
+      showStartupDiagnostics: settings.showStartupDiagnostics,
+      sidePanelAutoTelemetry: settings.sidePanelAutoTelemetry,
+      hudPositionFallback: settings.hudPositionFallback
+    },
+    scriptConfig: {
+      autothrottleResponsiveness: settings.autothrottleResponsiveness,
+      opSyncPolicy: settings.opSyncPolicy,
+      opDeltaThresholdKts: settings.opDeltaThresholdKts,
+      opThrustMultiplier: settings.opThrustMultiplier,
+      opCeilingFeet: settings.opCeilingFeet,
+      opStability: settings.opStability,
+      sasStrength: settings.sasStrength,
+      checklistAutoAdvance: settings.checklistAutoAdvance,
+      checklistEnforceMandatoryGates: settings.checklistEnforceMandatoryGates,
+      fuelDynamicSfc: settings.fuelDynamicSfc,
+      fuelRealisticTanks: settings.fuelRealisticTanks,
+      fuelAutoRefuel: settings.fuelAutoRefuel,
+      failureProbabilitiesEnabled: settings.failureProbabilitiesEnabled,
+      failureProbabilityIntervalSec: settings.failureProbabilityIntervalSec,
+      failureSystemChances: { ...settings.failureSystemChances },
+      failureRecoveryChancePct: settings.failureRecoveryChancePct,
+      landingReportAutoClose: settings.landingReportAutoClose,
+      landingReportSeconds: settings.landingReportSeconds,
+      fpvProjectionFactor: settings.fpvProjectionFactor,
+      fpvResolutionMode: settings.fpvResolutionMode,
+      realismOptions: { ...DEFAULT_REALISM_OPTIONS, ...settings.realismOptions }
+    }
+  };
+}
+
+export function mergeSettings(
+  extRaw?: Partial<ExtensionConfig> | null,
+  scriptRaw?: Partial<ScriptConfig> | null,
+  legacyRaw?: Partial<ExtensionSettings> | null
+): ExtensionSettings {
+  const legacy = legacyRaw ?? {};
+  const ext = extRaw ?? {};
+  const scr = scriptRaw ?? {};
+  return {
+    ...DEFAULT_SETTINGS,
+    ...legacy,
+    ...scr,
+    ...ext,
+    modules: {
+      ...DEFAULT_EXTENSION_CONFIG.modules,
+      ...(legacy.modules ?? {}),
+      ...(ext.modules ?? {})
+    },
+    keybindings: {
+      ...DEFAULT_EXTENSION_CONFIG.keybindings,
+      ...(legacy.keybindings ?? {}),
+      ...(ext.keybindings ?? {})
+    },
+    aircraftOverrides: parseAircraftOverrides(ext.aircraftOverrides ?? legacy.aircraftOverrides),
+    failureSystemChances: {
+      ...(legacy.failureSystemChances ?? {}),
+      ...(scr.failureSystemChances ?? {})
+    },
+    realismOptions: {
+      ...DEFAULT_REALISM_OPTIONS,
+      ...(legacy.realismOptions ?? {}),
+      ...(scr.realismOptions ?? {})
+    }
+  };
+}

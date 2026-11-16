@@ -34,6 +34,7 @@ export class SatelliteImageryModule implements IModule {
         try {
           setImagery(this.origProvider, false);
           this.ctx?.anchors.showToast('Imagery restored to GeoFS Native');
+          this.ctx?.emitDiag?.('IMAGERY_CHANGED', { provider: 'native' });
         } catch (err) {
           console.warn('[GeoFS Extension] Failed to restore native imagery:', err);
         }
@@ -50,6 +51,7 @@ export class SatelliteImageryModule implements IModule {
         });
         setImagery(provider, false);
         this.ctx?.anchors.showToast('Imagery switched to BING AERIAL');
+        this.ctx?.emitDiag?.('IMAGERY_CHANGED', { provider: 'bing' });
       } catch (err) {
         console.warn('[GeoFS Extension] Failed to apply Bing imagery:', err);
       }
@@ -81,6 +83,7 @@ export class SatelliteImageryModule implements IModule {
       });
       setImagery(provider, false);
       this.ctx?.anchors.showToast(`Imagery switched to ${settings.imageryProvider.toUpperCase()}`);
+      this.ctx?.emitDiag?.('IMAGERY_CHANGED', { provider: settings.imageryProvider });
     } catch (err) {
       console.warn('[GeoFS Extension] Failed to apply imagery provider:', err);
     }
