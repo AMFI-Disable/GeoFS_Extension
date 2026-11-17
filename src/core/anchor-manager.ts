@@ -123,14 +123,19 @@ export class AnchorManager {
   public toggleHudVisibility(): boolean {
     this.ensureHud();
     if (!this.hudRoot) return false;
-    this.hudHidden = !this.hudHidden;
-    this.hudRoot.style.display = this.hudHidden ? 'none' : 'flex';
-    this.syncEdgeHandle();
-    if (!this.hudHidden) {
+    const leftVal = Number.parseFloat(this.hudRoot.style.left || '');
+    const dockedLeftMinimized = this.hudMinimized && Number.isFinite(leftVal) && leftVal <= 16;
+    if (this.hudHidden || dockedLeftMinimized) {
+      this.hudHidden = false;
+      this.setHudMinimized(false);
+      this.syncEdgeHandle();
       this.bringToFront(this.hudRoot);
       this.clampElementToViewport(this.hudRoot);
+      return true;
     }
-    return !this.hudHidden;
+    this.hudHidden = true;
+    this.syncEdgeHandle();
+    return false;
   }
 
   public showToast(message: string, level: 'info' | 'warn' | 'critical' = 'info'): void {
@@ -238,6 +243,7 @@ export class AnchorManager {
 
   public clampElementToViewport(el: HTMLElement): void {
     if (typeof window === 'undefined' || !el.isConnected) return;
+    if (el.classList.contains('addonpack-card') && !el.classList.contains('active')) return;
     const style = el.style;
     if (style.display === 'none') return;
     const rect = el.getBoundingClientRect();
@@ -290,8 +296,14 @@ export class AnchorManager {
     }
   }
 
-  public makeDraggable(card: HTMLElement, storageKey: string, dragHandle?: HTMLElement): () => void {
+  public makeDraggable(
+    card: HTMLElement,
+    storageKey: string,
+    dragHandle?: HTMLElement,
+    options?: { axis?: 'both' | 'vertical' }
+  ): () => void {
     if (typeof document === 'undefined' || typeof window === 'undefined') return () => {};
+    const axis = options?.axis ?? 'both';
     let isPointerDown = false;
     let dragMoved = false;
     let startX = 0;
@@ -310,11 +322,20 @@ export class AnchorManager {
         const { left, top } = JSON.parse(saved) as { left?: string; top?: string };
         const parsedLeft = left ? Number.parseFloat(left) : NaN;
         const parsedTop = top ? Number.parseFloat(top) : NaN;
-        if (Number.isFinite(parsedLeft) && Number.isFinite(parsedTop)) {
+        if (axis === 'vertical') {
+          if (Number.isFinite(parsedTop)) {
+            card.style.left = '0px';
+            card.style.top = `${Math.max(0, parsedTop)}px`;
+            card.style.bottom = 'auto';
+            card.style.right = 'auto';
+            this.clampElementToViewport(card);
+          }
+        } else if (Number.isFinite(parsedLeft) && Number.isFinite(parsedTop)) {
           card.style.left = `${Math.max(0, parsedLeft)}px`;
           card.style.top = `${Math.max(0, parsedTop)}px`;
           card.style.bottom = 'auto';
           card.style.right = 'auto';
+          card.style.transformOrigin = 'top left';
           this.clampElementToViewport(card);
         }
       }
@@ -327,6 +348,7 @@ export class AnchorManager {
 
     const onMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return;
+      delete card.dataset.justDragged;
       const target = e.target as HTMLElement | null;
       if (target?.closest('input, a, select, textarea, label')) return;
       if (target?.closest('button')) {
@@ -344,40 +366,62 @@ export class AnchorManager {
     const onMouseMove = (e: MouseEvent) => {
       if (!isPointerDown) return;
       if (!dragMoved) {
-        const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+        const dist =
+          axis === 'vertical'
+            ? Math.abs(e.clientY - startY)
+            : Math.hypot(e.clientX - startX, e.clientY - startY);
         if (dist < 4) return;
         dragMoved = true;
+        window.getSelection()?.removeAllRanges();
         const rect = card.getBoundingClientRect();
         dragOffsetX = startX - rect.left;
         dragOffsetY = startY - rect.top;
         dragWidth = rect.width || card.offsetWidth;
         dragHeight = rect.height || card.offsetHeight;
-        card.style.left = `${Math.round(rect.left)}px`;
+        if (axis === 'vertical') {
+          card.style.left = '0px';
+        } else {
+          card.style.left = `${Math.round(rect.left)}px`;
+          card.style.transformOrigin = 'top left';
+        }
         card.style.top = `${Math.round(rect.top)}px`;
         card.style.bottom = 'auto';
         card.style.right = 'auto';
-        card.style.cursor = 'grabbing';
+        card.classList.add('is-dragging');
+        document.documentElement.classList.add('geofs-ext-dragging');
       }
 
-      const maxX = Math.max(0, window.innerWidth - dragWidth);
       const maxY = Math.max(0, window.innerHeight - dragHeight);
-      const newLeft = Math.max(0, Math.min(e.clientX - dragOffsetX, maxX));
       const newTop = Math.max(0, Math.min(e.clientY - dragOffsetY, maxY));
-      card.style.left = `${Math.round(newLeft)}px`;
-      card.style.top = `${Math.round(newTop)}px`;
+      if (axis === 'vertical') {
+        card.style.left = '0px';
+        card.style.top = `${Math.round(newTop)}px`;
+      } else {
+        const maxX = Math.max(0, window.innerWidth - dragWidth);
+        const newLeft = Math.max(0, Math.min(e.clientX - dragOffsetX, maxX));
+        card.style.left = `${Math.round(newLeft)}px`;
+        card.style.top = `${Math.round(newTop)}px`;
+      }
     };
 
-    const onMouseUp = () => {
+    const endDrag = () => {
       if (!isPointerDown) return;
       isPointerDown = false;
       card.style.cursor = '';
+      card.classList.remove('is-dragging');
+      document.documentElement.classList.remove('geofs-ext-dragging');
       if (dragMoved) {
+        dragMoved = false;
         card.dataset.justDragged = '1';
         setTimeout(() => {
           delete card.dataset.justDragged;
-        }, 80);
+        }, 0);
         try {
-          localStorage.setItem(storageKey, JSON.stringify({ left: card.style.left, top: card.style.top }));
+          const payload =
+            axis === 'vertical'
+              ? { top: card.style.top }
+              : { left: card.style.left, top: card.style.top };
+          localStorage.setItem(storageKey, JSON.stringify(payload));
         } catch {
           // ignore storage quota errors
         }
@@ -403,14 +447,23 @@ export class AnchorManager {
     triggerEl.addEventListener('mousedown', onMouseDown);
     card.addEventListener('mousedown', onCardFocusDown, true);
     document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('mouseup', endDrag);
+    window.addEventListener('blur', endDrag);
     card.addEventListener('click', onClickCapture, true);
 
     const cleanup = () => {
+      if (isPointerDown) {
+        isPointerDown = false;
+        dragMoved = false;
+        card.style.cursor = '';
+        card.classList.remove('is-dragging');
+        document.documentElement.classList.remove('geofs-ext-dragging');
+      }
       triggerEl.removeEventListener('mousedown', onMouseDown);
       card.removeEventListener('mousedown', onCardFocusDown, true);
       document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
+      document.removeEventListener('mouseup', endDrag);
+      window.removeEventListener('blur', endDrag);
       card.removeEventListener('click', onClickCapture, true);
       this.resizeObserver?.unobserve(card);
       this.trackedElements.delete(card);
@@ -428,8 +481,8 @@ export class AnchorManager {
     this.minBtnEl.title = minimized ? 'Restore HUD' : 'Minimize HUD';
     this.hudTabsEl.style.display = minimized ? 'none' : 'flex';
     this.hudBodyEl.style.display = minimized ? 'none' : 'block';
-    this.clampElementToViewport(this.hudRoot);
     this.syncEdgeHandle();
+    this.clampElementToViewport(this.hudRoot);
   }
 
   private syncEdgeHandle(): void {
@@ -438,6 +491,12 @@ export class AnchorManager {
     const dockedLeftMinimized = this.hudMinimized && Number.isFinite(leftVal) && leftVal <= 16;
     const showEdge = this.hudHidden || dockedLeftMinimized;
     this.edgeHandleEl.style.display = showEdge ? 'flex' : 'none';
+    this.hudRoot.style.display = showEdge ? 'none' : 'flex';
+    if (showEdge) {
+      this.edgeHandleEl.style.left = '0px';
+      this.edgeHandleEl.style.right = 'auto';
+      this.clampElementToViewport(this.edgeHandleEl);
+    }
   }
 
   private ensureHud(): void {
@@ -492,12 +551,12 @@ export class AnchorManager {
     edgeTab.id = 'hudMinimizeBtn';
     edgeTab.type = 'button';
     edgeTab.className = 'unified-hud-edge-tab';
-    edgeTab.title = 'Show Flight HUD';
+    edgeTab.title = 'Click to show Flight HUD (Drag vertically to reposition)';
     edgeTab.textContent = '▸';
     edgeTab.style.display = 'none';
     edgeTab.addEventListener('click', () => {
+      if (edgeTab.dataset.justDragged === '1') return;
       this.hudHidden = false;
-      root.style.display = 'flex';
       this.setHudMinimized(false);
     });
     document.body.appendChild(edgeTab);
@@ -509,6 +568,7 @@ export class AnchorManager {
     this.edgeHandleEl = edgeTab;
 
     this.makeDraggable(root, 'geofs_ext_hud_pos');
+    this.makeDraggable(edgeTab, 'geofs_ext_edge_tab_top', edgeTab, { axis: 'vertical' });
     this.clampElementToViewport(root);
     this.syncEdgeHandle();
   }
@@ -575,6 +635,16 @@ export class AnchorManager {
         --geofs-ext-border: #64748b;
         --geofs-ext-accent: #16a34a;
       }
+      html.geofs-ext-dragging,
+      html.geofs-ext-dragging *,
+      html.geofs-ext-dragging #flightDataDisplay.geofs-ext-hud,
+      html.geofs-ext-dragging #flightDataDisplay.geofs-ext-hud * {
+        cursor: grabbing !important;
+        user-select: none !important;
+      }
+      .is-dragging {
+        transition: none !important;
+      }
       #flightDataDisplay.geofs-ext-hud, .geofs-ext-native-card {
         box-sizing: border-box;
         position: fixed;
@@ -600,6 +670,12 @@ export class AnchorManager {
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
+        user-select: none;
+        touch-action: none;
+      }
+      html:not(.geofs-ext-dragging) #flightDataDisplay.geofs-ext-hud,
+      html:not(.geofs-ext-dragging) #flightDataDisplay.geofs-ext-hud * {
+        cursor: grab !important;
       }
       #flightDataDisplay.geofs-ext-hud * {
         box-sizing: border-box;
@@ -619,7 +695,7 @@ export class AnchorManager {
         min-height: 22px;
         gap: 3px;
         margin-bottom: 8px;
-        cursor: move;
+        cursor: grab;
         user-select: none;
       }
       .geofs-ext-hud-grip {
@@ -659,7 +735,7 @@ export class AnchorManager {
         font-size: 9.5px;
         font-weight: 700;
         text-transform: uppercase;
-        cursor: pointer;
+        cursor: grab;
         text-align: center;
         line-height: 1.2;
       }
@@ -687,7 +763,7 @@ export class AnchorManager {
         font-size: 11px;
         font-weight: 700;
         line-height: 20px;
-        cursor: pointer;
+        cursor: grab;
         text-align: center;
       }
       #flightDataDisplay.geofs-ext-hud > .geofs-ext-hud-body {
@@ -698,6 +774,7 @@ export class AnchorManager {
         overflow-x: hidden;
         scrollbar-width: thin;
         scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+        cursor: grab;
       }
       #flightDataDisplay.geofs-ext-hud.is-minimized {
         width: 40px;
@@ -709,7 +786,7 @@ export class AnchorManager {
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: move;
+        cursor: grab;
       }
       #flightDataDisplay.geofs-ext-hud.is-minimized > .geofs-ext-hud-header {
         margin-bottom: 0;
@@ -733,8 +810,7 @@ export class AnchorManager {
       #hudMinimizeBtn.unified-hud-edge-tab {
         position: fixed;
         left: 0;
-        top: 50%;
-        margin-top: -20px;
+        top: calc(50% - 20px);
         width: 24px;
         height: 40px;
         background: var(--geofs-ext-bg);
@@ -745,7 +821,9 @@ export class AnchorManager {
         z-index: 2147483001;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
+        cursor: grab;
+        user-select: none;
+        touch-action: none;
         font-family: Helvetica, Arial, sans-serif;
         font-size: 12px;
         font-weight: 700;

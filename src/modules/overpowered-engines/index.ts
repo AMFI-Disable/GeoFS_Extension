@@ -264,7 +264,9 @@ const CARD_STYLES = `
     padding: 11px 14px;
     border-bottom: 1px solid rgba(136, 136, 136, 0.45);
     background: rgba(0, 0, 0, 0.5);
-    cursor: move;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
   }
   #opEngineHeaderText {
     font-size: 11px;

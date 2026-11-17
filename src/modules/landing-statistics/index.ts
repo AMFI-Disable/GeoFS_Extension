@@ -184,8 +184,9 @@ export class LandingStatisticsModule implements IModule {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        cursor: move;
+        cursor: grab;
         user-select: none;
+        touch-action: none;
       }
       #statsCard .addonpack-card-header span {
         font-size: 11px;

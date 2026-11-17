@@ -433,9 +433,10 @@ const FAILURE_STYLES = `
     font-family: Helvetica, Arial, sans-serif;
     font-weight: 700;
     font-size: 10px;
-    cursor: pointer;
+    cursor: grab;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
     user-select: none;
+    touch-action: none;
     white-space: nowrap;
   }
   .geofs-ext-fail-pill.has-failures {
@@ -584,7 +585,7 @@ export class FailureSimulatorModule implements IModule {
       modal.id = 'geofs-failure-menu';
       modal.style.display = 'none';
       modal.innerHTML = `
-        <div id="fail-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(0,0,0,0.5);border-bottom:1px solid rgba(136,136,136,0.45);cursor:move;">
+        <div id="fail-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(0,0,0,0.5);border-bottom:1px solid rgba(136,136,136,0.45);cursor:grab;user-select:none;touch-action:none;">
           <span style="font-weight:700;font-size:12px;letter-spacing:0.6px;color:#ffffff;">FAILURE SIMULATOR</span>
           <button type="button" data-role="close" style="background:none;border:none;color:#cccccc;cursor:pointer;font-size:15px;line-height:1;">✕</button>
         </div>

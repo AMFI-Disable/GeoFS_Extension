@@ -191,25 +191,81 @@ async function run() {
       }
     }
 
-    // Assert minimize 40x40 circle + edge handle + viewport clamp on resize
+    // Assert consistent grab cursor across all HUD parts (no pointer/move cursor switching)
+    const hudCursorAudit = await simV3.evaluate(() => ({
+      hud: getComputedStyle(document.getElementById('flightDataDisplay')).cursor,
+      header: getComputedStyle(document.querySelector('#flightDataDisplay .geofs-ext-hud-header')).cursor,
+      grip: getComputedStyle(document.querySelector('#flightDataDisplay .geofs-ext-hud-grip')).cursor,
+      tab: getComputedStyle(document.getElementById('tab-btn-info')).cursor,
+      minBtn: getComputedStyle(document.querySelector('#flightDataDisplay .geofs-ext-hud-min')).cursor,
+      body: getComputedStyle(document.querySelector('#flightDataDisplay .geofs-ext-hud-body')).cursor
+    }));
+    for (const [part, cur] of Object.entries(hudCursorAudit)) {
+      assert.equal(cur, 'grab', `HUD ${part} must consistently show grab cursor, got ${cur}`);
+    }
+
+    // Assert minimize 40x40 circle (with edge button hidden -> single HUD button only) + restore
     await simV3.click('.geofs-ext-hud-min');
     const minRect = await simV3.locator('#flightDataDisplay').boundingBox();
     assert(minRect && Math.round(minRect.width) === 40 && Math.round(minRect.height) === 40, 'Minimized HUD must be 40x40');
+    assert.equal(await simV3.locator('#hudMinimizeBtn').isVisible(), false, 'Edge button must stay hidden when 40x40 HUD button is visible');
+    const minCursor = await simV3.evaluate(() => ({
+      hud: getComputedStyle(document.getElementById('flightDataDisplay')).cursor,
+      btn: getComputedStyle(document.querySelector('#flightDataDisplay .geofs-ext-hud-min')).cursor
+    }));
+    assert.equal(minCursor.hud, 'grab');
+    assert.equal(minCursor.btn, 'grab');
     await simV3.click('.geofs-ext-hud-min');
 
-    // Drag HUD to left edge from header strip (must move panel WITHOUT switching off active INFO tab) -> verify #hudMinimizeBtn appears when minimized
+    // Drag HUD to left edge from header strip (must show grabbing cursor globally without flash and move WITHOUT switching off INFO tab)
     const hdrBox = await simV3.locator('.geofs-ext-hud-header').boundingBox();
     assert(hdrBox);
     await simV3.mouse.move(hdrBox.x + 120, hdrBox.y + 8);
     await simV3.mouse.down();
     await simV3.mouse.move(4, 150, { steps: 6 });
+    const midDragCursor = await simV3.evaluate(() => ({
+      draggingClass: document.documentElement.classList.contains('geofs-ext-dragging'),
+      bodyCursor: getComputedStyle(document.body).cursor,
+      tabCursor: getComputedStyle(document.getElementById('tab-btn-info')).cursor
+    }));
+    assert.equal(midDragCursor.draggingClass, true, 'Active drag must apply global geofs-ext-dragging class');
+    assert.equal(midDragCursor.bodyCursor, 'grabbing', 'Global cursor must lock to grabbing while dragging');
+    assert.equal(midDragCursor.tabCursor, 'grabbing', 'Child elements must keep grabbing cursor during drag');
     await simV3.mouse.up();
+    assert.equal(
+      await simV3.evaluate(() => document.documentElement.classList.contains('geofs-ext-dragging')),
+      false,
+      'geofs-ext-dragging class must clear cleanly after mouseup'
+    );
     const activeTabAfterDrag = await simV3.locator('#tab-btn-info.is-active').count();
     assert.equal(activeTabAfterDrag, 1, 'Dragging across HUD header tabs must move HUD without switching tab');
+
+    // Minimizing near left edge swaps cleanly to a SINGLE #hudMinimizeBtn (hiding #flightDataDisplay)
     await simV3.click('.geofs-ext-hud-min');
     const edgeVisible = await simV3.locator('#hudMinimizeBtn').isVisible();
+    const hudVisibleWhenDocked = await simV3.locator('#flightDataDisplay').isVisible();
     assert.equal(edgeVisible, true, 'Left-edge handle should appear when HUD minimized near left edge');
+    assert.equal(hudVisibleWhenDocked, false, 'Only one HUD button must be visible when docked at left edge');
+
+    // Left-edge #hudMinimizeBtn must show grab cursor and drag purely vertically along left: 0 without reopening HUD
+    const edgeBoxBefore = await simV3.locator('#hudMinimizeBtn').boundingBox();
+    const edgeCursor = await simV3.evaluate(() => getComputedStyle(document.getElementById('hudMinimizeBtn')).cursor);
+    assert.equal(edgeCursor, 'grab', 'Edge HUD button must show grab cursor');
+    assert(edgeBoxBefore);
+    await simV3.mouse.move(edgeBoxBefore.x + edgeBoxBefore.width / 2, edgeBoxBefore.y + edgeBoxBefore.height / 2);
+    await simV3.mouse.down();
+    await simV3.mouse.move(edgeBoxBefore.x + 80, edgeBoxBefore.y + 90, { steps: 6 });
+    const edgeDraggingCursor = await simV3.evaluate(() => getComputedStyle(document.getElementById('hudMinimizeBtn')).cursor);
+    assert.equal(edgeDraggingCursor, 'grabbing');
+    await simV3.mouse.up();
+    const edgeBoxAfter = await simV3.locator('#hudMinimizeBtn').boundingBox();
+    assert(edgeBoxAfter, 'Edge HUD button should still exist after vertical drag');
+    assert.equal(Math.round(edgeBoxAfter.x), 0, `Edge HUD button must drag strictly along x=0, got x=${edgeBoxAfter.x}`);
+    assert(edgeBoxAfter.y >= edgeBoxBefore.y + 70, `Edge HUD button did not move vertically (before=${edgeBoxBefore.y}, after=${edgeBoxAfter.y})`);
+    assert.equal(await simV3.locator('#flightDataDisplay').isVisible(), false, 'Dragging #hudMinimizeBtn must not accidentally reopen HUD');
+
     await simV3.click('#hudMinimizeBtn');
+    assert.equal(await simV3.locator('#hudMinimizeBtn').isVisible(), false, 'Clicking edge handle must hide edge button and show full HUD');
 
     // Verify dedicated SVG grip also drags smoothly back right slightly
     const gripBox = await simV3.locator('.geofs-ext-hud-grip').boundingBox();
@@ -220,6 +276,21 @@ async function run() {
     await simV3.mouse.up();
     const movedLeft = await simV3.evaluate(() => Number.parseFloat(document.getElementById('flightDataDisplay').style.left || '0'));
     assert(movedLeft >= 35, `Dragging .geofs-ext-hud-grip should move HUD right, got left=${movedLeft}`);
+
+    // Verify scaled HUD (1.35x) drags without coordinate jump
+    await simV3.evaluate(() => document.documentElement.style.setProperty('--geofs-ext-scale', '1.35'));
+    const scaledBefore = await simV3.locator('#flightDataDisplay').boundingBox();
+    assert(scaledBefore);
+    await simV3.mouse.move(scaledBefore.x + 12, scaledBefore.y + 12);
+    await simV3.mouse.down();
+    await simV3.mouse.move(scaledBefore.x + 32, scaledBefore.y + 22, { steps: 4 });
+    await simV3.mouse.up();
+    const scaledAfter = await simV3.locator('#flightDataDisplay').boundingBox();
+    assert(
+      scaledAfter && Math.abs(scaledAfter.x - (scaledBefore.x + 20)) <= 4,
+      `Scaled HUD drag jumped unexpectedly: before=${scaledBefore.x}, after=${scaledAfter?.x}`
+    );
+    await simV3.evaluate(() => document.documentElement.style.setProperty('--geofs-ext-scale', '1'));
 
     // Resize narrow and verify HUD stays clamped inside viewport
     await simV3.setViewportSize({ width: 900, height: 650 });
@@ -296,15 +367,28 @@ async function run() {
     await simV3.waitForSelector('#geofs-ext-toasts [data-prompt-id="op-sync-prompt"]', { timeout: 5000 });
     await simV3.click('[data-prompt-id="op-sync-prompt"] [data-action-id="allow-once"]');
 
-    // Open OP ENG card & toggle SAS
+    // Open OP ENG card, verify grab cursor & smooth drag, & toggle SAS
     await simV3.click('.geofs-ext-op-bar-btn');
     await simV3.waitForSelector('#opEngineCard', { state: 'visible' });
+    const opHeaderCur = await simV3.evaluate(() => getComputedStyle(document.getElementById('opEngineHeader')).cursor);
+    assert.equal(opHeaderCur, 'grab', `#opEngineHeader must show grab cursor, got ${opHeaderCur}`);
+    const opHdrBox = await simV3.locator('#opEngineHeader').boundingBox();
+    assert(opHdrBox);
+    await simV3.mouse.move(opHdrBox.x + 40, opHdrBox.y + 12);
+    await simV3.mouse.down();
+    await simV3.mouse.move(opHdrBox.x + 70, opHdrBox.y + 22, { steps: 4 });
+    assert.equal(await simV3.evaluate(() => document.documentElement.classList.contains('geofs-ext-dragging')), true);
+    await simV3.mouse.up();
+    const opHdrAfter = await simV3.locator('#opEngineHeader').boundingBox();
+    assert(opHdrAfter && opHdrAfter.x >= opHdrBox.x + 20, 'OP Engine card header drag should reposition card');
     await simV3.click('#opSASBtn');
 
     // 5. Checklists Hardware Actuation & Fuel Weight Sync
     console.log('[E2E] Verifying Checklist Hardware Execution & Fuel Weight Sync...');
     await simV3.click('#tab-btn-checks');
     await simV3.waitForSelector('.geofs-ext-chk-phases');
+    const chkCur = await simV3.evaluate(() => getComputedStyle(document.querySelector('.geofs-ext-chk-item')).cursor);
+    assert.equal(chkCur, 'grab', `Checklist items inside HUD must keep grab cursor, got ${chkCur}`);
     const lightsBefore = await simV3.evaluate(() => window.geofs.animation.values.lights);
     await simV3.locator('.geofs-ext-chk-item', { hasText: 'Lights' }).first().click();
     const lightsAfter = await simV3.evaluate(() => window.geofs.animation.values.lights);
@@ -312,12 +396,16 @@ async function run() {
 
     await simV3.click('#tab-btn-fuel');
     await simV3.waitForSelector('text=ALTITUDE BURN');
+    const fuelBtnCur = await simV3.evaluate(() => getComputedStyle(document.querySelector('[data-role="fuelDynamicSfc"]')).cursor);
+    assert.equal(fuelBtnCur, 'grab', `Fuel buttons inside HUD must keep grab cursor, got ${fuelBtnCur}`);
     const oldDync = await simV3.locator('text=DYN SFC').count();
     assert.equal(oldDync, 0, 'Cryptic DYN SFC label must be replaced by ALTITUDE BURN');
     await simV3.click('[data-role="fuelDynamicSfc"]');
 
     // 6. Failure Simulator -> Emergency Checklist Override -> Contingency -> Restore
     console.log('[E2E] Verifying Failure Injection, Emergency QRH Override & Clean Restoration...');
+    const failPillCur = await simV3.evaluate(() => getComputedStyle(document.getElementById('fail-btn')).cursor);
+    assert.equal(failPillCur, 'grab', `#fail-btn pill must show grab cursor, got ${failPillCur}`);
     // Drag floating #fail-btn pill slightly left -> must move without opening #geofs-failure-menu
     const pillBefore = await simV3.locator('#fail-btn').boundingBox();
     assert(pillBefore);
@@ -331,6 +419,17 @@ async function run() {
 
     await simV3.click('#fail-btn');
     await simV3.waitForSelector('#geofs-failure-menu', { state: 'visible' });
+    const failHdrCur = await simV3.evaluate(() => getComputedStyle(document.getElementById('fail-header')).cursor);
+    assert.equal(failHdrCur, 'grab', `#fail-header must show grab cursor, got ${failHdrCur}`);
+    const failHdrBox = await simV3.locator('#fail-header').boundingBox();
+    assert(failHdrBox);
+    await simV3.mouse.move(failHdrBox.x + 50, failHdrBox.y + 12);
+    await simV3.mouse.down();
+    await simV3.mouse.move(failHdrBox.x + 80, failHdrBox.y + 22, { steps: 4 });
+    assert.equal(await simV3.evaluate(() => document.documentElement.classList.contains('geofs-ext-dragging')), true);
+    await simV3.mouse.up();
+    const failHdrAfter = await simV3.locator('#fail-header').boundingBox();
+    assert(failHdrAfter && failHdrAfter.x >= failHdrBox.x + 20, 'Failure modal header drag should reposition modal');
     await simV3.click('#geofs-failure-menu [data-failure-type="gearLeft"] button[data-action="fail"]');
 
     // Verify Checks tab opened automatically with emergency QRH header
