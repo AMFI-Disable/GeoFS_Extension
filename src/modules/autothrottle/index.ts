@@ -200,7 +200,14 @@ export class AutothrottleModule implements IModule {
     const pid = autopilot?.PIDs?.throttle;
     const snap = this.ctx.sim.buildTelemetrySnapshot(0.016, this.ctx.sim.getMajorVersion() ?? 4);
     if (!snap.aircraft || snap.crashed || snap.aircraft.category === 'rotorcraft' || this.electricalFailure || !pid) {
-      this.ctx.anchors.showToast('Autothrottle unavailable for the current aircraft or aircraft state.', 'warn');
+      this.ctx.emitDiag?.('AUTOTHROTTLE_ERROR', {
+        level: 'error',
+        aircraftId: snap.aircraft?.id ?? null,
+        category: snap.aircraft?.category ?? null,
+        crashed: snap.crashed,
+        electricalFailure: this.electricalFailure,
+        hasPid: Boolean(pid)
+      });
       return;
     }
     if (autopilot?.on) autopilot.turnOff?.();

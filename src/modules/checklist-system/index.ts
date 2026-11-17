@@ -423,10 +423,11 @@ export class ChecklistSystemModule implements IModule {
       const btn = document.createElement('button');
       btn.type = 'button';
       const isEmg = idx >= mandatory.length;
-      btn.className = `geofs-ext-chk-phase ${idx === this.activePhase ? 'is-active' : ''} ${isEmg ? 'is-emergency' : ''}`;
+      btn.className = `geofs-ext-chk-phase ${!this.showGuide && idx === this.activePhase ? 'is-active' : ''} ${isEmg ? 'is-emergency' : ''}`;
       btn.textContent = label;
       btn.title = label;
       btn.addEventListener('click', () => {
+        this.showGuide = false;
         this.activePhase = idx;
         this.lastRender = '';
       });
@@ -434,15 +435,15 @@ export class ChecklistSystemModule implements IModule {
     });
     this.rootEl.appendChild(phaseBar);
 
-    // Compact V-Speeds banner
-    const speedBanner = document.createElement('div');
-    speedBanner.style.cssText = 'font-size:9px;color:#aaaaaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-    speedBanner.textContent = speeds;
-    speedBanner.title = speeds;
-    this.rootEl.appendChild(speedBanner);
+    if (speeds) {
+      const speedBanner = document.createElement('div');
+      speedBanner.style.cssText = 'font-size:9px;color:#aaaaaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      speedBanner.textContent = speeds;
+      speedBanner.title = speeds;
+      this.rootEl.appendChild(speedBanner);
+    }
 
-    // Emergency Alert Header & Recovery Action Button
-    if (activeEmergency) {
+    if (activeEmergency && !this.showGuide) {
       const qrhHeader = document.createElement('div');
       qrhHeader.style.cssText = 'padding:5px 7px;border-radius:6px;background:rgba(239,68,68,0.18);border:1px solid #ef4444;display:flex;flex-direction:column;gap:5px;';
       const qrhTitle = document.createElement('div');
@@ -465,7 +466,44 @@ export class ChecklistSystemModule implements IModule {
       this.rootEl.appendChild(qrhHeader);
     }
 
-    // Checklist Items
+    if (this.showGuide) {
+      const guideBox = document.createElement('div');
+      guideBox.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+      const guideHeading = document.createElement('div');
+      guideHeading.style.cssText = 'font-size:9.5px;font-weight:700;color:#4caf50;text-transform:uppercase;letter-spacing:0.4px;';
+      guideHeading.textContent = 'Situational Procedures Guide';
+      guideBox.appendChild(guideHeading);
+
+      const detailEls: HTMLDetailsElement[] = [];
+      for (const guide of SITUATIONAL_GUIDES) {
+        const det = document.createElement('details');
+        det.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.25);border-radius:6px;padding:4px 6px;';
+        const sum = document.createElement('summary');
+        sum.style.cssText = 'font-size:10px;font-weight:700;color:#ffffff;cursor:grab;';
+        sum.textContent = guide.title;
+        det.appendChild(sum);
+        const ul = document.createElement('ul');
+        ul.style.cssText = 'margin:4px 0 2px 14px;padding:0;font-size:9px;color:#cccccc;line-height:1.3;';
+        for (const step of guide.steps) {
+          const li = document.createElement('li');
+          li.textContent = step;
+          ul.appendChild(li);
+        }
+        det.appendChild(ul);
+        det.addEventListener('toggle', () => {
+          if (det.open) {
+            for (const other of detailEls) {
+              if (other !== det && other.open) other.open = false;
+            }
+          }
+        });
+        detailEls.push(det);
+        guideBox.appendChild(det);
+      }
+      this.rootEl.appendChild(guideBox);
+      return;
+    }
+
     for (const entry of items) {
       const row = document.createElement('div');
       row.className = `geofs-ext-chk-item ${entry.checked ? 'is-done' : ''}`;
@@ -523,35 +561,6 @@ export class ChecklistSystemModule implements IModule {
       });
 
       this.rootEl.appendChild(row);
-    }
-
-    // Expandable Situational Procedure Guide
-    if (this.showGuide) {
-      const guideBox = document.createElement('div');
-      guideBox.style.cssText = 'margin-top:4px;padding-top:6px;border-top:1px solid rgba(136,136,136,0.35);display:flex;flex-direction:column;gap:4px;';
-      const guideHeading = document.createElement('div');
-      guideHeading.style.cssText = 'font-size:9.5px;font-weight:700;color:#4caf50;text-transform:uppercase;';
-      guideHeading.textContent = 'Situational Procedures Guide';
-      guideBox.appendChild(guideHeading);
-
-      for (const guide of SITUATIONAL_GUIDES) {
-        const det = document.createElement('details');
-        det.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.25);border-radius:6px;padding:4px 6px;';
-        const sum = document.createElement('summary');
-        sum.style.cssText = 'font-size:10px;font-weight:700;color:#ffffff;cursor:pointer;';
-        sum.textContent = guide.title;
-        det.appendChild(sum);
-        const ul = document.createElement('ul');
-        ul.style.cssText = 'margin:4px 0 2px 14px;padding:0;font-size:9px;color:#cccccc;line-height:1.3;';
-        for (const step of guide.steps) {
-          const li = document.createElement('li');
-          li.textContent = step;
-          ul.appendChild(li);
-        }
-        det.appendChild(ul);
-        guideBox.appendChild(det);
-      }
-      this.rootEl.appendChild(guideBox);
     }
   }
 

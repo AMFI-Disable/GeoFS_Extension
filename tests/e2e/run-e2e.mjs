@@ -382,13 +382,45 @@ async function run() {
     const opHdrAfter = await simV3.locator('#opEngineHeader').boundingBox();
     assert(opHdrAfter && opHdrAfter.x >= opHdrBox.x + 20, 'OP Engine card header drag should reposition card');
     await simV3.click('#opSASBtn');
+    const opCardLayout = await simV3.evaluate(() => {
+      const card = document.getElementById('opEngineCard');
+      const rect = card?.getBoundingClientRect();
+      return { width: rect?.width ?? 0, scrollWidth: card?.scrollWidth ?? 0, clientWidth: card?.clientWidth ?? 0 };
+    });
+    assert(opCardLayout.width >= 319 && opCardLayout.width <= 321, `Expected fixed 320px OP card, got ${opCardLayout.width}`);
+    assert(opCardLayout.scrollWidth <= opCardLayout.clientWidth + 1, 'OP card must not horizontally overflow');
 
-    // 5. Checklists Hardware Actuation & Fuel Weight Sync
-    console.log('[E2E] Verifying Checklist Hardware Execution & Fuel Weight Sync...');
+    // 5. Checklists Hardware Actuation, Non-Scrolling HUD Audit & Fuel Weight Sync
+    console.log('[E2E] Verifying Checklist Hardware Execution, Non-Scrolling Full HUD & Fuel Weight Sync...');
+    const assertHudNoScroll = async (tabName) => {
+      const hudBody = await simV3.evaluate(() => {
+        const hud = document.getElementById('flightDataDisplay');
+        const body = hud?.querySelector('.geofs-ext-hud-body');
+        const st = body ? getComputedStyle(body) : null;
+        return {
+          overflowY: st?.overflowY,
+          scrollHeight: body?.scrollHeight ?? 0,
+          clientHeight: body?.clientHeight ?? 0,
+          hudScrollWidth: hud?.scrollWidth ?? 0,
+          hudClientWidth: hud?.clientWidth ?? 0
+        };
+      });
+      assert.equal(hudBody.overflowY, 'visible', `HUD ${tabName} body must not scroll (overflowY=${hudBody.overflowY})`);
+      assert(hudBody.scrollHeight <= hudBody.clientHeight + 2, `HUD ${tabName} body overflowed vertically (${hudBody.scrollHeight} > ${hudBody.clientHeight})`);
+      assert(hudBody.hudScrollWidth <= hudBody.hudClientWidth + 1, `HUD ${tabName} overflowed horizontally`);
+    };
+
+    await assertHudNoScroll('INFO');
     await simV3.click('#tab-btn-checks');
     await simV3.waitForSelector('.geofs-ext-chk-phases');
     const chkCur = await simV3.evaluate(() => getComputedStyle(document.querySelector('.geofs-ext-chk-item')).cursor);
     assert.equal(chkCur, 'grab', `Checklist items inside HUD must keep grab cursor, got ${chkCur}`);
+    await assertHudNoScroll('CHECKS');
+    await simV3.click('.geofs-ext-chk-btn:has-text("GUIDE")');
+    await simV3.waitForSelector('text=Situational Procedures Guide');
+    await assertHudNoScroll('CHECKS-GUIDE');
+    await simV3.click('.geofs-ext-chk-btn:has-text("GUIDE")');
+    await simV3.waitForSelector('.geofs-ext-chk-item');
     const lightsBefore = await simV3.evaluate(() => window.geofs.animation.values.lights);
     await simV3.locator('.geofs-ext-chk-item', { hasText: 'Lights' }).first().click();
     const lightsAfter = await simV3.evaluate(() => window.geofs.animation.values.lights);
@@ -396,11 +428,16 @@ async function run() {
 
     await simV3.click('#tab-btn-fuel');
     await simV3.waitForSelector('text=ALTITUDE BURN');
+    await assertHudNoScroll('FUEL');
     const fuelBtnCur = await simV3.evaluate(() => getComputedStyle(document.querySelector('[data-role="fuelDynamicSfc"]')).cursor);
     assert.equal(fuelBtnCur, 'grab', `Fuel buttons inside HUD must keep grab cursor, got ${fuelBtnCur}`);
     const oldDync = await simV3.locator('text=DYN SFC').count();
     assert.equal(oldDync, 0, 'Cryptic DYN SFC label must be replaced by ALTITUDE BURN');
     await simV3.click('[data-role="fuelDynamicSfc"]');
+
+    await simV3.click('#tab-btn-land');
+    await assertHudNoScroll('LAND');
+    await simV3.click('#tab-btn-info');
 
     // 6. Failure Simulator -> Emergency Checklist Override -> Contingency -> Restore
     console.log('[E2E] Verifying Failure Injection, Emergency QRH Override & Clean Restoration...');
@@ -419,6 +456,27 @@ async function run() {
 
     await simV3.click('#fail-btn');
     await simV3.waitForSelector('#geofs-failure-menu', { state: 'visible' });
+    const failModalAudit = await simV3.evaluate(() => {
+      const modal = document.getElementById('geofs-failure-menu');
+      const sections = modal?.querySelector('[data-role="sections"]');
+      const grids = Array.from(modal?.querySelectorAll('[data-section-grid-cols]') || []).map((g) => ({
+        cols: Number(g.dataset.sectionGridCols),
+        items: g.children.length
+      }));
+      return {
+        width: modal?.getBoundingClientRect().width ?? 0,
+        sectionsOverflowY: sections ? getComputedStyle(sections).overflowY : '',
+        scrollHeight: sections?.scrollHeight ?? 0,
+        clientHeight: sections?.clientHeight ?? 0,
+        grids
+      };
+    });
+    assert(failModalAudit.width >= 459 && failModalAudit.width <= 461, `Expected fixed 460px Failure modal, got ${failModalAudit.width}`);
+    assert.equal(failModalAudit.sectionsOverflowY, 'visible', 'Failure modal sections must not scroll');
+    assert(failModalAudit.scrollHeight <= failModalAudit.clientHeight + 2, 'Failure modal sections overflowed vertically');
+    for (const g of failModalAudit.grids) {
+      assert.equal(g.items % g.cols, 0, `Failure section grid (${g.items} items / ${g.cols} cols) has blank trailing cell`);
+    }
     const failHdrCur = await simV3.evaluate(() => getComputedStyle(document.getElementById('fail-header')).cursor);
     assert.equal(failHdrCur, 'grab', `#fail-header must show grab cursor, got ${failHdrCur}`);
     const failHdrBox = await simV3.locator('#fail-header').boundingBox();
@@ -592,7 +650,9 @@ async function run() {
     await sidePage.waitForSelector('[data-surface="sidepanel"]');
     await sidePage.waitForSelector('.badge--ok:has-text("V4")', { timeout: 10000 });
     await sidePage.waitForSelector('text=UI_MOUNT', { timeout: 10000 });
-    await sidePage.waitForSelector('text=UNAVAILABLE ON V4', { timeout: 10000 });
+    await sidePage.waitForSelector('.diag-line--error:has-text("REALISM_FEATURE_ERROR")', { timeout: 10000 });
+    const sideText = await sidePage.locator('body').textContent();
+    assert(!/unavailable/i.test(sideText || ''), `Side panel must not contain 'unavailable' text, got: ${sideText}`);
     await assertNoHorizontalOverflow(sidePage, 'sidepanel');
     await simV4.close();
     await helpTab.close();

@@ -624,34 +624,26 @@ export function App() {
           <div class="panel-card" style="grid-column: 1 / -1">
             <div class="section-heading">Realism Pack Controls (Background Engine)</div>
             <div class="surface-grid-2">
-              {REALISM_OPTION_META.map((item) => {
-                const unavailable = Boolean(isV4 && item.v4Unavailable);
-                return (
-                  <label class="switch-row" key={item.key} style={unavailable ? 'opacity:0.6' : ''}>
-                    <span style="display:flex;align-items:center;gap:6px">
-                      <span>{item.label}</span>
-                      {item.v4Unavailable && (
-                        <span class={`badge ${unavailable ? 'badge--warn' : ''}`}>
-                          {unavailable ? 'UNAVAILABLE ON V4' : 'V3 Only'}
-                        </span>
-                      )}
-                    </span>
-                    <input
-                      type="checkbox"
-                      disabled={unavailable}
-                      checked={!unavailable && Boolean(settings.realismOptions[item.key])}
-                      onChange={() =>
-                        patchScr({
-                          realismOptions: {
-                            ...settings.realismOptions,
-                            [item.key]: !settings.realismOptions[item.key]
-                          }
-                        })
-                      }
-                    />
-                  </label>
-                );
-              })}
+              {REALISM_OPTION_META.filter((item) => !(isV4 && item.v4Unavailable)).map((item) => (
+                <label class="switch-row" key={item.key}>
+                  <span style="display:flex;align-items:center;gap:6px">
+                    <span>{item.label}</span>
+                    {item.v4Unavailable && <span class="badge">V3 Only</span>}
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(settings.realismOptions[item.key])}
+                    onChange={() =>
+                      patchScr({
+                        realismOptions: {
+                          ...settings.realismOptions,
+                          [item.key]: !settings.realismOptions[item.key]
+                        }
+                      })
+                    }
+                  />
+                </label>
+              ))}
             </div>
           </div>
         </div>
@@ -888,8 +880,14 @@ export function App() {
                   .slice()
                   .reverse()
                   .map((entry, idx) => (
-                    <div class="diag-line" key={`${entry.time}-${idx}`}>
+                    <div
+                      class={`diag-line ${
+                        entry.level === 'error' ? 'diag-line--error' : entry.level === 'warn' ? 'diag-line--warn' : ''
+                      }`}
+                      key={`${entry.time}-${idx}`}
+                    >
                       <span style="color:var(--accent)">[{entry.time.slice(11, 19)}]</span>{' '}
+                      {entry.level === 'error' && <span style="color:#ef4444;font-weight:700">[ERROR] </span>}
                       <strong>{entry.code}</strong> {entry.payload ? JSON.stringify(entry.payload) : ''}
                     </div>
                   ))

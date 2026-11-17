@@ -152,14 +152,22 @@ export class RealismPackModule implements IModule {
 
   private emitRealismDiag(options: Partial<RealismOptions> | undefined): void {
     const major = this.lastSimMajor;
-    const v4Unavailable = major === 4;
+    const v4Unsupported = major === 4;
     this.ctx?.emitDiag?.('REALISM_STATE', {
       simMajor: major,
       blackout: isEnabled(options, 'blackout'),
       soundExpansion: isEnabled(options, 'soundExpansion'),
-      vortexStatus: v4Unavailable ? 'UNAVAILABLE' : isEnabled(options, 'vortexEffects') ? 'ACTIVE' : 'OFF',
-      carrierStatus: v4Unavailable ? 'UNAVAILABLE' : isEnabled(options, 'carrierOps') ? 'ACTIVE' : 'OFF'
+      vortexStatus: v4Unsupported ? 'V4_UNSUPPORTED' : isEnabled(options, 'vortexEffects') ? 'ACTIVE' : 'OFF',
+      carrierStatus: v4Unsupported ? 'V4_UNSUPPORTED' : isEnabled(options, 'carrierOps') ? 'ACTIVE' : 'OFF'
     });
+    if (v4Unsupported) {
+      this.ctx?.emitDiag?.('REALISM_FEATURE_ERROR', {
+        level: 'error',
+        simMajor: 4,
+        features: ['vortexEffects', 'carrierOps'],
+        message: 'Vortex Effects and Carrier Ops require GeoFS V3.9'
+      });
+    }
   }
 
   private ensureStage(major: SimMajorVersion): void {

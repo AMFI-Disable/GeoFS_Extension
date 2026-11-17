@@ -132,7 +132,7 @@ export class LandingStatisticsModule implements IModule {
     header.textContent = 'Session Touchdowns';
 
     const list = document.createElement('div');
-    list.style.cssText = 'display:flex;flex-direction:column;gap:4px;font-size:10px;max-height:175px;overflow-y:auto;';
+    list.style.cssText = 'display:flex;flex-direction:column;gap:4px;font-size:10px;';
     list.textContent = 'No landings recorded in this session.';
     this.listEl = list;
 
@@ -152,7 +152,8 @@ export class LandingStatisticsModule implements IModule {
         left: 20px;
         bottom: 60px;
         width: 330px;
-        max-width: calc(100vw - 40px);
+        min-width: 330px;
+        max-width: min(330px, calc(100vw - 24px));
         background: var(--geofs-ext-bg, rgba(0, 0, 0, 0.8));
         color: var(--geofs-ext-fg, #ffffff);
         border: 1px solid var(--geofs-ext-border, #888888);
@@ -184,16 +185,22 @@ export class LandingStatisticsModule implements IModule {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 8px;
         cursor: grab;
         user-select: none;
         touch-action: none;
       }
       #statsCard .addonpack-card-header span {
+        flex: 1;
+        min-width: 0;
         font-size: 11px;
         font-weight: 800;
-        letter-spacing: 1px;
+        letter-spacing: 0.8px;
         text-transform: uppercase;
         color: #dddddd;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       #statsCard .addonpack-close-btn {
         background: #000000;
@@ -572,7 +579,7 @@ export class LandingStatisticsModule implements IModule {
   private renderSessionList(): void {
     if (!this.listEl) return;
     this.listEl.innerHTML = '';
-    for (const r of this.sessionRecords) {
+    for (const r of this.sessionRecords.slice(0, 5)) {
       const row = document.createElement('div');
       row.style.cssText = 'border-bottom:1px solid rgba(136,136,136,0.3);padding-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
       row.textContent = `${r.rating} • ${r.vsFpm} fpm • ${r.gForce}G • ${r.groundSpeedKts} kt • ${r.score?.toFixed(1) ?? '—'}/10`;

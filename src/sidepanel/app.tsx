@@ -281,23 +281,16 @@ export function App() {
       <div class="panel-card">
         <div class="section-heading">Realism Pack (Background Engine)</div>
         <div class="field-col">
-          {REALISM_OPTION_META.map((item) => {
-            const unavailable = Boolean(isV4 && item.v4Unavailable);
-            return (
-              <label class="switch-row" key={item.key} style={unavailable ? 'opacity:0.6' : ''}>
-                <span style="display:flex;align-items:center;gap:6px">
-                  <span>{item.label}</span>
-                  {unavailable && <span class="badge badge--warn">UNAVAILABLE ON V4</span>}
-                </span>
-                <input
-                  type="checkbox"
-                  disabled={unavailable}
-                  checked={!unavailable && Boolean(settings.realismOptions[item.key])}
-                  onChange={() => toggleRealism(item.key)}
-                />
-              </label>
-            );
-          })}
+          {REALISM_OPTION_META.filter((item) => !(isV4 && item.v4Unavailable)).map((item) => (
+            <label class="switch-row" key={item.key}>
+              <span>{item.label}</span>
+              <input
+                type="checkbox"
+                checked={Boolean(settings.realismOptions[item.key])}
+                onChange={() => toggleRealism(item.key)}
+              />
+            </label>
+          ))}
         </div>
       </div>
 
@@ -318,8 +311,15 @@ export function App() {
               .slice()
               .reverse()
               .map((entry, idx) => (
-                <div class="diag-line" key={`${entry.time}-${idx}`} title={JSON.stringify(entry.payload ?? '')}>
+                <div
+                  class={`diag-line ${
+                    entry.level === 'error' ? 'diag-line--error' : entry.level === 'warn' ? 'diag-line--warn' : ''
+                  }`}
+                  key={`${entry.time}-${idx}`}
+                  title={JSON.stringify(entry.payload ?? '')}
+                >
                   <span style="color:var(--accent)">[{entry.time.slice(11, 19)}]</span>{' '}
+                  {entry.level === 'error' && <span style="color:#ef4444;font-weight:700">[ERROR] </span>}
                   <strong>{entry.code}</strong>{' '}
                   {entry.payload ? JSON.stringify(entry.payload) : ''}
                 </div>

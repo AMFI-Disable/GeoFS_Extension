@@ -38,11 +38,21 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
 
   const startSuite = (simMajor: 3 | 4) => {
     const emitDiag = (code: string, payload?: unknown) => {
-      const entry = { time: new Date().toISOString(), code, payload };
+      const payloadLevel =
+        payload && typeof payload === 'object' && 'level' in payload
+          ? (payload as { level?: unknown }).level
+          : undefined;
+      const level: 'info' | 'warn' | 'error' =
+        payloadLevel === 'error' || payloadLevel === 'warn'
+          ? payloadLevel
+          : code.endsWith('_ERROR')
+            ? 'error'
+            : 'info';
+      const entry = { time: new Date().toISOString(), code, level, payload };
       if (!Array.isArray(window.__geofsExtDiag)) window.__geofsExtDiag = [];
       window.__geofsExtDiag.push(entry);
       if (window.__geofsExtDiag.length > 100) window.__geofsExtDiag.shift();
-      console.info(`[GeoFS-EXT][DIAG] ${code}`, payload ?? '');
+      console.info(`[GeoFS-EXT][DIAG]${level === 'error' ? '[ERROR]' : ''} ${code}`, payload ?? '');
       window.postMessage({ type: 'GEOFS_EXT_DIAG', entry }, '*');
     };
 

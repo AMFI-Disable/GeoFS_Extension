@@ -324,7 +324,7 @@ declare global {
       };
       [key: string]: unknown;
     };
-    __geofsExtDiag?: Array<{ time: string; code: string; payload?: unknown }>;
+    __geofsExtDiag?: Array<{ time: string; code: string; level?: 'info' | 'warn' | 'error'; payload?: unknown }>;
     __geofsExt?: Record<string, unknown>;
   }
 }

@@ -448,9 +448,10 @@ const FAILURE_STYLES = `
     box-sizing: border-box;
     position: fixed;
     left: 50px;
-    top: 80px;
-    width: 420px;
-    max-width: calc(100vw - 24px);
+    top: 60px;
+    width: 460px;
+    min-width: 460px;
+    max-width: min(460px, calc(100vw - 24px));
     background: rgba(0, 0, 0, 0.8);
     border: 1px solid #888888;
     border-radius: 15px;
@@ -461,7 +462,7 @@ const FAILURE_STYLES = `
     z-index: 2147483004;
     display: none;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -486,11 +487,12 @@ const FAILURE_STYLES = `
     color: #ffffff;
     border: 1px solid #888888;
     border-radius: 15px;
-    padding: 4px 8px;
-    font-size: 10px;
+    padding: 3px 6px;
+    font-size: 9px;
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
+    text-align: center;
   }
   .geofs-ext-fail-btn--danger {
     border-color: #ef4444;
@@ -585,21 +587,21 @@ export class FailureSimulatorModule implements IModule {
       modal.id = 'geofs-failure-menu';
       modal.style.display = 'none';
       modal.innerHTML = `
-        <div id="fail-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(0,0,0,0.5);border-bottom:1px solid rgba(136,136,136,0.45);cursor:grab;user-select:none;touch-action:none;">
-          <span style="font-weight:700;font-size:12px;letter-spacing:0.6px;color:#ffffff;">FAILURE SIMULATOR</span>
-          <button type="button" data-role="close" style="background:none;border:none;color:#cccccc;cursor:pointer;font-size:15px;line-height:1;">✕</button>
+        <div id="fail-header" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(0,0,0,0.5);border-bottom:1px solid rgba(136,136,136,0.45);border-radius:15px 15px 0 0;cursor:grab;user-select:none;touch-action:none;">
+          <span style="font-weight:700;font-size:11px;letter-spacing:0.6px;color:#ffffff;">FAILURE SIMULATOR</span>
+          <button type="button" data-role="close" style="background:none;border:none;color:#cccccc;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;">✕</button>
         </div>
-        <div style="padding:12px 16px;border-bottom:1px solid rgba(136,136,136,0.3);display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;gap:8px;">
-            <button type="button" id="enBtn" class="geofs-ext-fail-btn geofs-ext-fail-btn--ok" style="flex:1;padding:7px 10px;">ENABLE PROBABILITY</button>
-            <button type="button" data-role="clear-all" class="geofs-ext-fail-btn geofs-ext-fail-btn--danger" style="padding:7px 10px;">CLEAR ALL FAILURES</button>
+        <div style="padding:8px 12px;border-bottom:1px solid rgba(136,136,136,0.3);display:flex;flex-direction:column;gap:6px;">
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;">
+            <button type="button" id="enBtn" class="geofs-ext-fail-btn geofs-ext-fail-btn--ok" style="padding:6px 8px;font-size:9.5px;">ENABLE PROBABILITY</button>
+            <button type="button" data-role="clear-all" class="geofs-ext-fail-btn geofs-ext-fail-btn--danger" style="padding:6px 8px;font-size:9.5px;">CLEAR ALL FAILURES</button>
           </div>
-          <div data-role="prob-info" style="font-size:10px;color:#aaaaaa;display:flex;justify-content:space-between;">
+          <div data-role="prob-info" style="font-size:9.5px;color:#aaaaaa;display:flex;justify-content:space-between;white-space:nowrap;">
             <span>Probability rolls off</span>
             <span>Recovery: 60%</span>
           </div>
         </div>
-        <div data-role="sections" style="max-height:58vh;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;"></div>
+        <div data-role="sections" style="padding:8px 12px;display:flex;flex-direction:column;gap:6px;overflow:visible;"></div>
       `;
       document.body?.appendChild(modal);
       this.modal = modal;
@@ -680,7 +682,7 @@ export class FailureSimulatorModule implements IModule {
 
           const sectHeader = document.createElement('div');
           sectHeader.style.cssText =
-            'display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(136,136,136,0.3);border-radius:10px;cursor:pointer;';
+            'display:flex;justify-content:space-between;align-items:center;padding:5px 9px;background:rgba(255,255,255,0.06);border:1px solid rgba(136,136,136,0.3);border-radius:10px;cursor:pointer;';
 
           const left = document.createElement('div');
           left.style.cssText = 'display:flex;align-items:center;gap:6px;';
@@ -726,8 +728,11 @@ export class FailureSimulatorModule implements IModule {
             this.render();
           });
 
+          const n = types.length;
+          const cols = n <= 1 ? 1 : n === 2 || n === 4 ? 2 : 3;
           const content = document.createElement('div');
-          content.style.cssText = `display:${collapsed ? 'none' : 'flex'};flex-direction:column;gap:6px;padding-top:6px;`;
+          content.dataset.sectionGridCols = String(cols);
+          content.style.cssText = `display:${collapsed ? 'none' : 'grid'};grid-template-columns:repeat(${cols},minmax(0,1fr));gap:5px;padding-top:5px;`;
           for (const type of types) {
             content.appendChild(this.systemRow(type));
           }
@@ -741,33 +746,31 @@ export class FailureSimulatorModule implements IModule {
   private systemRow(type: FailureType): HTMLElement {
     const failed = this.active.has(type);
     const chancePct = Math.round((this.chances.get(type) ?? 0) * 100);
+    const description = type.startsWith('engine')
+      ? 'Thrust loss and heavy smoke. Expect yaw asymmetry and reduced climb performance.'
+      : SYSTEM_DESCRIPTIONS[type as System];
 
     const card = document.createElement('div');
     card.dataset.failureType = type;
-    card.style.cssText = 'padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.28);border-radius:10px;';
+    card.title = description;
+    card.style.cssText = 'min-width:0;padding:6px 7px;background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.28);border-radius:10px;display:flex;flex-direction:column;gap:4px;';
 
     const top = document.createElement('div');
-    top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;';
+    top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:4px;min-width:0;';
     const titleWrap = document.createElement('div');
-    titleWrap.style.cssText = 'display:flex;align-items:center;gap:7px;';
+    titleWrap.style.cssText = 'display:flex;align-items:center;gap:5px;flex:1;min-width:0;';
     const led = document.createElement('div');
     led.id = `led-${type}`;
     led.className = `geofs-ext-fail-led ${failed ? 'is-failed' : ''}`;
     const nameSpan = document.createElement('span');
-    nameSpan.style.cssText = 'font-size:11px;font-weight:700;color:#ffffff;';
+    nameSpan.style.cssText = 'font-size:10px;font-weight:700;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
     nameSpan.textContent = label(type);
     titleWrap.append(led, nameSpan);
 
     const valSpan = document.createElement('span');
-    valSpan.style.cssText = 'font-size:10px;color:#aaaaaa;';
+    valSpan.style.cssText = 'font-size:9px;color:#aaaaaa;flex-shrink:0;';
     valSpan.textContent = `${chancePct}%`;
     top.append(titleWrap, valSpan);
-
-    const desc = document.createElement('div');
-    desc.style.cssText = 'font-size:9.5px;font-style:italic;color:#9ca3af;margin-bottom:6px;line-height:1.25;';
-    desc.textContent = type.startsWith('engine')
-      ? 'Thrust loss and heavy smoke. Expect yaw asymmetry and reduced climb performance.'
-      : SYSTEM_DESCRIPTIONS[type as System];
 
     const slider = document.createElement('input');
     slider.type = 'range';
@@ -775,7 +778,7 @@ export class FailureSimulatorModule implements IModule {
     slider.max = '100';
     slider.step = '1';
     slider.value = String(chancePct);
-    slider.style.cssText = 'width:100%;height:4px;margin-bottom:7px;accent-color:#4caf50;cursor:pointer;';
+    slider.style.cssText = 'width:100%;height:4px;margin:0;accent-color:#4caf50;cursor:pointer;';
     slider.setAttribute('aria-label', `${label(type)} probability percentage`);
     slider.addEventListener('input', () => {
       valSpan.textContent = `${slider.value}%`;
@@ -784,13 +787,13 @@ export class FailureSimulatorModule implements IModule {
     slider.addEventListener('change', () => this.persistChances());
 
     const actions = document.createElement('div');
-    actions.style.cssText = 'display:flex;gap:5px;';
+    actions.style.cssText = 'display:flex;gap:3px;';
 
     const failBtn = document.createElement('button');
     failBtn.type = 'button';
     failBtn.dataset.action = 'fail';
     failBtn.className = 'geofs-ext-fail-btn geofs-ext-fail-btn--danger';
-    failBtn.style.flex = '1';
+    failBtn.style.cssText = 'flex:1;min-width:0;padding:3px 2px;font-size:8.5px;';
     failBtn.textContent = 'FAIL';
     failBtn.disabled = failed;
     failBtn.addEventListener('click', () => this.fail(type));
@@ -799,8 +802,8 @@ export class FailureSimulatorModule implements IModule {
     recoverBtn.type = 'button';
     recoverBtn.dataset.action = 'recover';
     recoverBtn.className = 'geofs-ext-fail-btn geofs-ext-fail-btn--warn';
-    recoverBtn.style.flex = '1';
-    recoverBtn.textContent = 'RECOVER';
+    recoverBtn.style.cssText = 'flex:1;min-width:0;padding:3px 2px;font-size:8.5px;';
+    recoverBtn.textContent = 'REC';
     recoverBtn.disabled = !failed || !isFailureRecoverable(type);
     recoverBtn.title = isFailureRecoverable(type)
       ? 'Roll probability recovery via QRH procedure'
@@ -811,7 +814,7 @@ export class FailureSimulatorModule implements IModule {
     fixBtn.type = 'button';
     fixBtn.dataset.action = 'fix';
     fixBtn.className = 'geofs-ext-fail-btn geofs-ext-fail-btn--ok';
-    fixBtn.style.flex = '1';
+    fixBtn.style.cssText = 'flex:1;min-width:0;padding:3px 2px;font-size:8.5px;';
     fixBtn.textContent = 'FIX';
     fixBtn.disabled = !failed;
     fixBtn.addEventListener('click', () => {
@@ -820,7 +823,7 @@ export class FailureSimulatorModule implements IModule {
     });
 
     actions.append(failBtn, recoverBtn, fixBtn);
-    card.append(top, desc, slider, actions);
+    card.append(top, slider, actions);
     return card;
   }
 
@@ -1063,7 +1066,12 @@ export class FailureSimulatorModule implements IModule {
     if (!this.aircraft || this.aircraft.crashed || this.active.has(type)) return;
     const effect = this.effect(type, this.aircraft);
     if (!effect) {
-      this.ctx?.anchors.showToast(`${label(type)} unavailable on this aircraft.`, 'warn');
+      this.ctx?.emitDiag?.('FAILURE_SYSTEM_ERROR', {
+        level: 'error',
+        type,
+        system: label(type),
+        reason: 'Target control surface or system missing on current aircraft'
+      });
       return;
     }
     this.active.set(type, effect);

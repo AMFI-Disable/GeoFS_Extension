@@ -55,7 +55,7 @@ const FUEL_STYLES = `
   .geofs-ext-fuel-root {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     width: 100%;
     font-family: Helvetica, Arial, sans-serif;
   }
@@ -77,8 +77,8 @@ const FUEL_STYLES = `
     color: #cccccc;
     border: 1px solid #888888;
     border-radius: 15px;
-    padding: 5px 7px;
-    font-size: 9.5px;
+    padding: 5px 6px;
+    font-size: 9px;
     font-weight: 700;
     cursor: pointer;
     text-align: center;
@@ -151,30 +151,30 @@ export class FuelSimulatorModule implements IModule {
         </div>
         <div class="geofs-ext-fuel-bar-track"><div data-role="bar-fill" class="geofs-ext-fuel-bar-fill" style="width:100%;"></div></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;font-size:11px;">
         <div>
           <div style="font-size:9px;color:#aaaaaa;text-transform:uppercase;">Burn Rate</div>
-          <strong data-role="burn" style="font-size:12px;">0 kg/h</strong>
+          <strong data-role="burn" style="font-size:12px;white-space:nowrap;">0 kg/h</strong>
         </div>
         <div>
           <div style="font-size:9px;color:#aaaaaa;text-transform:uppercase;">Gross Weight</div>
-          <strong data-role="weight" style="font-size:12px;">—</strong>
+          <strong data-role="weight" style="font-size:12px;white-space:nowrap;">—</strong>
         </div>
       </div>
       <div data-role="tanks" style="font-size:9px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Tanks L/C/R: —</div>
       <div>
-        <input type="range" min="0" max="100" step="1" value="100" data-role="slider" style="width:100%;accent-color:#4caf50;cursor:pointer;">
+        <input type="range" min="0" max="100" step="1" value="100" data-role="slider" style="width:100%;margin:0;accent-color:#4caf50;cursor:pointer;">
         <div style="display:flex;justify-content:space-between;font-size:10px;color:#aaaaaa;margin-top:2px;">
           <span>SET FUEL</span><span data-role="slider-label">100%</span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;">
         <button type="button" class="geofs-ext-fuel-btn" data-role="fuelDynamicSfc" title="${FUEL_OPTIONS[0][2]}">${FUEL_OPTIONS[0][1]}</button>
         <button type="button" class="geofs-ext-fuel-btn" data-role="fuelRealisticTanks" title="${FUEL_OPTIONS[1][2]}">${FUEL_OPTIONS[1][1]}</button>
+        <button type="button" class="geofs-ext-fuel-btn" data-role="fuelAutoRefuel" title="${FUEL_OPTIONS[2][2]}">${FUEL_OPTIONS[2][1]}</button>
+        <button type="button" class="geofs-ext-fuel-btn" data-role="refuel" style="border-color:#4caf50;color:#ffffff;">REFUEL 100%</button>
       </div>
-      <button type="button" class="geofs-ext-fuel-btn" data-role="fuelAutoRefuel" title="${FUEL_OPTIONS[2][2]}">${FUEL_OPTIONS[2][1]}</button>
-      <button type="button" class="geofs-ext-fuel-btn" data-role="refuel" style="border-color:#4caf50;color:#ffffff;">REFUEL 100%</button>
-      <div data-role="status" style="font-size:9px;font-weight:700;color:#4caf50;text-align:center;letter-spacing:0.6px;">SYSTEMS LIVE</div>
+      <div data-role="status" style="font-size:9px;font-weight:700;color:#4caf50;text-align:center;letter-spacing:0.6px;white-space:nowrap;">SYSTEMS LIVE</div>
     `;
 
     this.pctEl = el.querySelector('[data-role="pct"]');
@@ -252,7 +252,7 @@ export class FuelSimulatorModule implements IModule {
       if (this.pctEl) this.pctEl.textContent = '—';
       if (this.burnEl) this.burnEl.textContent = '—';
       if (this.weightEl) this.weightEl.textContent = '—';
-      if (this.tanksEl) this.tanksEl.textContent = 'Tanks: N/A';
+      if (this.tanksEl) this.tanksEl.textContent = 'Tanks L/C/R: —';
       return;
     }
     if (telemetry.paused || telemetry.crashed) {

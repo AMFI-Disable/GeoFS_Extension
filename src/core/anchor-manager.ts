@@ -660,7 +660,7 @@ export class AnchorManager {
         border-radius: 15px;
         font-family: Helvetica, Arial, sans-serif;
         font-size: 12px;
-        padding: 9px 8px;
+        padding: 8px;
         z-index: 2147483000;
         display: flex;
         flex-direction: column;
@@ -694,7 +694,7 @@ export class AnchorManager {
         height: auto;
         min-height: 22px;
         gap: 3px;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         cursor: grab;
         user-select: none;
       }
@@ -767,13 +767,10 @@ export class AnchorManager {
         text-align: center;
       }
       #flightDataDisplay.geofs-ext-hud > .geofs-ext-hud-body {
-        flex: 1 1 auto;
+        flex: 0 0 auto;
         width: 100%;
-        max-height: min(440px, calc(100vh - 140px));
-        overflow-y: auto;
-        overflow-x: hidden;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+        max-height: none;
+        overflow: visible;
         cursor: grab;
       }
       #flightDataDisplay.geofs-ext-hud.is-minimized {

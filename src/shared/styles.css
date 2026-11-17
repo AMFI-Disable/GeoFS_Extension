@@ -400,6 +400,14 @@ select {
   text-overflow: ellipsis;
 }
 
+.diag-line--error {
+  color: #fca5a5;
+}
+
+.diag-line--warn {
+  color: #fde047;
+}
+
 .table-wrap {
   width: 100%;
   overflow-x: auto;

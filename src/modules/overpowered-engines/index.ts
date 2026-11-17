@@ -240,6 +240,8 @@ const CARD_STYLES = `
     bottom: 120px;
     left: 540px;
     width: 320px;
+    min-width: 320px;
+    max-width: min(320px, calc(100vw - 24px));
     background: rgba(0, 0, 0, 0.8);
     color: #ffffff;
     border: 1px solid #888888;
@@ -261,7 +263,7 @@ const CARD_STYLES = `
     justify-content: space-between;
     align-items: center;
     gap: 8px;
-    padding: 11px 14px;
+    padding: 10px 14px;
     border-bottom: 1px solid rgba(136, 136, 136, 0.45);
     background: rgba(0, 0, 0, 0.5);
     cursor: grab;
@@ -269,6 +271,8 @@ const CARD_STYLES = `
     touch-action: none;
   }
   #opEngineHeaderText {
+    flex: 1;
+    min-width: 0;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.4px;
@@ -279,10 +283,10 @@ const CARD_STYLES = `
     text-overflow: ellipsis;
   }
   .op-card-body {
-    padding: 14px;
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
   .op-btn-row {
     display: flex;
@@ -294,7 +298,7 @@ const CARD_STYLES = `
     color: #ffffff;
     border: 1px solid #888888;
     border-radius: 15px;
-    padding: 8px 10px;
+    padding: 7px 10px;
     font-family: Helvetica, Arial, sans-serif;
     font-size: 11px;
     font-weight: 700;
@@ -310,10 +314,12 @@ const CARD_STYLES = `
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5px;
+    gap: 6px;
+    margin-bottom: 4px;
     font-size: 10px;
     color: #cccccc;
     text-transform: uppercase;
+    white-space: nowrap;
   }
   #opMultInput {
     background: #000000;
@@ -328,6 +334,7 @@ const CARD_STYLES = `
   }
   .op-slider {
     width: 100%;
+    margin: 0;
     accent-color: #4caf50;
     cursor: pointer;
   }
@@ -459,7 +466,7 @@ export class OverpoweredEnginesModule implements IModule {
                 <div class="op-thrust-lock-target">
                   <div class="op-label-row">
                     <span>Thrust Multiplier</span>
-                    <span><input type="number" id="opMultInput" data-role="multiplier" min="1" max="1000000000" step="any" value="${settings.opThrustMultiplier}"> x</span>
+                    <span style="white-space:nowrap;flex-shrink:0;"><input type="number" id="opMultInput" data-role="multiplier" min="1" max="1000000000" step="any" value="${settings.opThrustMultiplier}"> x</span>
                   </div>
                   <input type="range" id="opMultSlider" data-role="mult-slider" class="op-slider" min="0" max="${THRUST_PRESETS.length - 1}" step="1" value="${this.getThrustIndex(settings.opThrustMultiplier)}">
                 </div>
@@ -490,11 +497,11 @@ export class OverpoweredEnginesModule implements IModule {
             </div>
           </div>
 
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-            <button type="button" id="opKeybindBtn" class="op-pill" title="Click to rebind Overpowered Thrust hotkey">${settings.keybindings.toggleOpEngines}</button>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:10px;">
-              <div id="opStatusMsg" style="color:#aaaaaa;font-style:italic;">Hotkey toggles thrust</div>
-              <div id="opSASMsg" style="color:#4caf50;display:${settings.opStability ? 'block' : 'none'};">SAS ACTIVE (Attitude Hold)</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0;">
+            <button type="button" id="opKeybindBtn" class="op-pill" style="flex-shrink:0;" title="Click to rebind Overpowered Thrust hotkey">${settings.keybindings.toggleOpEngines}</button>
+            <div style="flex:1;min-width:0;text-align:right;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              <span id="opStatusMsg" style="color:#aaaaaa;font-style:italic;display:${settings.opStability ? 'none' : 'inline'};">Hotkey toggles thrust</span>
+              <span id="opSASMsg" style="color:#4caf50;font-weight:700;display:${settings.opStability ? 'inline' : 'none'};">SAS ACTIVE (Attitude Hold)</span>
             </div>
           </div>
         </div>
@@ -811,8 +818,10 @@ export class OverpoweredEnginesModule implements IModule {
     if (keyBtn && !this.isListeningKey) {
       keyBtn.textContent = settings.keybindings.toggleOpEngines;
     }
+    const statusMsg = card.querySelector<HTMLElement>('#opStatusMsg');
+    if (statusMsg) statusMsg.style.display = settings.opStability ? 'none' : 'inline';
     const sasMsg = card.querySelector<HTMLElement>('#opSASMsg');
-    if (sasMsg) sasMsg.style.display = settings.opStability ? 'block' : 'none';
+    if (sasMsg) sasMsg.style.display = settings.opStability ? 'inline' : 'none';
   }
 
   private restoreTorque(): void {

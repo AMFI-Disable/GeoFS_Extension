@@ -152,7 +152,7 @@ export class InformationDisplayModule implements IModule {
     this.setText('gs', `${telemetry.groundSpeed.toFixed(1)}`);
     this.setText(
       'glideslope',
-      telemetry.glideslopeDeviation === undefined ? 'N/A' : `${telemetry.glideslopeDeviation.toFixed(1)}°`
+      telemetry.glideslopeDeviation === undefined ? '--' : `${telemetry.glideslopeDeviation.toFixed(1)}°`
     );
 
     const aoaColor = telemetry.aoa > 16 ? '#ef4444' : telemetry.aoa > 12 ? '#eab308' : '#ffffff';
@@ -168,7 +168,10 @@ export class InformationDisplayModule implements IModule {
     const vSpeedsText = formatVSpeeds(ac?.vSpeeds, ac?.machSpeeds);
     this.setText('v-speeds', vSpeedsText);
     const vEl = this.cells.get('v-speeds');
-    if (vEl) vEl.title = vSpeedsText;
+    if (vEl) {
+      vEl.hidden = !vSpeedsText;
+      vEl.title = vSpeedsText;
+    }
 
     const rotorcraft = ac?.category === 'rotorcraft';
     const torque = this.cells.get('rotor-torque');

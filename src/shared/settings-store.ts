@@ -34,6 +34,7 @@ export interface LiveTelemetrySummary {
 export interface DiagEntry {
   time: string;
   code: string;
+  level?: 'info' | 'warn' | 'error';
   payload?: unknown;
 }
 

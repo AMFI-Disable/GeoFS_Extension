@@ -72,5 +72,5 @@ export function formatVSpeeds(speeds: VSpeeds | undefined, machSpeeds?: VSpeeds)
     if (machSpeeds?.[speed] !== undefined) return [`${speed} Mach ${machSpeeds[speed]}`];
     return [];
   });
-  return entries.length ? `V-Speeds: ${entries.join(' · ')}` : 'V-Speeds: Unavailable';
+  return entries.length ? `V-Speeds: ${entries.join(' · ')}` : '';
 }
