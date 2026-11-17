@@ -251,13 +251,14 @@ async function run() {
     // Engage A/THR and dial target speed 450 vs 145 -> should trigger OP-SYNC Ask prompt
     await simV3.click('#autothrottle-button');
 
-    // Assert expanded autopilot bar + bottom corner pills stay within viewport with zero mutual overlap
     const collisionCheck = await simV3.evaluate(() => {
       const box = (sel) => document.querySelector(sel)?.getBoundingClientRect().toJSON() ?? null;
       const boxes = {
         apBar: box('.geofs-autopilot-bar'),
         opBtn: box('#opEngineBarBtn'),
         failPill: box('#fail-btn'),
+        topHudBtn: box('[data-geofs-ext-control="top-hud-toggle"]'),
+        rightChecksBtn: box('[data-geofs-ext-control="checklist-right-pad"]'),
         fpvBtn: box('[data-geofs-ext-control="fpv-pad"]'),
         gsWidget: box('#flightDataDisplay0')
       };
@@ -268,14 +269,15 @@ async function run() {
         vw: window.innerWidth,
         vh: window.innerHeight,
         opVsFail: overlaps(boxes.opBtn, boxes.failPill),
-        fpvVsFail: overlaps(boxes.fpvBtn, boxes.failPill),
         apVsFail: overlaps(boxes.apBar, boxes.failPill),
         gsVsFail: overlaps(boxes.gsWidget, boxes.failPill)
       };
     });
     assert(collisionCheck.boxes.apBar.width < 700, `Autopilot bar expanded abnormally wide (${collisionCheck.boxes.apBar.width}px)`);
+    assert.equal(collisionCheck.boxes.topHudBtn, null, 'Excessive unmovable top-bar HUD button must not be mounted');
+    assert.equal(collisionCheck.boxes.rightChecksBtn, null, 'Unmovable right-bar CHECKS button must not be mounted');
+    assert.equal(collisionCheck.boxes.fpvBtn, null, 'Unmovable corner FPV button must not be mounted');
     assert.equal(collisionCheck.opVsFail, false, '#opEngineBarBtn overlaps #fail-btn');
-    assert.equal(collisionCheck.fpvVsFail, false, 'FPV corner button overlaps #fail-btn');
     assert.equal(collisionCheck.apVsFail, false, 'Autopilot bar overlaps #fail-btn');
     assert.equal(collisionCheck.gsVsFail, false, 'Glideslope widget overlaps #fail-btn');
 
@@ -357,15 +359,28 @@ async function run() {
     const fpvAudit = await simV3.evaluate(() => {
       const ent = window.geofs.api.viewer.entities._items[0];
       const gs = document.getElementById('flightDataDisplay0');
+      const gsStyle = gs ? getComputedStyle(gs) : null;
+      const span = gs?.querySelector('span');
+      const spanStyle = span ? getComputedStyle(span) : null;
       return {
         imageUrl: ent?.billboard?.image,
         gsText: gs?.textContent?.trim(),
-        gsVisible: gs ? getComputedStyle(gs).display !== 'none' : false
+        gsVisible: gs ? gsStyle?.display !== 'none' : false,
+        gsBg: gsStyle?.backgroundColor,
+        gsBorder: gsStyle?.borderStyle,
+        gsShadow: gsStyle?.boxShadow,
+        gsFont: gsStyle?.fontFamily,
+        spanColor: spanStyle?.color
       };
     });
     assert(fpvAudit.imageUrl && fpvAudit.imageUrl.includes('assets/fpv_hires.png'), `Expected bundled hires FPV PNG, got ${fpvAudit.imageUrl}`);
     assert.equal(fpvAudit.gsVisible, true);
-    assert(fpvAudit.gsText && fpvAudit.gsText.includes('°'), `Expected Glideslope readout, got ${fpvAudit.gsText}`);
+    assert.equal(fpvAudit.gsBg, 'rgba(0, 0, 0, 0)', `Expected transparent Glideslope background, got ${fpvAudit.gsBg}`);
+    assert.equal(fpvAudit.gsBorder, 'none', `Expected borderless Glideslope widget, got ${fpvAudit.gsBorder}`);
+    assert.equal(fpvAudit.gsShadow, 'none', `Expected shadowless Glideslope widget, got ${fpvAudit.gsShadow}`);
+    assert.equal(fpvAudit.spanColor, 'rgb(0, 0, 0)', `Expected native black Glideslope text, got ${fpvAudit.spanColor}`);
+    assert(fpvAudit.gsFont && fpvAudit.gsFont.includes('Roboto'), `Expected native Roboto font for Glideslope, got ${fpvAudit.gsFont}`);
+    assert(fpvAudit.gsText && /^Glideslope\s+-?\d+\.\d+$/i.test(fpvAudit.gsText), `Expected legacy Glideslope readout, got ${fpvAudit.gsText}`);
 
     // Trigger clean touchdown transition: sample short-final airborne approach frames first, then contact ground
     await simV3.evaluate(() => {

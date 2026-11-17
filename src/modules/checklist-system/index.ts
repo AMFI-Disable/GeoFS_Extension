@@ -237,14 +237,6 @@ export class ChecklistSystemModule implements IModule {
       context.anchors.showToast(`Checklist Phase: ${this.phaseTitles[this.activePhase]}`);
     };
 
-    const rightBtn = document.createElement('button');
-    rightBtn.type = 'button';
-    rightBtn.className = 'geofs-ext-pad';
-    rightBtn.textContent = 'CHECKS';
-    rightBtn.title = 'Cycle Mandatory Checklist Phase';
-    rightBtn.addEventListener('click', cyclePhase);
-    this.unmounts.push(context.anchors.mountControl('checklist-right-pad', 'right', rightBtn));
-
     const combo = context.getSettings().keybindings.toggleChecklist;
     this.unmounts.push(context.keybinds.register('checklist-cycle', combo, cyclePhase));
 

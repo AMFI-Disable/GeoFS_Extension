@@ -58,7 +58,7 @@ export class FlightPathVectorModule implements IModule {
   private svgEl: SVGSVGElement | null = null;
   private birdEl: SVGGElement | null = null;
   private glideslopeEl: HTMLDivElement | null = null;
-  private btnEl: HTMLButtonElement | null = null;
+  private glideslopeSpan: HTMLSpanElement | null = null;
   private unmounts: Array<() => void> = [];
 
   public init(context: ModuleContext): void {
@@ -66,13 +66,6 @@ export class FlightPathVectorModule implements IModule {
     this.ctx = context;
 
     if (typeof document !== 'undefined') {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'geofs-ext-pad is-active';
-      btn.textContent = 'FPV ON';
-      btn.addEventListener('click', () => this.toggle());
-      this.btnEl = btn;
-      this.unmounts.push(context.anchors.mountControl('fpv-pad', 'corner', btn));
       this.ensureGlideslopeWidget();
     }
 
@@ -93,10 +86,6 @@ export class FlightPathVectorModule implements IModule {
     if (this.birdEl) this.birdEl.style.display = 'none';
     if (this.svgEl) this.svgEl.style.display = this.visible ? 'block' : 'none';
     if (this.glideslopeEl) this.glideslopeEl.style.display = this.visible ? 'inline-block' : 'none';
-    if (this.btnEl) {
-      this.btnEl.classList.toggle('is-active', this.visible);
-      this.btnEl.textContent = this.visible ? 'FPV ON' : 'FPV OFF';
-    }
   }
 
   private ensureGlideslopeWidget(): HTMLDivElement | null {
@@ -105,17 +94,24 @@ export class FlightPathVectorModule implements IModule {
     if (!el) {
       el = document.createElement('div');
       el.id = 'flightDataDisplay0';
-      el.style.cssText =
-        'position:fixed;bottom:46px;right:calc(10px + 48px + 16px);height:36px;min-width:64px;padding:0 12px;' +
-        'display:inline-block;box-sizing:border-box;background:var(--geofs-ext-bg, rgba(0, 0, 0, 0.8));' +
-        'color:var(--geofs-ext-fg, #ffffff);border:1px solid var(--geofs-ext-border, #888888);' +
-        'border-radius:15px;box-shadow:0 2px 5px rgba(0,0,0,0.35);backdrop-filter:none;-webkit-backdrop-filter:none;' +
-        'font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;' +
-        'text-align:center;line-height:34px;vertical-align:middle;white-space:nowrap;overflow:hidden;z-index:2147483000;';
-      el.textContent = 'GLIDESLOPE N/A';
       document.body.appendChild(el);
     }
+    el.style.cssText =
+      'position:fixed;bottom:40px;right:calc(10px + 48px + 16px);height:36px;min-width:64px;padding:0 16px;' +
+      'display:inline-block;background:0 0;border:none;border-radius:0;box-shadow:none;' +
+      'backdrop-filter:none;-webkit-backdrop-filter:none;' +
+      'font-family:"Roboto","Helvetica","Arial",sans-serif;font-size:14px;font-weight:400;text-transform:uppercase;' +
+      'overflow:hidden;will-change:box-shadow;' +
+      'transition:box-shadow .2s cubic-bezier(.4,0,1,1),background-color .2s cubic-bezier(.4,0,.2,1),color .2s cubic-bezier(.4,0,.2,1);' +
+      'text-align:center;line-height:36px;vertical-align:middle;z-index:9999;pointer-events:none;';
+    let span = el.querySelector('span');
+    if (!span) {
+      el.innerHTML =
+        '<span style="background: 0 0; border: none; border-radius: 2px; color: #000; display: inline-block; padding: 0 8px;">Glideslope N/A</span>';
+      span = el.querySelector('span');
+    }
     this.glideslopeEl = el;
+    this.glideslopeSpan = span;
     return el;
   }
 
@@ -271,13 +267,19 @@ export class FlightPathVectorModule implements IModule {
       const denom = navDir === 'to' ? navDist + 600 : Math.abs(navDist - 600);
       if (denom > 0) {
         const deg = Math.atan((telemetry.aglFeet * 0.3048) / denom) * (180 / Math.PI);
-        if (Number.isFinite(deg)) gsText = `${deg.toFixed(1)}°`;
+        if (Number.isFinite(deg)) gsText = deg.toFixed(1);
       }
     } else if (typeof telemetry.glideslopeDeviation === 'number' && Number.isFinite(telemetry.glideslopeDeviation)) {
-      gsText = `${telemetry.glideslopeDeviation.toFixed(1)}°`;
+      gsText = telemetry.glideslopeDeviation.toFixed(1);
     }
 
-    el.textContent = `GLIDESLOPE ${gsText}`;
+    const span = this.glideslopeSpan ?? el.querySelector('span');
+    if (span) {
+      span.textContent = `Glideslope ${gsText}`;
+    } else {
+      el.innerHTML = `<span style="background: 0 0; border: none; border-radius: 2px; color: #000; display: inline-block; padding: 0 8px;">Glideslope ${gsText}</span>`;
+      this.glideslopeSpan = el.querySelector('span');
+    }
   }
 
   public destroy(): void {
@@ -299,7 +301,7 @@ export class FlightPathVectorModule implements IModule {
     this.birdEl = null;
     this.glideslopeEl?.remove();
     this.glideslopeEl = null;
-    this.btnEl = null;
+    this.glideslopeSpan = null;
     this.ctx = null;
   }
 }

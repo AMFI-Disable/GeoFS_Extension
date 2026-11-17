@@ -110,20 +110,10 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
       };
 
       anchors.init();
-      const topHudBtn = document.createElement('button');
-      topHudBtn.type = 'button';
-      topHudBtn.className = 'geofs-ext-pad is-active';
-      topHudBtn.textContent = 'HUD';
-      topHudBtn.addEventListener('click', () => {
-        const shown = anchors.toggleHudVisibility();
-        topHudBtn.classList.toggle('is-active', shown);
-      });
-      anchors.mountControl('top-hud-toggle', 'top', topHudBtn);
 
       keybinds.start();
       keybinds.register('hud-toggle', settings.keybindings.toggleHud, () => {
-        const shown = anchors.toggleHudVisibility();
-        topHudBtn.classList.toggle('is-active', shown);
+        anchors.toggleHudVisibility();
       });
 
       for (const mod of createBuiltinModules()) {
