@@ -1,5 +1,6 @@
 import { pinValue } from '../src/modules/failure-simulator';
 import { describe, it, expect, beforeEach } from 'vitest';
+import { AnchorManager } from '../src/core/anchor-manager';
 import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-adapter';
 import { ModuleManager } from '../src/core/module-manager';
 import { detectGeoFSKeyCollision, formatComboForOs } from '../src/core/keybind-manager';
@@ -10,7 +11,7 @@ import { buildGForceShader } from '../src/modules/realism-pack';
 import { rateLanding, scoreLanding } from '../src/modules/landing-statistics';
 import { EngineCeiling, EngineThrust } from '../src/modules/overpowered-engines';
 import { drainFuelTanks, fuelBurnKgHr } from '../src/modules/fuel-simulator';
-import { projectFlightPath } from '../src/modules/flight-path-vector';
+import { projectFlightPath, resolveFpvColorState, resolveGlideslopeAppearance } from '../src/modules/flight-path-vector';
 import { DEFAULT_SETTINGS } from '../src/types/settings';
 import type { GeoFSAnimationValues, GeoFSSound } from '../src/types/geofs.d';
 import type { IModule } from '../src/types/module';
@@ -20,14 +21,17 @@ describe('SimAdapter & Version Detection', () => {
     (globalThis as unknown as { window: Record<string, unknown> }).window = {};
   });
 
-  it('recognizes GeoFS V3 and V4 while ignoring minor versions', () => {
+  it('recognizes GeoFS V3 and V4 while ignoring minor and suffix tokens', () => {
     expect(parseSimMajor('3.9')).toBe(3);
     expect(parseSimMajor('v3.9.4')).toBe(3);
+    expect(parseSimMajor('3.9-beta')).toBe(3);
+    expect(parseSimMajor('GeoFS 3.9')).toBe(3);
     expect(parseSimMajor('4.0')).toBe(4);
     expect(parseSimMajor('4.12.3')).toBe(4);
     expect(parseSimMajor('v4')).toBe(4);
     expect(parseSimMajor('2.9')).toBeNull();
     expect(parseSimMajor('5.0')).toBeNull();
+    expect(parseSimMajor('30')).toBeNull();
   });
 
   it('classifies aircraft into correct categories for checklists and PID presets', () => {
@@ -281,5 +285,109 @@ describe('Archived Engine and Flight Path Behavior', () => {
     ]);
 
     expect(mem.map((r) => r.id)).toEqual(['stable-tab-1', 'beta-tab-2']);
+  });
+
+  it('adapts glideslope text color for daytime, twilight, and night in-game time', () => {
+    const win = (globalThis as unknown as { window: Record<string, unknown> }).window;
+    win.geofs = { version: '4.0', environment: { sunElevation: 0.45 } };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'day', color: '#000000' });
+
+    win.geofs = { version: '4.0', environment: { sunElevation: 0.01 } };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'twilight', color: '#f8fafc' });
+
+    win.geofs = { version: '4.0', environment: { sunElevation: -0.25 } };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'night', color: '#ffffff' });
+
+    win.geofs = { version: '3.9', camera: { lla: [37.6, -122.4, 500] }, api: { viewer: { clock: { currentTime: 't' } } } };
+    win.Cesium = { JulianDate: { toDate: () => new Date('2026-11-16T20:00:00Z') } };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'day', color: '#000000' });
+
+    win.Cesium = { JulianDate: { toDate: () => new Date('2026-11-16T06:00:00Z') } };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'night', color: '#ffffff' });
+
+    delete win.Cesium;
+    win.geofs = { version: '4.0' };
+    win.weather = { localTime: 18.5 };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'twilight', color: '#f8fafc' });
+    win.weather = { localTime: 22.0 };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'night', color: '#ffffff' });
+  });
+
+  it('synchronizes autopilot pad CSS variables from native .geofs-autopilot-pad', () => {
+    const props = new Map<string, string>();
+    const wrapperProps = new Map<string, string>();
+    const nativeLabel = { kind: 'label' };
+    const nativePad = {
+      getBoundingClientRect: () => ({ width: 88, height: 27 }),
+      querySelector: () => nativeLabel
+    };
+    const host = {
+      querySelector: () => nativePad
+    };
+    const padEl = {
+      isConnected: true,
+      closest: () => host,
+      style: { setProperty: (k: string, v: string) => props.set(k, v) }
+    } as unknown as HTMLElement;
+    const wrapperEl = {
+      style: { setProperty: (k: string, v: string) => wrapperProps.set(k, v) }
+    } as unknown as HTMLElement;
+
+    (globalThis as unknown as { window: Record<string, unknown> }).window = {};
+    (globalThis as unknown as { document: Record<string, unknown> }).document = {
+      querySelector: () => null
+    };
+    (globalThis as unknown as { getComputedStyle: (el: unknown) => CSSStyleDeclaration }).getComputedStyle = (el) =>
+      (el === nativeLabel
+        ? { fontFamily: '"Roboto", sans-serif', fontSize: '12px', fontWeight: '400', letterSpacing: '0.5px' }
+        : { borderRadius: '15px', margin: '0px 8px', verticalAlign: 'middle' }) as unknown as CSSStyleDeclaration;
+
+    const anchors = new AnchorManager();
+    anchors.syncAutopilotPad(padEl, wrapperEl, true);
+
+    expect(props.get('--geofs-ext-ap-width')).toBe('88px');
+    expect(props.get('--geofs-ext-ap-height')).toBe('27px');
+    expect(props.get('--geofs-ext-ap-radius')).toBe('15px');
+    expect(props.get('--geofs-ext-ap-margin')).toBe('0px 8px');
+    expect(props.get('--geofs-ext-ap-valign')).toBe('middle');
+    expect(props.get('--geofs-ext-ap-font-family')).toBe('"Roboto", sans-serif');
+    expect(props.get('--geofs-ext-ap-font-size')).toBe('12px');
+    expect(props.get('--geofs-ext-ap-font-weight')).toBe('400');
+    expect(props.get('--geofs-ext-ap-letter-spacing')).toBe('0.5px');
+    expect(wrapperProps.get('--geofs-ext-ap-valign')).toBe('middle');
+    delete (globalThis as unknown as { document?: unknown }).document;
+    delete (globalThis as unknown as { getComputedStyle?: unknown }).getComputedStyle;
+  });
+
+  it('keeps FPV green/amber on ground, low speed, and normal descents while warning red only on valid airborne stall/AoA', () => {
+    expect(resolveFpvColorState({ vs: 0, aoa: 90, kias: 0, groundContact: true }, { stalling: true }))
+      .toEqual({ isWarning: false, hue: 120 });
+
+    expect(resolveFpvColorState({ vs: 0, aoa: 45, kias: 18, groundContact: false }, { stalling: true }))
+      .toEqual({ isWarning: false, hue: 120 });
+
+    expect(resolveFpvColorState({ vs: 200, aoa: 180, kias: 120, groundContact: false }, { stalling: false }).isWarning)
+      .toBe(false);
+
+    const descent = resolveFpvColorState({ vs: -3000, aoa: 2, kias: 280, groundContact: false }, { stalling: false });
+    expect(descent.isWarning).toBe(false);
+    expect(descent.hue).toBeGreaterThanOrEqual(60);
+
+    const steepDive = resolveFpvColorState({ vs: -6000, aoa: 1, kias: 340, groundContact: false }, { stalling: false });
+    expect(steepDive).toEqual({ isWarning: false, hue: 30 });
+
+    expect(resolveFpvColorState({ vs: 3000, aoa: 8, kias: 220, groundContact: false }, { stalling: false }))
+      .toEqual({ isWarning: false, hue: 200 });
+
+    expect(resolveFpvColorState({ vs: -800, aoa: 19, kias: 110, groundContact: false, aglFeet: 500 }, { stalling: false }))
+      .toEqual({ isWarning: true, hue: 0 });
+    expect(resolveFpvColorState({ vs: -200, aoa: 19, kias: 135, groundContact: false, aglFeet: 12 }, { stalling: true }))
+      .toEqual({ isWarning: false, hue: 116 });
+    expect(resolveFpvColorState({ vs: 1200, aoa: 19, kias: 260, groundContact: false, aglFeet: 5000 }, { stalling: false }))
+      .toEqual({ isWarning: false, hue: 152 });
+    expect(resolveFpvColorState({ vs: -1200, aoa: 10, kias: 95, groundContact: false, aglFeet: 500 }, { stalling: true }))
+      .toEqual({ isWarning: true, hue: 0 });
+    expect(resolveFpvColorState({ vs: Number.NaN, aoa: Number.NaN, kias: 200, groundContact: false }, null))
+      .toEqual({ isWarning: false, hue: 120 });
   });
 });

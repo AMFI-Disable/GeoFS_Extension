@@ -317,10 +317,15 @@
             initGSystems: () => {
                 const breathAudio = new Audio(`${AUDIO_BASE}cutgbreath.mp3`);
                 const windAudio = new Audio(`${AUDIO_BASE}wind.mp3`);
+                const inCockpit = () =>
+                    geofs?.animation?.values?.view == "cockpit" || geofs?.camera?.currentModeName == "cockpit";
 
-                // Physiological Feedback: Pilot strain audio
+                // Physiological Feedback: Pilot strain audio (cockpit only)
                 setInterval(() => {
-                    if (!window.realismSettings.gBreath || geofs.isPaused()) return;
+                    if (!window.realismSettings.gBreath || geofs.isPaused() || !geofs.animation?.values || !inCockpit()) {
+                        breathAudio.pause();
+                        return;
+                    }
                     if (geofs.animation.values.loadFactor >= 3) {
                         breathAudio.play().catch(() => {});
                         if (geofs.animation.values.loadFactor > 6 && window.V39_NOTIF) window.V39_NOTIF.warn("⚠️ HIGH G-LOAD - PILOT STRAIN DETECTED");
@@ -329,8 +334,8 @@
 
                 // Audio Atmosphere: Cockpit wind simulation
                 setInterval(() => {
-                    if (!window.realismSettings.windAudio || geofs.isPaused() || !geofs.animation.values) return;
-                    if (geofs.animation.values.accZ >= 50 && geofs.animation.values.view == "cockpit") {
+                    if (!window.realismSettings.windAudio || geofs.isPaused() || !geofs.animation?.values) return;
+                    if (geofs.animation.values.accZ >= 50 && inCockpit()) {
                         windAudio.play().catch(() => {});
                     }
                 }, 1000);
@@ -338,34 +343,41 @@
                 /**
                  * Blackout GLSL Shader
                  * Implements a procedural vignette and desaturation effect 
-                 * based on sustained high-G loads.
+                 * based on sustained high-G loads in cockpit view.
                  */
                 const blackoutShader = `
                     uniform sampler2D colorTexture;
                     varying vec2 v_textureCoordinates;
                     uniform float strength;
-                    vec4 vignette(float strength, vec2 coordinate, vec2 texCoord) {
+                    vec4 vignette(float s, vec2 coordinate, vec2 texCoord) {
                         vec2 uv = coordinate.xy / czm_viewport.zw;  
-                        uv *=  1.0 - uv.yx;
-                        float vig = (uv.x*uv.y) * 15.0; 
-                        vig = pow(vig, strength);
-                        return mix(vec4(vig), texture2D(colorTexture, texCoord), vig); 
+                        uv *= 1.0 - uv.yx;
+                        float vig = clamp((uv.x * uv.y) * 15.0, 0.0, 1.0); 
+                        vig = s > 0.0001 ? pow(max(vig, 0.0001), s) : 1.0;
+                        return mix(vec4(0.0, 0.0, 0.0, 1.0), texture2D(colorTexture, texCoord), vig); 
                     }
-                    vec4 grayOut(float strength, vec2 coordinate, vec2 texCoord) {
-                      vec4 initialCol = vignette(strength * 20.0, coordinate, texCoord);
+                    vec4 grayOut(float s, vec2 coordinate, vec2 texCoord) {
+                      vec4 initialCol = vignette(s * 20.0, coordinate, texCoord);
                       vec4 grayCol = vec4(vec3(initialCol.r), 1.0);
-                      return mix(initialCol, grayCol, strength * 3.0);
+                      return mix(initialCol, grayCol, clamp(s * 3.0, 0.0, 1.0));
                     }
-                    vec4 blur(float strength, vec2 coordinate, vec2 texCoord) {
-                      float radius = strength / 10.0;
-                      vec4 initialCol  = grayOut(strength, coordinate, texCoord);
-                      vec4 blurCol1    = grayOut(strength, coordinate + vec2(radius, 0.0), texCoord + vec2(radius, 0.0));
-                      vec4 blurCol2    = grayOut(strength, coordinate + vec2(-radius, 0.0), texCoord + vec2(-radius, 0.0));
-                      vec4 blurCol3    = grayOut(strength, coordinate + vec2(0.0, radius), texCoord + vec2(0.0, radius));
-                      vec4 blurCol4    = grayOut(strength, coordinate + vec2(0.0, -radius), texCoord + vec2(0.0, -radius));
-                      return mix(initialCol, (blurCol1 + blurCol2 + blurCol3 + blurCol4) / 4.0, strength * 2.0);
+                    vec4 blur(float s, vec2 coordinate, vec2 texCoord) {
+                      float uvRadius = s * 0.005;
+                      vec2 pxRadius = vec2(uvRadius) * czm_viewport.zw;
+                      vec4 initialCol  = grayOut(s, coordinate, texCoord);
+                      vec4 blurCol1    = grayOut(s, coordinate + vec2(pxRadius.x, 0.0), clamp(texCoord + vec2(uvRadius, 0.0), 0.0, 1.0));
+                      vec4 blurCol2    = grayOut(s, coordinate + vec2(-pxRadius.x, 0.0), clamp(texCoord + vec2(-uvRadius, 0.0), 0.0, 1.0));
+                      vec4 blurCol3    = grayOut(s, coordinate + vec2(0.0, pxRadius.y), clamp(texCoord + vec2(0.0, uvRadius), 0.0, 1.0));
+                      vec4 blurCol4    = grayOut(s, coordinate + vec2(0.0, -pxRadius.y), clamp(texCoord + vec2(0.0, -uvRadius), 0.0, 1.0));
+                      return mix(initialCol, (blurCol1 + blurCol2 + blurCol3 + blurCol4) / 4.0, clamp(s * 2.0, 0.0, 1.0));
                     }
-                    void main() { gl_FragColor = blur(strength, gl_FragCoord.xy, v_textureCoordinates); }
+                    void main() {
+                      if (strength <= 0.0001) {
+                        gl_FragColor = texture2D(colorTexture, v_textureCoordinates);
+                        return;
+                      }
+                      gl_FragColor = blur(strength, gl_FragCoord.xy, v_textureCoordinates);
+                    }
                 `;
 
                 let boTimer = 0;
@@ -373,15 +385,20 @@
                 let boActive = false;
 
                 /**
-                 * Calculates the current blackout/redout intensity based on load factor.
+                 * Calculates the current blackout/redout intensity based on load factor (cockpit only).
                  * 
                  * @returns {number} The strength value between 0.0 and 1.0.
                  */
                 const getBOStrength = () => {
-                    if (!window.realismSettings.blackout || !geofs.animation.values) return 0;
+                    if (!window.realismSettings.blackout || !geofs.animation?.values || !inCockpit()) {
+                        boInitTime = 0;
+                        boTimer = 0;
+                        boActive = false;
+                        return 0;
+                    }
                     const g = geofs.animation.values.loadFactor;
                     // Logic: Cumulative strain calculation
-                    if (g > 9 && geofs.animation.values.view == "cockpit") {
+                    if (g > 9) {
                         boInitTime += 0.05;
                         if (boInitTime > 0.1) boActive = true;
                         if (boActive) boTimer = Math.min(1, boTimer + 0.001 * ((g - 5) / 10));
@@ -393,15 +410,20 @@
                     return boTimer;
                 };
 
-                // Cesium Integration: Inject post-process stage
+                // Cesium Integration: Only enable post-process stage when cockpit blackout is active
                 const blackoutInitInt = setInterval(() => {
-                    if (geofs.fx.atmosphere?.atmospherePostProcessStage?._ready) {
+                    if (geofs.fx?.atmosphere?.atmospherePostProcessStage?._ready) {
                         geofs.fx.overg = {
                             create: function() {
                                 this.shader = new Cesium.PostProcessStage({ fragmentShader: blackoutShader, uniforms: { strength: 0.0 } });
+                                this.shader.enabled = false;
                                 geofs.api.viewer.scene.postProcessStages.add(this.shader);
                             },
-                            update: function() { this.shader.uniforms.strength = getBOStrength(); }
+                            update: function() {
+                                const s = getBOStrength();
+                                this.shader.uniforms.strength = s;
+                                this.shader.enabled = s > 0;
+                            }
                         };
                         geofs.fx.overg.create();
                         setInterval(() => geofs.fx.overg.update(), 10);
@@ -449,23 +471,32 @@
                     if (PWAircraft.has(Number(geofs.aircraft.instance.id))) {
                         // Logic: Scale lift/drag based on wash direction
                         geofs.aircraft.instance.airfoils.forEach(e => { e.propwash = (e.forceDirection === 2) ? 0.005 : 0.01; });
-                        // Physics Hack: Shift CoM based on RPM-induced torque
-                        if (geofs.aircraft.instance.setup?.parts?.[0]) {
-                            geofs.aircraft.instance.setup.parts[0].centerOfMass = [geofs.animation.values.rpm/1000, 0, 0];
-                        }
                     }
                 }, 100);
             },
 
             initSafetySystems: () => {
                 setInterval(() => {
-                    if (!window.realismSettings.spinFix || !geofs.aircraft.instance) return;
+                    const ac = geofs.aircraft.instance;
+                    if (!window.realismSettings.spinFix || !ac || ac.groundContact || (geofs.animation.values.haglFeet || 0) <= 50) return;
                     const spinIds = [2948, 2581, 2808, 3460, 2988];
-                    if (spinIds.includes(Number(geofs.aircraft.instance.id))) {
+                    if (spinIds.includes(Number(ac.id))) {
                         const pitch = geofs.animation.values.atilt;
+                        if (!Number.isFinite(pitch)) return;
                         setTimeout(() => {
-                            if (Math.abs(geofs.animation.values.atilt - pitch) > 50) {
-                                geofs.flyToCamera();
+                            const cur = geofs.animation.values.atilt;
+                            if (!geofs.aircraft.instance || geofs.aircraft.instance !== ac || ac.groundContact || !Number.isFinite(cur)) return;
+                            const delta = Math.abs((((cur - pitch) + 540) % 360) - 180);
+                            if (delta > 50) {
+                                const rb = ac.rigidBody;
+                                const av = rb?.getAngularVelocity?.();
+                                if (Array.isArray(av) && av.length >= 3 && av.every(Number.isFinite)) {
+                                    rb.setAngularVelocity([
+                                        Math.max(-2, Math.min(2, av[0] * 0.5)),
+                                        Math.max(-2, Math.min(2, av[1] * 0.5)),
+                                        Math.max(-2, Math.min(2, av[2] * 0.5))
+                                    ]);
+                                }
                                 if (window.V39_NOTIF) window.V39_NOTIF.info("SPIN RECOVERY ACTIVE");
                             }
                         }, 500);
@@ -512,6 +543,7 @@
             initExternalExpansions: () => {
                 setInterval(() => {
                     if (!window.realismSettings.soundExpansion || geofs.isPaused()) return;
+                    if (!geofs.aircraft?.instance || !window.audio?.sounds || Object.keys(window.audio.sounds).length === 0) return;
                     const id = Number(geofs.aircraft.instance.id);
                     if (window.lastAudioLoad === id) return;
                     if ([4, 3054].includes(id)) {
@@ -528,20 +560,13 @@
             initPerformanceHacks: () => {
                 setInterval(() => {
                     if (!window.realismSettings.performanceMode) return;
+                    if (!geofs.api?.renderingSettings) return;
                     geofs.api.renderingSettings.degradedCollisions = true;
                     geofs.api.renderingSettings.lowResRunways = true;
                 }, 1000);
             },
 
-            initEnvironmentPatches: () => {
-                setInterval(() => {
-                    if (Object.values(geofs.runways.nearRunways)[0]?.icao == "VNLK") {
-                        geofs.runways.setRunwayModelVisibility(1);
-                    } else {
-                        geofs.runways.setRunwayModelVisibility(0);
-                    }
-                }, 1000);
-            },
+            initEnvironmentPatches: () => { },
 
             initVortexEffects: () => {
                 setInterval(() => {

@@ -9,7 +9,7 @@ This document tracks all aircraft (`AIRCRAFT_CATALOG` entries, OEW/MTOW/fuel spe
 
 ## Completed Aircraft Profiles (`SimAdapter`)
 
-Currently implemented in [sim-adapter.ts](src/core/sim-adapter.ts):
+Currently implemented in [sim-adapter.ts](../src/core/sim-adapter.ts):
 
 | GeoFS ID | Aircraft | Category | Engines |
 | :--- | :--- | :--- | :--- |

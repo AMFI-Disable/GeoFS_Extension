@@ -274,7 +274,7 @@
                                 const n = s.name ? s.name.toLowerCase() : "";
                                 if(n.includes("front") || n.includes("nose") || n.includes("tail") || n.includes("steer")) fG = i; 
                             });
-                            this.activeFailures.set("gearFront", setInterval(() => { if(ac.suspensions[fG]) ac.suspensions[fG].collisionPoints[0][2] = 30; }, 1000));
+                            this.activeFailures.set("gearFront", setInterval(() => { if(ac.suspensions[fG]) ac.suspensions[fG].collisionPoints[0][2] = 0.5; }, 1000));
                         }
                         break;
                     case "gearLeft":
@@ -286,7 +286,7 @@
                                 const n = s.name ? s.name.toLowerCase() : "";
                                 if(n.includes("left") || n.includes("l_g") || n.includes("main l") || n.includes("l-gear")) lG = i; 
                             });
-                            this.activeFailures.set("gearLeft", setInterval(() => { if(ac.suspensions[lG]) ac.suspensions[lG].collisionPoints[0][2] = 30; }, 1000));
+                            this.activeFailures.set("gearLeft", setInterval(() => { if(ac.suspensions[lG]) ac.suspensions[lG].collisionPoints[0][2] = 0.5; }, 1000));
                         }
                         break;
                     case "gearRight":
@@ -298,7 +298,7 @@
                                 const n = s.name ? s.name.toLowerCase() : "";
                                 if(n.includes("right") || n.includes("r_g") || n.includes("main r") || n.includes("r-gear")) rG = i; 
                             });
-                            this.activeFailures.set("gearRight", setInterval(() => { if(ac.suspensions[rG]) ac.suspensions[rG].collisionPoints[0][2] = 30; }, 1000));
+                            this.activeFailures.set("gearRight", setInterval(() => { if(ac.suspensions[rG]) ac.suspensions[rG].collisionPoints[0][2] = 0.5; }, 1000));
                         }
                         break;
                     case "ailerons":

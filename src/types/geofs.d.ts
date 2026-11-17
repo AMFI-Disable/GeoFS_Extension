@@ -151,6 +151,13 @@ export interface GeoFSControls {
   throttle2?: number;
   throttle3?: number;
   throttle4?: number;
+  roll?: number;
+  pitch?: number;
+  yaw?: number;
+  rawRoll?: number;
+  rawPitch?: number;
+  rawYaw?: number;
+  gear?: GeoFSPositionControl & { toggle?: () => void };
   reversers?: boolean;
   flaps?: GeoFSPositionControl;
   airbrakes?: GeoFSPositionControl;
@@ -164,6 +171,7 @@ export interface GeoFSControls {
     setFlaps?: { set?: () => void };
     setGear?: { set?: () => void };
     setAirbrakes?: { set?: () => void };
+    setParkingBrake?: { set?: () => void };
   };
   [key: string]: unknown;
 }
@@ -174,9 +182,22 @@ export interface GeoFSThrottlePid {
   compute: (input: number, dt: number) => number;
 }
 
+export interface GeoFSCesiumEntity {
+  position?: unknown;
+  show?: boolean;
+  billboard?: {
+    image?: string;
+    scale?: number;
+    color?: unknown;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export interface GeoFSGlobal {
   version?: string | number;
   isPaused?: () => boolean;
+  debug?: { fps?: number | string; [key: string]: unknown };
   autopilot?: {
     on?: boolean;
     turnOff?: () => void;
@@ -187,14 +208,18 @@ export interface GeoFSGlobal {
     PIDs?: { throttle?: GeoFSThrottlePid };
   };
   aircraft?: {
-    instance?: GeoFSAircraftInstance;
+    instance?: GeoFSAircraftInstance & { toggleGear?: () => void };
   };
-  camera?: { lla?: [number, number, number]; translate?: (x: number, y: number, z: number) => void };
+  camera?: { lla?: [number, number, number]; currentModeName?: string; translate?: (x: number, y: number, z: number) => void };
   preferences?: { crashDetection?: boolean };
   flyToCamera?: () => void;
   cautiousWithTerrain?: boolean;
   fx?: {
+    atmosphere?: {
+      atmospherePostProcessStage?: { _ready?: boolean };
+    };
     ParticleEmitter?: new (options: Record<string, unknown>) => GeoFSParticleEmitter;
+    setParticlesColor?: (color: unknown) => void;
     particles?: Record<string, {
       _emitter?: GeoFSParticleEmitter;
       setColor?: (color: unknown) => void;
@@ -213,10 +238,16 @@ export interface GeoFSGlobal {
   aircraftList?: Record<string, { name?: string; [key: string]: unknown }>;
   animation?: {
     values?: GeoFSAnimationValues;
+    getValue?: (name: string) => unknown;
   };
   api?: {
     hdOn?: boolean;
-    renderingSettings?: { physicsDeltaMs?: number; degradedCollisions?: boolean; lowResRunways?: boolean };
+    renderingSettings?: {
+      physicsDeltaMs?: number;
+      degradedCollisions?: boolean;
+      lowResRunways?: boolean;
+      resolutionScale?: number;
+    };
     imageryProvider?: unknown;
     viewer?: {
       scene?: {
@@ -226,6 +257,13 @@ export interface GeoFSGlobal {
           remove?: (stage: unknown) => void;
         };
         camera?: unknown;
+      };
+      entities?: {
+        add?: (spec: Record<string, unknown>) => GeoFSCesiumEntity;
+        remove?: (entity: GeoFSCesiumEntity) => boolean | void;
+      };
+      clock?: {
+        currentTime?: unknown;
       };
       terrainProvider?: unknown;
     };
@@ -257,8 +295,8 @@ declare global {
   interface Window {
     geofs?: GeoFSGlobal;
     componentHandler?: {
-      upgradeElement: (element: Element) => void;
-      downgradeElements?: (elements: Element[]) => void;
+      upgradeElement?: (el: HTMLElement) => void;
+      downgradeElements?: (elements: HTMLElement[]) => void;
     };
     audio?: {
       on?: boolean;
@@ -272,7 +310,12 @@ declare global {
     instruments?: GeoFSInstruments;
     controls?: GeoFSControls;
     Cesium?: {
-      Color?: new (r: number, g: number, b: number, a: number) => unknown;
+      Color?: {
+        new (r: number, g: number, b: number, a: number): unknown;
+        LIME?: unknown;
+        RED?: unknown;
+        fromHsl?: (h: number, s: number, l: number) => unknown;
+      };
       PostProcessStage?: new (opts: { fragmentShader: string; uniforms?: Record<string, unknown> }) => unknown;
       UrlTemplateImageryProvider?: new (opts: { url: string; maximumLevel?: number; credit?: unknown }) => unknown;
       BingMapsImageryProvider?: new (opts: { url?: string; key: string; mapStyle?: string }) => unknown;
@@ -284,5 +327,7 @@ declare global {
       };
       [key: string]: unknown;
     };
+    __geofsExtDiag?: Array<{ time: string; code: string; level?: 'info' | 'warn' | 'error'; payload?: unknown }>;
+    __geofsExt?: Record<string, unknown>;
   }
 }

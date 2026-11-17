@@ -13,14 +13,12 @@
 !public/
 !scripts/
 !tests/
-!geofs-v3.9/
-!geofs-v4.0/
+!userscripts/
 !agents.md
 !readme*.md
 !changelog.md
-!roadmap.md
+!docs/
 !security.md
-!todo.md
 !license
 !.gitignore
 !.github/
@@ -57,6 +55,7 @@ pnpm-debug.log*
 
 # 2.3 Build Products, Caches & Output Directories
 dist/
+/GeoFS Extension/
 build/
 release/
 coverage/
@@ -65,8 +64,7 @@ coverage/
 *.zip
 
 # 2.4 Environment Secrets, Private Keys & Tokens
-.env
-.env.*
+.env*
 *.key
 *.pem
 *.token

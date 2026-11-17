@@ -490,9 +490,14 @@
 
                 // Physics Simulation: Roll moment due to fuel imbalance
                 const imbalance = this.state.tanks.left - this.state.tanks.right;
-                if (Math.abs(imbalance) > 10) {
-                    const rollMoment = imbalance * 0.000001; 
-                    ac.rigidBody.applyTorque(window.V3.scale(ac.object3d.worldRotation[0], rollMoment));
+                const axis = ac.object3d?.worldRotation?.[0];
+                if (!ac.groundContact && Number.isFinite(imbalance) && Math.abs(imbalance) > 10 && Array.isArray(axis) && axis.length >= 3 && axis.every(Number.isFinite)) {
+                    const axisLen = Math.hypot(axis[0], axis[1], axis[2]);
+                    const rollMoment = Math.max(-5, Math.min(5, imbalance * 0.000001));
+                    if (axisLen > 0.001 && Number.isFinite(rollMoment) && typeof ac.rigidBody?.applyTorque === 'function') {
+                        const inv = 1 / axisLen;
+                        ac.rigidBody.applyTorque([axis[0] * inv * rollMoment, axis[1] * inv * rollMoment, axis[2] * inv * rollMoment]);
+                    }
                 }
             } else {
                 // Parallel Architecture: Uniform distribution

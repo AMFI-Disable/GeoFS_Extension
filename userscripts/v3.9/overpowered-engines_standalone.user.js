@@ -344,8 +344,9 @@
          * oscillations during overpowered flight.
          */
         tickSAS: () => {
-            if (!globalThis.isSASActive || !geofs?.aircraft?.instance) return;
-            const rb = geofs.aircraft.instance.rigidBody;
+            const ac = geofs?.aircraft?.instance;
+            if (!globalThis.isSASActive || !ac || ac.groundContact) return;
+            const rb = ac.rigidBody;
             if (!rb) return;
 
             // Input Validation: Threshold check for user stick/yoke interaction
@@ -360,7 +361,9 @@
             } else {
                 // Maneuver Smoothing: Apply slight dampening to prevent flat spins
                 const av = rb.getAngularVelocity();
-                rb.setAngularVelocity([av[0] * 0.95, av[1] * 0.95, av[2] * 0.95]);
+                if (Array.isArray(av) && av.length >= 3 && av.every(Number.isFinite)) {
+                    rb.setAngularVelocity([av[0] * 0.95, av[1] * 0.95, av[2] * 0.95]);
+                }
             }
         },
 

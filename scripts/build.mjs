@@ -1,6 +1,7 @@
 import { build as viteBuild } from 'vite';
 import { build as esbuild } from 'esbuild';
-import { cpSync, mkdirSync, readFileSync, rmSync } from 'fs';
+import preact from '@preact/preset-vite';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -14,8 +15,22 @@ rmSync(dist, { recursive: true, force: true });
 mkdirSync(resolve(dist, 'content'), { recursive: true });
 mkdirSync(resolve(dist, 'background'), { recursive: true });
 
-// 1. Build Preact popup UI via Vite
-await viteBuild({ configFile: resolve(root, 'vite.config.ts') });
+// 1. Build Preact UI surfaces (popup, sidepanel, options) via Vite
+for (const surface of ['popup', 'sidepanel', 'options']) {
+  const entry = resolve(root, 'src', surface, 'index.html');
+  if (!existsSync(entry)) continue;
+  await viteBuild({
+    configFile: false,
+    plugins: [preact()],
+    root: resolve(root, 'src', surface),
+    base: './',
+    build: {
+      outDir: resolve(dist, surface),
+      emptyOutDir: true,
+      rollupOptions: { input: entry }
+    }
+  });
+}
 
 // 2. Bundle self-contained MV3 scripts (background + ISOLATED + MAIN)
 await Promise.all([
@@ -47,8 +62,11 @@ await Promise.all([
 
 // 3. Copy manifest and static assets
 cpSync(resolve(root, 'public/manifest.json'), resolve(dist, 'manifest.json'));
-for (const directory of ['icons', 'audio']) {
-  cpSync(resolve(root, 'public', directory), resolve(dist, directory), { recursive: true });
+for (const directory of ['icons', 'audio', 'assets']) {
+  const srcDir = resolve(root, 'public', directory);
+  if (existsSync(srcDir)) {
+    cpSync(srcDir, resolve(dist, directory), { recursive: true });
+  }
 }
 
 if (shouldZip) {
@@ -63,17 +81,18 @@ if (shouldZip) {
 }
 
 if (process.argv.includes('--unpacked')) {
-  const unpacked = resolve(root, '..', 'GeoFS Extension');
+  const unpacked = resolve(root, 'GeoFS Extension');
   mkdirSync(unpacked, { recursive: true });
 
   // Replace only the entries produced by this build.
-  for (const entry of ['manifest.json', 'background', 'content', 'icons', 'audio', 'popup']) {
+  for (const entry of ['manifest.json', 'background', 'content', 'icons', 'audio', 'assets', 'popup', 'sidepanel', 'options']) {
+    const srcEntry = resolve(dist, entry);
     const destination = resolve(unpacked, entry);
     rmSync(destination, { recursive: true, force: true });
-    cpSync(resolve(dist, entry), destination, { recursive: true });
+    if (existsSync(srcEntry)) cpSync(srcEntry, destination, { recursive: true });
   }
 
-  console.log('[build] Refreshed the sibling GeoFS Extension folder.');
+  console.log('[build] Refreshed the GeoFS Extension folder in the checkout.');
 }
 
 console.log('[build] GeoFS Extension dist/ built successfully.');

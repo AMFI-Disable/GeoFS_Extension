@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GeoFS E2E Simulator Harness</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0f172a;
+      color: #ffffff;
+      font-family: Helvetica, Arial, sans-serif;
+      overflow: hidden;
+    }
+    .geofs-ui-top {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 44px;
+      background: rgba(0, 0, 0, 0.75);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      z-index: 100;
+    }
+    .geofs-ui-right {
+      position: fixed;
+      top: 40%;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 100;
+    }
+    .geofs-autopilot-bar {
+      position: fixed;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 46px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid #666666;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      z-index: 100;
+    }
+    .control-pad {
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 27px;
+      padding: 0 10px;
+      margin: 0 4px;
+      background-color: #000000;
+      border: 1px solid #888888;
+      border-radius: 15px;
+      box-shadow: 0 0 5px #000000;
+      cursor: pointer;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .control-pad:hover {
+      border-color: #ffffff;
+    }
+    .control-pad .control-pad-label {
+      font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.78);
+      text-align: center;
+    }
+    .control-pad.green-pad .control-pad-label {
+      color: #ffffff;
+    }
+    .geofs-ui-bottom {
+      position: fixed;
+      bottom: 64px;
+      left: 16px;
+      z-index: 90;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    (() => {
+      const params = new URLSearchParams(location.search);
+      const simVer = params.get('version') || '3.9';
+      const missingAnchors = params.get('anchors') === 'missing';
+
+      if (!missingAnchors) {
+        const top = document.createElement('div');
+        top.className = 'geofs-ui-top';
+        top.textContent = 'GeoFS Mock Top Bar';
+        const right = document.createElement('div');
+        right.className = 'geofs-ui-right';
+        const bottom = document.createElement('div');
+        bottom.className = 'geofs-ui-bottom';
+        const ap = document.createElement('div');
+        ap.className = 'geofs-autopilot-bar';
+        ap.innerHTML = '<div class="control-pad geofs-autopilot-pad"><div class="control-pad-label transp-pad">AUTOPILOT</div></div>';
+        document.body.append(top, right, bottom, ap);
+      }
+
+      window.componentHandler = {
+        upgradeElement(el) {
+          if (el && el.dataset) el.dataset.mdlUpgraded = 'true';
+        }
+      };
+
+      const values = {
+        kias: 145,
+        mach: 0.22,
+        altitude: 1500,
+        haglFeet: 1500,
+        groundElevationFeet: 0,
+        verticalSpeed: -300,
+        heading360: 280,
+        groundSpeedKnt: 150,
+        loadFactor: 1.0,
+        accZ: 9.81,
+        aoa: 4.5,
+        atilt: 3.0,
+        aroll: 0.0,
+        parkingBrake: 1,
+        gearPosition: 1,
+        flapsTarget: 0,
+        airbrakesPosition: 0,
+        NAVVNAV: 1,
+        NAVGlideAngleDeviation: -0.25,
+        lights: 0
+      };
+
+      const assertVec3 = (label, v, positive = false) => {
+        if (!Array.isArray(v) || v.length !== 3 || !v.every((n) => typeof n === 'number' && Number.isFinite(n) && (!positive || n > 0))) {
+          throw new Error(`Invalid rigidBody.${label} vector: ${JSON.stringify(v)}`);
+        }
+      };
+
+      const rigidBody = {
+        mass: 180000,
+        _av: [0, 0, 0],
+        _torques: [],
+        getAngularVelocity() {
+          return this._av;
+        },
+        setAngularVelocity(next) {
+          assertVec3('setAngularVelocity', next);
+          this._av = next;
+        },
+        setMassProps(mass, inertia) {
+          if (typeof mass !== 'number' || !Number.isFinite(mass) || mass <= 0) {
+            this.mass = NaN;
+            throw new Error(`Invalid rigidBody.setMassProps mass: ${String(mass)}`);
+          }
+          assertVec3('setMassProps.inertia', inertia, true);
+          this.mass = mass;
+        },
+        applyTorque(t) {
+          assertVec3('applyTorque', t);
+          this._torques.push(t);
+        },
+        applyTorqueImpulse(t) {
+          assertVec3('applyTorqueImpulse', t);
+          this._torques.push(t);
+        },
+        applyCentralImpulse(v) {
+          assertVec3('applyCentralImpulse', v);
+        }
+      };
+
+      const aircraftInstance = {
+        id: '24',
+        aircraftRecord: { id: 24, name: 'Airbus A350-900' },
+        name: 'Airbus A350-900',
+        llaLocation: [37.62, -122.38, 457],
+        groundContact: false,
+        crashed: false,
+        stalling: false,
+        trueAirSpeed: 76,
+        engine: { on: true, thrust: 50000 },
+        engines: [
+          { on: true, thrust: 25000 },
+          { on: true, thrust: 25000 }
+        ],
+        parts: {
+          engine1: { thrust: 25000 },
+          engine2: { thrust: 25000 }
+        },
+        suspensions: [
+          { name: 'gear_front', collisionPoints: [[0, 0, -2.5]] },
+          { name: 'gear_left', collisionPoints: [[-3, 0, -2.5]] },
+          { name: 'gear_right', collisionPoints: [[3, 0, -2.5]] }
+        ],
+        airfoils: [
+          { name: 'aileron_left', object3d: { _scale: [1, 1, 1] } }
+        ],
+        cockpitSetup: {
+          parts: [
+            { object3d: { _scale: [1, 1, 1] } },
+            { object3d: { _scale: [1, 1, 1] } }
+          ]
+        },
+        rigidBody,
+        object3d: { worldRotation: [[1, 0, 0]] },
+        definition: {
+          name: 'Airbus A350-900',
+          mass: 180000,
+          maxThrust: 374000,
+          flapsSteps: 4,
+          hasGear: true,
+          hasAirbrakes: true,
+          zeroThrustAltitude: 50000
+        },
+        stopEngines() {
+          this.engine.on = false;
+        },
+        startEngines() {
+          this.engine.on = true;
+        },
+        setFlaps(v) {
+          values.flapsTarget = v;
+        }
+      };
+
+      window.controls = {
+        throttle: 0.5,
+        throttle1: 0.5,
+        throttle2: 0.5,
+        rawRoll: 0,
+        rawPitch: 0,
+        rawYaw: 0,
+        brakes: 0,
+        flaps: { target: 0, position: 0, delta: 1 },
+        airbrakes: { target: 0, position: 0, delta: 1 },
+        setters: {
+          setGear: {
+            set() {
+              values.gearPosition = values.gearPosition ? 0 : 1;
+            }
+          },
+          setFlaps: {
+            set() {
+              values.flapsTarget = window.controls.flaps.target;
+            }
+          },
+          setParkingBrake: {
+            set() {
+              values.parkingBrake = values.parkingBrake ? 0 : 1;
+            }
+          },
+          setAirbrakes: {
+            set() {
+              values.airbrakesPosition = window.controls.airbrakes.target;
+            }
+          },
+          setLights: {
+            set() {
+              values.lights = values.lights ? 0 : 1;
+            }
+          }
+        },
+        axisSetters: {
+          throttle: {
+            process() {}
+          }
+        }
+      };
+
+      window.instruments = {
+        visible: true,
+        hide() {
+          this.visible = false;
+        },
+        show() {
+          this.visible = true;
+        },
+        update() {}
+      };
+
+      window.weather = {
+        localTime: 12,
+        definition: { turbulences: 0 }
+      };
+
+      window.Cesium = {
+        Cartesian3: {
+          fromDegrees(lon, lat, alt) {
+            return { x: lon * 100000, y: lat * 100000, z: alt };
+          }
+        },
+        Color: {
+          LIME: '#00ff00',
+          RED: '#ff0000',
+          fromHsl(h, s, l) {
+            return `hsl(${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`;
+          }
+        },
+        PostProcessStage: class {
+          constructor(opts) {
+            this.opts = opts;
+          }
+        },
+        UrlTemplateImageryProvider: class {}
+      };
+
+      const entitiesList = [];
+      const mockLayers = {
+        _layers: [{ show: true, alpha: 1 }],
+        get length() {
+          return this._layers.length;
+        },
+        get(i) {
+          return this._layers[i];
+        },
+        addImageryProvider(p) {
+          const layer = { show: true, alpha: 1, _provider: p };
+          this._layers.push(layer);
+          return layer;
+        },
+        remove(layer) {
+          this._layers = this._layers.filter((x) => x !== layer);
+        }
+      };
+
+      window.geofs = {
+        version: simVer,
+        isPaused: () => false,
+        cautiousWithTerrain: false,
+        camera: {
+          lla: [37.62, -122.38, 457]
+        },
+        utils: {
+          machToKnots: (m) => m * 661.47,
+          distanceBetweenLocations: (a, b) => Math.hypot((a[0] - b[0]) * 111000, (a[1] - b[1]) * 88000)
+        },
+        runways: {
+          getNearestRunway: () => ({
+            aimingPointLla1: [37.62, -122.38],
+            aimingPointLla2: [37.621, -122.379]
+          })
+        },
+        animation: { values },
+        autopilot: {
+          on: false,
+          speedMode: 'knots',
+          values: { speed: 250 },
+          turnOff() {
+            this.on = false;
+          },
+          setSpeed(v) {
+            this.values.speed = v;
+          },
+          setSpeedMode(m) {
+            this.speedMode = m;
+          },
+          PIDs: {
+            throttle: {
+              initialize() {},
+              set() {},
+              compute(speed) {
+                return speed < 200 ? 0.8 : 0.4;
+              }
+            }
+          }
+        },
+        aircraft: { instance: aircraftInstance },
+        api: {
+          renderingSettings: { resolutionScale: 1 },
+          imageryProvider: {},
+          viewer: {
+            entities: {
+              _items: entitiesList,
+              add(ent) {
+                entitiesList.push(ent);
+                return ent;
+              },
+              remove(ent) {
+                const idx = entitiesList.indexOf(ent);
+                if (idx >= 0) entitiesList.splice(idx, 1);
+              }
+            },
+            scene: {
+              canvas: { width: 1280, height: 720 },
+              postProcessStages: {
+                add(s) {
+                  return s;
+                },
+                remove() {}
+              },
+              imageryLayers: mockLayers
+            }
+          }
+        }
+      };
+
+      // Subtle camera motion so 3D Cesium FPV projection delta advances continuously
+      setInterval(() => {
+        if (window.geofs?.camera?.lla) {
+          window.geofs.camera.lla[1] += 0.0001;
+          window.geofs.aircraft.instance.llaLocation[1] = window.geofs.camera.lla[1];
+        }
+      }, 40);
+    })();
+  </script>
+</body>
+</html>

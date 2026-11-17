@@ -1,146 +1,171 @@
 // ==UserScript==
-// @name         GeoFS-V4.0_Autothrottle
-// @name:vi           GeoFS-V4.0_Ga-Tự-Động
-// @name:zh-CN        GeoFS-V4.0_自动油门
-// @name:zh-TW        GeoFS-V4.0_自動油門
-// @name:ja           GeoFS-V4.0_オートスロットル
-// @name:ko           GeoFS-V4.0_자동-조절
-// @name:fr           GeoFS-V4.0_Auto-Manette
-// @name:de           GeoFS-V4.0_Autothrottle
-// @name:es           GeoFS-V4.0_Acelerador-Automático
-// @name:pt-BR        GeoFS-V4.0_Acelerador-Automático
-// @name:pt-PT        GeoFS-V4.0_Acelerador-Automático
-// @name:ru           GeoFS-V4.0_Автомат-Тяги
-// @name:ar           GeoFS-V4.0_خنق-تلقائي
-// @name:tr           GeoFS-V4.0_Otomatik-Gaz-Kelebeği
-// @name:id           GeoFS-V4.0_Pembatasan-Otomatis
-// @name:th           GeoFS-V4.0_คันเร่งอัตโนมัติ
-// @name:pl           GeoFS-V4.0_Automatyczna-Przepustnica
-// @name:nl           GeoFS-V4.0_Autothrottle
-// @name:it           GeoFS-V4.0_Automanetta
-// @name:sv           GeoFS-V4.0_Autothrottle
-// @name:da           GeoFS-V4.0_Autothrottle
-// @name:fi           GeoFS-V4.0_Automaattinen-Kaasutin
-// @name:nb           GeoFS-V4.0_Autothrottle
-// @name:cs           GeoFS-V4.0_Autothrottle
-// @name:hu           GeoFS-V4.0_Automatikus-Fojtószelep
-// @name:ro           GeoFS-V4.0_Autoaccelerare
-// @name:uk           GeoFS-V4.0_Автодросель
-// @name:hi           GeoFS-V4.0_ऑटोथ्रोटल
-// @name:bn           GeoFS-V4.0_অটোথ্রটল
-// @name:fa           GeoFS-V4.0_گاز-خودکار
-// @name:he           GeoFS-V4.0_מצערת-אוטומטית
-// @name:ms           GeoFS-V4.0_Autothrottle
-// @name:fil          GeoFS-V4.0_Autothrottle
-// @name:el           GeoFS-V4.0_Αυτόματο-Γκάζι
-// @name:hr           GeoFS-V4.0_Automatski-Gas
-// @name:sk           GeoFS-V4.0_Autothrottle
-// @name:bg           GeoFS-V4.0_Автодросел
-// @name:sr           GeoFS-V4.0_Аутотхроттле
-// @name:lt           GeoFS-V4.0_Automatinis-Droselis
-// @name:lv           GeoFS-V4.0_Autodrosele
-// @name:et           GeoFS-V4.0_Automaatne-Drosselklapp
-// @name:sl           GeoFS-V4.0_Samodejni-Plin
-// @name:ca           GeoFS-V4.0_Autoaccelerador
-// @name:af           GeoFS-V4.0_Autothrottle
-// @name:sw           GeoFS-V4.0_Autothrottle
-// @name:zu           GeoFS-V4.0_I-Autothrottle
-// @name:mn           GeoFS-V4.0_Автомат-Тохируулагч
-// @name:my           GeoFS-V4.0_Autothrottle
-// @name:km           GeoFS-V4.0_ស្វ័យប្រវត្តិ
-// @name:lo           GeoFS-V4.0_Autothrottle
-// @name:ur           GeoFS-V4.0_آٹو-تھروٹل
-// @namespace    https://greasyfork.org/users/1594049
-// @version      1.0.1
-// @description  Holds a selected speed in GeoFS with an automatic throttle controller. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:vi    Bộ điều khiển tự động dựa trên PID chính xác cho GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:zh-CN 用于 GeoFS 的基于 PID 的精密自动油门. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:zh-TW 用於 GeoFS 的基於 PID 的精密自動油門. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:ja    GeoFS 用の高精度 PID ベースのオートスロットル. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:ko    GeoFS용 정밀 PID 기반 자동 조절. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:fr    Autothrottle de précision basé sur PID pour GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:de    Präzises PID-basiertes Autothrottle für GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:es    Acelerador automático basado en PID de precisión para GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:pt-BR Autothrottle baseado em PID de precisão para GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:pt-PT Autothrottle baseado em PID de precisão para GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:ru    Прецизионный автоматический дроссель на основе ПИД-регулятора для GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:ar    خنق تلقائي دقيق قائم على PID لـ GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:tr    GeoFS için Hassas PID Tabanlı Otomatik Kısma. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:id    Autothrottle berbasis PID presisi untuk GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:th    GeoFS-V4.0 · คันเร่งอัตโนมัติ. © 2026 AMFI Disable. Part of the GeoFS V4.0_Ecosystem.
-// @description:pl    Precyzyjna automatyczna przepustnica oparta na PID dla GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:nl    Precisie-PID-gebaseerde Autothrottle voor GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:it    Autothrottle di precisione basato su PID per GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:sv    Precision PID-baserad Autothrottle för GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:da    Præcisions PID-baseret Autothrottle til GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:fi    Tarkka PID-pohjainen automaattinen kaasutin GeoFS:lle. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:nb    Presisjons PID-basert autothrottle for GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:cs    Přesný autothrottle založený na PID pro GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:hu    Precíziós PID-alapú automata fojtószelep a GeoFS-hez. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:ro    Autothrottle de precizie bazat pe PID pentru GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:uk    Precision Autothrottle на основі PID для GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:hi    जियोएफएस के लिए सटीक पीआईडी-आधारित ऑटोथ्रोटल. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:bn    জিওএফএস-এর জন্য যথার্থ PID-ভিত্তিক অটোথ্রটল. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:fa    گاز خودکار مبتنی بر PID دقیق برای GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:he    Autothrottle מבוסס PID מדויק עבור GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:ms    Autothrottle berasaskan PID ketepatan untuk GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:fil   Precision PID-based Autothrottle para sa GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:el    Αυτόματο γκάζι με βάση PID ακριβείας για GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:hr    Precizni autothrottle temeljen na PID-u za GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:sk    Presný Autothrottle založený na PID pre GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:bg    Прецизен PID базиран Autothrottle за GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:sr    Прецизни ПИД-базирани аутоматски гас за ГеоФС. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:lt    Tikslus PID pagrįstas automatinis droselis, skirtas GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:lv    Precīza, uz PID balstīta automātiskā drosele GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:et    Täpne PID-põhine automaatne gaasipedaal GeoFS-i jaoks. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:sl    Precision Autothrottle na osnovi PID za GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:ca    Autoaccelerador basat en PID de precisió per a GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:af    Presisie PID-gebaseerde Autothrottle vir GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:sw    Precision PID-msingi Autothrottle kwa GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:zu    I-Precision PID-based Autothrottle ye-GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:mn    GeoFS-д зориулсан нарийн PID-д суурилсан автомат тохируулагч. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:my    GeoFS-V4.0 · Autothrottle. © 2026 AMFI Disable. Part of the GeoFS V4.0_Ecosystem.
-// @description:km    Autothrottle ដែលមានមូលដ្ឋានលើភាពជាក់លាក់ PID សម្រាប់ GeoFS ។ លក្ខណៈ​ពិសេស​នៃ​បន្ទះ glassmorphic បង្រួម និង​របៀប​ចុះចត​ថយក្រោយ​ដោយ​ស្វ័យ​ប្រវត្តិ. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:lo    Autothrottle ທີ່ອີງໃສ່ Precision PID ສໍາລັບ GeoFS. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @description:ur    جیو ایف ایس کے لیے پی آئی ڈی پر مبنی آٹو تھروٹل۔ ایک کمپیکٹ گلاس مورفک پینل اور آٹو ریٹارڈ لینڈنگ موڈ کی خصوصیات ہیں۔. © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
-// @author       AMFI-Disable
-// @homepageURL  https://sites.google.com/view/geofs-v40-ecosystem/home
-// @icon         https://www.geo-fs.com/images/icons/favicon.ico
-// @match        https://beta.geo-fs.com/geofs.php*
-// @match        https://www.geo-fs.com/geofs.php*
-// @require      https://update.greasyfork.org/scripts/604885/code.js
-// @require      https://update.greasyfork.org/scripts/604887/code.js
-// @grant        none
-// @run-at       document-idle
-// @license      MIT
-// @copyright    2026, AMFI-Disable (https://greasyfork.org/users/1594049)
-// @compatible   chrome
-// @compatible   firefox
-// @compatible   edge
-// @compatible   safari
-// @compatible   brave
-// @compatible   opera
+// @name                GeoFS-V3.9_Autothrottle
+// @name:vi             GeoFS-V3.9_Ga-Tự-Động
+// @name:zh-CN          GeoFS-V3.9_自动油门
+// @name:zh-TW          GeoFS-V3.9_自動油門
+// @name:ja             GeoFS-V3.9_オートスロットル
+// @name:ko             GeoFS-V3.9_자동-조절
+// @name:fr             GeoFS-V3.9_Auto-Manette
+// @name:de             GeoFS-V3.9_Autothrottle
+// @name:es             GeoFS-V3.9_Acelerador-Automático
+// @name:pt-BR          GeoFS-V3.9_Acelerador-Automático
+// @name:pt-PT          GeoFS-V3.9_Acelerador-Automático
+// @name:ru             GeoFS-V3.9_Автомат-Тяги
+// @name:ar             GeoFS-V3.9_خنق-تلقائي
+// @name:tr             GeoFS-V3.9_Otomatik-Gaz-Kelebeği
+// @name:id             GeoFS-V3.9_Pembatasan-Otomatis
+// @name:th             GeoFS-V3.9_คันเร่งอัตโนมัติ
+// @name:pl             GeoFS-V3.9_Automatyczna-Przepustnica
+// @name:nl             GeoFS-V3.9_Autothrottle
+// @name:it             GeoFS-V3.9_Automanetta
+// @name:sv             GeoFS-V3.9_Autothrottle
+// @name:da             GeoFS-V3.9_Autothrottle
+// @name:fi             GeoFS-V3.9_Automaattinen-Kaasutin
+// @name:nb             GeoFS-V3.9_Autothrottle
+// @name:cs             GeoFS-V3.9_Autothrottle
+// @name:hu             GeoFS-V3.9_Automatikus-Fojtószelep
+// @name:ro             GeoFS-V3.9_Autoaccelerare
+// @name:uk             GeoFS-V3.9_Автодросель
+// @name:hi             GeoFS-V3.9_ऑटोथ्रोटल
+// @name:bn             GeoFS-V3.9_অটোথ্রটল
+// @name:fa             GeoFS-V3.9_گاز-خودکار
+// @name:he             GeoFS-V3.9_מצערת-אוטומטית
+// @name:ms             GeoFS-V3.9_Autothrottle
+// @name:fil            GeoFS-V3.9_Autothrottle
+// @name:el             GeoFS-V3.9_Αυτόματο-Γκάζι
+// @name:hr             GeoFS-V3.9_Automatski-Gas
+// @name:sk             GeoFS-V3.9_Autothrottle
+// @name:bg             GeoFS-V3.9_Автодросел
+// @name:sr             GeoFS-V3.9_Аутотхроттле
+// @name:lt             GeoFS-V3.9_Automatinis-Droselis
+// @name:lv             GeoFS-V3.9_Autodrosele
+// @name:et             GeoFS-V3.9_Automaatne-Drosselklapp
+// @name:sl             GeoFS-V3.9_Samodejni-Plin
+// @name:ca             GeoFS-V3.9_Autoaccelerador
+// @name:af             GeoFS-V3.9_Autothrottle
+// @name:sw             GeoFS-V3.9_Autothrottle
+// @name:zu             GeoFS-V3.9_I-Autothrottle
+// @name:mn             GeoFS-V3.9_Автомат-Тохируулагч
+// @name:my             GeoFS-V3.9_Autothrottle
+// @name:km             GeoFS-V3.9_ស្វ័យប្រវត្តិ
+// @name:lo             GeoFS-V3.9_Autothrottle
+// @name:ur             GeoFS-V3.9_آٹو-تھروٹل
+// @description         Precision PID-based Autothrottle for GeoFS. Features a compact glassmorphic panel and auto-retard Landing Mode. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:vi      Bộ điều khiển tự động dựa trên PID chính xác cho GeoFS. Có bảng điều khiển thủy tinh nhỏ gọn và Chế độ hạ cánh tự động chậm lại. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:zh-CN   用于 GeoFS 的基于 PID 的精密自动油门。具有紧凑的玻璃变形面板和自动延迟着陆模式。 © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:zh-TW   用於 GeoFS 的基於 PID 的精密自動油門。具有緊湊的玻璃變形面板和自動延遲著陸模式。 © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:ja      GeoFS 用の高精度 PID ベースのオートスロットル。コンパクトなグラスモーフィックパネルと自動遅延着陸モードを備えています。 © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:ko      GeoFS용 정밀 PID 기반 자동 조절. 소형 유리모형 패널과 자동 지연 착륙 모드가 특징입니다. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:fr      Autothrottle de précision basé sur PID pour GeoFS. Comprend un panneau glassmorphic compact et un mode d'atterrissage à retard automatique. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:de      Präzises PID-basiertes Autothrottle für GeoFS. Verfügt über ein kompaktes glasmorphisches Panel und einen Landemodus mit automatischer Verzögerung. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:es      Acelerador automático basado en PID de precisión para GeoFS. Cuenta con un panel glassmorphic compacto y modo de aterrizaje con retardo automático. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:pt-BR   Autothrottle baseado em PID de precisão para GeoFS. Apresenta um painel glassmorphic compacto e modo de pouso com retardo automático. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:pt-PT   Autothrottle baseado em PID de precisão para GeoFS. Apresenta um painel glassmorphic compacto e modo de aterragem com retardamento automático. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:ru      Прецизионный автоматический дроссель на основе ПИД-регулятора для GeoFS. Имеет компактную стекломорфную панель и автоматический режим приземления. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:ar      خنق تلقائي دقيق قائم على PID لـ GeoFS. تتميز بلوحة زجاجية مدمجة ووضع هبوط تلقائي. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:tr      GeoFS için Hassas PID Tabanlı Otomatik Kısma. Kompakt bir cammorfik panele ve otomatik geciktirmeli İniş Moduna sahiptir. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:id      Autothrottle berbasis PID presisi untuk GeoFS. Dilengkapi panel kacamorfik kompak dan Mode Pendaratan dengan perlambatan otomatis. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:th      คันเร่งอัตโนมัติที่ใช้ PID ที่แม่นยำสำหรับ GeoFS โดดเด่นด้วยแผงกลาสมอร์ฟิกขนาดกะทัดรัดและโหมด Landing Mode ที่หน่วงอัตโนมัติ © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:pl      Precyzyjna automatyczna przepustnica oparta na PID dla GeoFS. Posiada kompaktowy panel szklanomorficzny i tryb lądowania z automatycznym opóźnianiem. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:nl      Precisie-PID-gebaseerde Autothrottle voor GeoFS. Beschikt over een compact glasmorf paneel en automatisch vertraagde landingsmodus. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:it      Autothrottle di precisione basato su PID per GeoFS. Dispone di un pannello vetromorfico compatto e modalità di atterraggio con ritardo automatico. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:sv      Precision PID-baserad Autothrottle för GeoFS. Har en kompakt glasmorfisk panel och automatiskt retard landningsläge. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:da      Præcisions PID-baseret Autothrottle til GeoFS. Har et kompakt glasmorfisk panel og auto-retard landingstilstand. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:fi      Tarkka PID-pohjainen automaattinen kaasutin GeoFS:lle. Sisältää kompaktin lasimorfisen paneelin ja automaattisesti hidastavan laskeutumistilan. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:nb      Presisjons PID-basert autothrottle for GeoFS. Har et kompakt glassmorfisk panel og automatisk forsinket landingsmodus. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:cs      Přesný autothrottle založený na PID pro GeoFS. Obsahuje kompaktní sklomorfní panel a automaticky retardovaný režim přistání. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:hu      Precíziós PID-alapú automata fojtószelep a GeoFS-hez. Kompakt üvegmorf panellel és automatikusan késleltetett leszállási móddal rendelkezik. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:ro      Autothrottle de precizie bazat pe PID pentru GeoFS. Dispune de un panou sticlomorf compact și modul de aterizare cu întârziere automată. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:uk      Precision Autothrottle на основі PID для GeoFS. Має компактну скломорфну ​​панель і режим приземлення з автоматичною затримкою. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:hi      जियोएफएस के लिए सटीक पीआईडी-आधारित ऑटोथ्रोटल। एक कॉम्पैक्ट ग्लासमॉर्फिक पैनल और ऑटो-रिटार्ड लैंडिंग मोड की सुविधा है। © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:bn      জিওএফএস-এর জন্য যথার্থ PID-ভিত্তিক অটোথ্রটল। একটি কমপ্যাক্ট গ্লাসমর্ফিক প্যানেল এবং স্বয়ংক্রিয়-রিটার্ড ল্যান্ডিং মোড বৈশিষ্ট্যযুক্ত। © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:fa      گاز خودکار مبتنی بر PID دقیق برای GeoFS. دارای پانل شیشه ای جمع و جور و حالت فرود عقب ماندگی خودکار. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:he      Autothrottle מבוסס PID מדויק עבור GeoFS. כולל פאנל זכוכית מורפי קומפקטי ומצב נחיתה עם עיכוב אוטומטי. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:ms      Autothrottle berasaskan PID ketepatan untuk GeoFS. Mempunyai panel glassmorphic padat dan Mod Pendaratan terencat auto. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:fil     Precision PID-based Autothrottle para sa GeoFS. Nagtatampok ng compact glassmorphic panel at auto-retard Landing Mode. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:el      Αυτόματο γκάζι με βάση PID ακριβείας για GeoFS. Διαθέτει συμπαγή γυάλινη μορφοποίηση και λειτουργία αυτόματης επιβράδυνσης προσγείωσης. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:hr      Precizni autothrottle temeljen na PID-u za GeoFS. Sadrži kompaktnu staklomorfnu ploču i način slijetanja s automatskim usporavanjem. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:sk      Presný Autothrottle založený na PID pre GeoFS. Obsahuje kompaktný sklomorfný panel a režim pristátia s automatickým spomalením. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:bg      Прецизен PID базиран Autothrottle за GeoFS. Разполага с компактен стъкломорфен панел и режим на кацане с автоматично забавяне. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:sr      Прецизни ПИД-базирани аутоматски гас за ГеоФС. Садржи компактну стакломорфну ​​плочу и режим слетања са аутоматским успоравањем. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:lt      Tikslus PID pagrįstas automatinis droselis, skirtas GeoFS. Turi kompaktišką stiklo morfinę plokštę ir automatiškai lėtinantį tūpimo režimą. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:lv      Precīza, uz PID balstīta automātiskā drosele GeoFS. Tam ir kompakts stikla formas panelis un automātiski palēnināts piezemēšanās režīms. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:et      Täpne PID-põhine automaatne gaasipedaal GeoFS-i jaoks. Sellel on kompaktne klaasmorfne paneel ja automaatselt aeglustav maandumisrežiim. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:sl      Precision Autothrottle na osnovi PID za GeoFS. Vsebuje kompaktno steklomorfno ploščo in način pristajanja s samodejnim zamikom. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:ca      Autoaccelerador basat en PID de precisió per a GeoFS. Compta amb un panell de vidre compacte i un mode d'aterratge amb retard automàtic. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:af      Presisie PID-gebaseerde Autothrottle vir GeoFS. Beskik oor 'n kompakte glasmorfiese paneel en outo-vertraagde landingsmodus. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:sw      Precision PID-msingi Autothrottle kwa GeoFS. Inaangazia paneli kompakt ya glasi na Hali ya Kutua inayorudisha nyuma kiotomatiki. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:zu      I-Precision PID-based Autothrottle ye-GeoFS. Ifaka iphaneli ye-glassmorphic ehlangene kanye ne-Auto-retard Landing Mode. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:mn      GeoFS-д зориулсан нарийн PID-д суурилсан автомат тохируулагч. Авсаархан шилэн хавтан болон автоматаар удаашруулдаг буух горимтой. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:my      GeoFS အတွက် တိကျသော PID-based Autothrottle ကျစ်လစ်သိပ်သည်းသော ဖန်သားပုံစံ အကန့်နှင့် အလိုအလျောက် နောက်ကျသော ကမ်းတက်မုဒ်တို့ ပါဝင်ပါသည်။ © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:km      Autothrottle ដែលមានមូលដ្ឋានលើភាពជាក់លាក់ PID សម្រាប់ GeoFS ។ លក្ខណៈ​ពិសេស​នៃ​បន្ទះ glassmorphic បង្រួម និង​របៀប​ចុះចត​ថយក្រោយ​ដោយ​ស្វ័យ​ប្រវត្តិ។ © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:lo      Autothrottle ທີ່ອີງໃສ່ Precision PID ສໍາລັບ GeoFS. ມີແຜງແກ້ວສະມໍຟິກຂະໜາດກະທັດຮັດ ແລະ ໂໝດຈອດລົດອັດຕະໂນມັດ. © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @description:ur      جیو ایف ایس کے لیے پی آئی ڈی پر مبنی آٹو تھروٹل۔ ایک کمپیکٹ گلاس مورفک پینل اور آٹو ریٹارڈ لینڈنگ موڈ کی خصوصیات ہیں۔ © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+
+// @namespace           https://greasyfork.org/users/1594049
+// @version             3.9.0
+// @author              AMFI-Disable
+// @homepageURL         https://sites.google.com/view/geofs-v39-ecosystem/home
+// @icon                https://www.geo-fs.com/images/icons/favicon.ico
+// @match               https://www.geo-fs.com/geofs.php*
+// @require             https://update.greasyfork.org/scripts/581510/code.js
+// @require             https://update.greasyfork.org/scripts/581511/code.js
+// @grant               none
+// @license             MIT
+// @copyright           2026, AMFI-Disable (https://greasyfork.org/users/1594049)
+// @compatible          chrome
+// @compatible          firefox
+// @compatible          edge
+// @compatible          safari
+// @compatible          brave
+// @compatible          opera
 // ==/UserScript==
+
+// Wait for GeoFS to report its version before executing any module code.
+// Unknown, older, and newer versions never activate this V3.9 release.
+(function waitForGeoFSVersion() {
+    const version = window.geofs?.version;
+    if (version === undefined || version === null || version === '') {
+        setTimeout(waitForGeoFSVersion, 250);
+        return;
+    }
+    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
+        console.warn('[GeoFS-V3.9_Autothrottle] Inactive: GeoFS ' + version + ' is not V3.9.');
+        return;
+    }
+
+
+/**
+ * GeoFS-V3.9_Autothrottle | Standalone
+ * 
+ * Implements a high-precision PID-based speed maintenance system. 
+ * Features automatic Mach/Knots conversion, Landing Mode (Auto-Retard) 
+ * with touchdown detection, and joystick input suppression.
+ * 
+ * Part of the GeoFS-V3.9_Ecosystem.
+ * 
+ * © 2026 AMFI-Disable. Licensed under the MIT License.
+ */
+
 (() => {
-    'use strict';
-    if (!window.GeoFSV4Core || !window.GeoFSV4Design) { console.error('[GeoFS-V4.0_Autothrottle] Missing dependency'); return; }
+    /**
+     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
+     * Allows this module to execute only when GeoFS reports version 3.9.
+     */
+    function isUnsupportedGeoFS() {
+        const raw = window.geofs?.version;
+        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
+    }
+
+    if (isUnsupportedGeoFS()) {
+        console.warn("[GeoFS-V3.9_Autothrottle] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        return;
+    }
+
     function main () {
-        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-        let previousOpState = null;
-        function releaseOpSync() {
-            if (!geofs.autothrottle.opSyncActive) return;
-            geofs.autothrottle.opSyncActive = false;
-            document.dispatchEvent(new CustomEvent('V40_opSyncStateChanged', { detail: { active: false } }));
-            if (!previousOpState) return;
-            if (Number.isFinite(previousOpState.multiplier)) {
-                window.opMultiplier = previousOpState.multiplier;
-                document.dispatchEvent(new CustomEvent('V40_opMultiplierUpdated', { detail: { value: window.opMultiplier } }));
-            }
-            if (!previousOpState.thrust && globalThis.isThrustActive && window.toggleThrustMode) {
-                window.toggleThrustMode();
-            }
-            if (!previousOpState.ceiling && globalThis.isCeilingActive && window.toggleCeilingMode) window.toggleCeilingMode();
-            previousOpState = null;
+        if (isUnsupportedGeoFS()) {
+            console.warn("[GeoFS-V3.9_Autothrottle] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+            return;
         }
         geofs.autothrottle = {
             on: !1,
@@ -166,17 +191,17 @@
                         </div>
                         <div class="ext-autothrottle-controls" style="display: none;">
                             <div class="ext-autothrottle-control" style="position: relative;">
-                                <div id="V40-at-rev" style="display: none; font-size: 8px; color: #ef4444; font-weight: 900; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); letter-spacing: 1px; text-shadow: 0 0 5px #ef4444;">[REV]</div>
-                                <a class="ext-autothrottle-numberDown numberDown ext-autothrottle-control">-</a><input class="ext-autothrottle-numberValue numberValue ext-autothrottle-speed" min="0" smallstep="5" stepthreshold="100" step="10" data-method="setSpeed" maxlength="4" max="9999" value="0"><a class="ext-autothrottle-numberUp numberUp">+</a>
+                                <div id="V39-at-rev" style="display: none; font-size: 8px; color: #ef4444; font-weight: 900; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); letter-spacing: 1px; text-shadow: 0 0 5px #ef4444;">[REV]</div>
+                                <a class="ext-autothrottle-numberDown numberDown ext-autothrottle-control">-</a><input class="ext-autothrottle-numberValue numberValue ext-autothrottle-speed" min="0" data-smallstep="5" data-stepthreshold="100" step="10" data-method="setSpeed" maxlength="4" max="9999" value="0"><a class="ext-autothrottle-numberUp numberUp">+</a>
                                 <span class="ext-autothrottle-switch ext-autothrottle-speedMode">
                                     <a class="ext-autothrottle-switchLeft switchLeft green-pad" data-method="setAutothrottleSpeedMode" value="knots" id="knotsMode">KTS</a>
                                     <a class="ext-autothrottle-switchRight switchRight" data-method="setAutothrottleSpeedMode" value="mach" id="machMode">M.</a>
                                 </span>
                             </div>
-                            <div class="geofs-autopilot-control" style="display: inline-block; vertical-align: bottom; margin-left: 5px; text-align: center;">
-                                <span style="display: block; font-size: 10px; font-weight: bold; color: #aaa; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;">LANDING</span>
+                            <div class="ext-autothrottle-control ext-autothrottle-landing" style="position: relative;">
+                                <span class="ext-autothrottle-landing-label">LANDING</span>
                                 <span class="ext-autothrottle-switch ext-autothrottle-mode" id="autothrottle-landing-mode-switch" role="group" aria-label="Landing mode">
-                                    <a class="ext-autothrottle-switchLeft switchLeft landing-selected" data-method="setArm" value="false" id="armOff" role="button" tabindex="0" aria-pressed="true">OFF</a>
+                                    <a class="ext-autothrottle-switchLeft switchLeft green-pad active" data-method="setArm" value="false" id="armOff" role="button" tabindex="0" aria-pressed="true">OFF</a>
                                     <a class="ext-autothrottle-switchRight switchRight" data-method="setArm" value="true" id="armOn" role="button" tabindex="0" aria-pressed="false">ARM</a>
                                 </span>
                             </div>
@@ -266,10 +291,10 @@
                     geofs.autopilot.setSpeed(targetVal);
                     $input.val(isMach ? targetVal.toFixed(6) : Math.round(targetVal));
                     
-                    if (window.V40_NOTIF) {
-                        window.V40_NOTIF.show(`🛫 Autothrottle Engaged - Holding ${targetVal.toFixed(isMach ? 2 : 0)} ${isMach ? 'Mach' : 'Knots'}`);
+                    if (window.V39_NOTIF) {
+                        V39_NOTIF.success(`🛫 Autothrottle Engaged - Holding ${targetVal.toFixed(isMach ? 2 : 0)} ${isMach ? 'Mach' : 'Knots'}`);
                     }
-                    document.dispatchEvent(new CustomEvent('V40_autothrottleStateChanged', { detail: { active: !0 } }));
+                    document.dispatchEvent(new CustomEvent('V39_autothrottleStateChanged', { detail: { active: !0 } }));
                 });
 
                 // Triggered when the system is disengaged.
@@ -282,8 +307,18 @@
                         $("#autothrottle-button").removeClass("red-pad");
                     }, 3000);
                     
-                    releaseOpSync();
-
+                    if (geofs.autothrottle.opSyncActive) {
+                        geofs.autothrottle.opSyncActive = false;
+                        document.dispatchEvent(new CustomEvent('V39_opSyncStateChanged', { detail: { active: false } }));
+                        
+                        if (globalThis.isThrustActive && window.toggleThrustMode) {
+                            window.toggleThrustMode();
+                        }
+                        if (globalThis.isCeilingActive && window.toggleCeilingMode) {
+                            window.toggleCeilingMode();
+                        }
+                    }
+                    
                     if (geofs.autothrottle.reverseEngaged) {
                         geofs.autothrottle.reverseEngaged = false;
                         if (geofs.aircraft.instance.definition && geofs.autothrottle._origReverse !== undefined) {
@@ -292,9 +327,8 @@
                     }
 
                     // Remove REV visual indicator in case it was active during disengagement
-                    $("#V40-at-rev").hide();
+                    $("#V39-at-rev").hide();
                     // Reset our tracking values to prevent spikes on subsequent engagements
-                    geofs.autothrottle._tickTime = null;
                     geofs.autothrottle._lastFrameTime = null;
                     geofs.autothrottle._prevKias = null;
                     geofs.autothrottle._currentAccelKts = 0;
@@ -302,15 +336,15 @@
                     geofs.autopilot.setSpeedMode(geofs.autopilot.speedMode);
                     geofs.autothrottle.on = !1;
                     
-                    if (window.V40_NOTIF) {
-                        window.V40_NOTIF.show("🛬 Autothrottle Disengaged - Control Returned to Pilot");
+                    if (window.V39_NOTIF) {
+                        V39_NOTIF.info("🛬 Autothrottle Disengaged - Control Returned to Pilot");
                     }
-                    document.dispatchEvent(new CustomEvent('V40_autothrottleStateChanged', { detail: { active: !1 } }));
+                    document.dispatchEvent(new CustomEvent('V39_autothrottleStateChanged', { detail: { active: !1 } }));
                 });
 
                 // Safety: Automatically disengage if the main Autopilot is turned on.
                 $(document).on("autopilotOn", () => {
-                    geofs.autopilot.setSpeedMode("kias");
+                    geofs.autopilot.setSpeedMode("knots");
                     geofs.autopilot.setSpeed(geofs.animation.values.kias);
                     geofs.autothrottle.on && $(document).trigger("autothrottleOff")
                 });
@@ -389,12 +423,13 @@
                        display: inline-block;
                        width: 35px;
                        height: 17px;
-                       line-height: 19px;
+                       line-height: 15px;
+                       font-size: 10px;
+                       font-weight: 400;
                        cursor: pointer;
                        color: white;
                        background: #000;
                        margin: 2px 0px;
-                       display: inline-block;
                        border: 1px solid white;
                        box-shadow: 0px 0px 5px #000;
                    }
@@ -405,6 +440,20 @@
                        color: white;
                        line-height: 25px;
                        display: inline-block;
+                       vertical-align: top;
+                   }
+                   .ext-autothrottle-control .ext-autothrottle-landing-label {
+                       display: block;
+                       height: 25px;
+                       line-height: 25px;
+                       font-family: 'LCD-Bold', monospace;
+                       font-size: 20px;
+                       font-weight: 400;
+                       letter-spacing: 1px;
+                       color: #ffffff;
+                       text-shadow: 0px 0px 5px #000;
+                       white-space: nowrap;
+                       user-select: none;
                    }
                    .ext-autothrottle-bar .ext-autothrottle-speed {
                        width: 50px !important;
@@ -462,10 +511,6 @@
                        border-color: #ef4444 !important;
                        box-shadow: 0 0 10px rgba(239, 68, 68, 0.4) !important;
                     }
-                    #autothrottle-landing-mode-switch .landing-selected {
-                       background: #555;
-                       border-color: #888;
-                    }
                 `;
                 document.head.appendChild(style);
             },
@@ -480,7 +525,7 @@
                 if (!geofs.autothrottle.on) {
                     // Electrical System Dependency: Block engagement if no power.
                     if (window.failureSimulator?.fails?.electrical) {
-                        if (window.V40_NOTIF) window.V40_NOTIF.show("⚡ AUTOTHROTTLE OFFLINE - NO ELECTRICAL POWER");
+                        if (window.V39_NOTIF) V39_NOTIF.critical("⚡ AUTOTHROTTLE OFFLINE - NO ELECTRICAL POWER");
                         return;
                     }
 
@@ -531,32 +576,28 @@
                         geofs.autothrottle._origReverse = geofs.aircraft.instance.definition.reverse;
                         geofs.aircraft.instance.definition.reverse = true;
                     }
-                    $("#V40-at-rev").show();
+                    $("#V39-at-rev").show();
                 } else if (f <= e * 1.05 && geofs.autothrottle.reverseEngaged) {
                     geofs.autothrottle.reverseEngaged = false;
                     // Restore original reverse property of aircraft definition
                     if (geofs.aircraft.instance.definition && geofs.autothrottle._origReverse !== undefined) {
                         geofs.aircraft.instance.definition.reverse = geofs.autothrottle._origReverse;
                     }
-                    $("#V40-at-rev").hide();
+                    $("#V39-at-rev").hide();
                 }
 
                 /**
                  * --- 2. [Integration] Seamless OP Engines Bridge ---
                  */
-                const mass = geofs.aircraft.instance.setup?.mass || 1000; // Default to 1 ton if missing
+                const mass = geofs.aircraft.instance.setup.mass || 1000; // Default to 1 ton if missing
                 const OP_LIMIT_KNOTS = (mass < 10000) ? 200 : 500;
                 
                 // Keep OP Engines engaged if targeting supersonic, OR if air-braking from supersonic
                 if (e > OP_LIMIT_KNOTS || (geofs.autothrottle.reverseEngaged && f > OP_LIMIT_KNOTS)) {
-                    // Preserve the pilot's settings before automatic management begins.
-                    if (!geofs.autothrottle.opSyncActive && (window.toggleThrustMode || window.toggleCeilingMode)) {
-                        previousOpState = { thrust: !!globalThis.isThrustActive, ceiling: !!globalThis.isCeilingActive, multiplier: window.opMultiplier };
-                    }
                     // Auto-activate OP Engines if target speed exceeds physical aircraft limits
                     if (!globalThis.isThrustActive && window.toggleThrustMode) {
                         window.toggleThrustMode();
-                        if (window.V40_NOTIF) window.V40_NOTIF.show(`🚀 Physical limit (${OP_LIMIT_KNOTS}kts) exceeded. OP Engines engaged.`);
+                        if (window.V39_NOTIF) V39_NOTIF.warn(`🚀 Physical limit (${OP_LIMIT_KNOTS}kts) exceeded. OP Engines engaged.`);
                     }
                     
                     // Auto-activate Ceiling Bypass to handle extreme high-altitude atmospheric heights
@@ -566,7 +607,7 @@
                     
                     if (!geofs.autothrottle.opSyncActive) {
                         geofs.autothrottle.opSyncActive = true;
-                        document.dispatchEvent(new CustomEvent('V40_opSyncStateChanged', { detail: { active: true } }));
+                        document.dispatchEvent(new CustomEvent('V39_opSyncStateChanged', { detail: { active: true } }));
                     }
                     
                     if (globalThis.isThrustActive) {
@@ -574,25 +615,38 @@
                         const rawError = Math.abs(e - f); // Absolute error
                         const baseMult = activeSpeed / 500;
                         
-                        // Scale errorBoost aggressively for massive hypersonic target differences
-                        let errorBoost = rawError / 100;
-                        if (rawError > 1000) {
-                            errorBoost = (rawError / 10) * (1 + (rawError / 10000));
+                        const clampedError = Math.min(rawError, 5000);
+                        let errorBoost = clampedError / 100;
+                        if (clampedError > 1000) {
+                            errorBoost = (clampedError / 25) * (1 + (clampedError / 10000));
                         }
                         
-                        const targetMult = clamp(baseMult + errorBoost, 1, 1000000000);
+                        const targetMult = clamp(Math.min(activeSpeed, 5000) / 500 + errorBoost, 1, 250);
                         
                         // Smoothly slide the multiplier towards the optimal target
-                        window.opMultiplier += (targetMult - window.opMultiplier) * 0.15;
-                        
-                        window.opMultiplier = clamp(window.opMultiplier, 1, 1000000000);
+                        const currentMult = Number.isFinite(window.opMultiplier) && window.opMultiplier >= 1 ? window.opMultiplier : 1;
+                        window.opMultiplier = clamp(currentMult + (targetMult - currentMult) * 0.15, 1, 250);
                         
                         // Broadcast live updates to sync the Overpowered Engines UI
-                        document.dispatchEvent(new CustomEvent('V40_opMultiplierUpdated', { detail: { value: window.opMultiplier } }));
+                        document.dispatchEvent(new CustomEvent('V39_opMultiplierUpdated', { detail: { value: window.opMultiplier } }));
                     }
                 } else {
-                    // Restore the pilot's settings when automatic management ends.
-                    releaseOpSync();
+                    // Target is achievable within standard flight envelope
+                    if (geofs.autothrottle.opSyncActive) {
+                        geofs.autothrottle.opSyncActive = false;
+                        document.dispatchEvent(new CustomEvent('V39_opSyncStateChanged', { detail: { active: false } }));
+                        
+                        // Gracefully relinquish control and disable overpowered engines
+                        if (globalThis.isThrustActive && window.toggleThrustMode) {
+                             window.toggleThrustMode();
+                             if (window.V39_NOTIF) V39_NOTIF.warn("🛬 Returned to standard flight envelope. OP Engines disengaged.");
+                        }
+                        
+                        // Restore standard atmospheric limits
+                        if (globalThis.isCeilingActive && window.toggleCeilingMode) {
+                             window.toggleCeilingMode();
+                        }
+                    }
                 }
 
                 const mult = (globalThis.isThrustActive && window.opMultiplier) ? window.opMultiplier : 1.0;
@@ -649,16 +703,11 @@
                      throttleCmd *= (100 / currentAccel); // Proportional cut to maintain exactly 100 kts/sec
                 }
 
-                const targetVal = geofs.autothrottle.reverseEngaged ? 
-                     clamp(-throttleCmd * damping, -1, 0) : 
-                     clamp(throttleCmd * damping, 0, 1);
-                controls.manipulatorSetters.setThrottle(targetVal);
-                if (controls.throttleLeft !== undefined) controls.throttleLeft = targetVal;
-                if (controls.throttleRight !== undefined) controls.throttleRight = targetVal;
-                if (controls.throttle1 !== undefined) controls.throttle1 = targetVal;
-                if (controls.throttle2 !== undefined) controls.throttle2 = targetVal;
-                if (controls.throttle3 !== undefined) controls.throttle3 = targetVal;
-                if (controls.throttle4 !== undefined) controls.throttle4 = targetVal;
+                if (geofs.autothrottle.reverseEngaged) {
+                     controls.throttle = clamp(-throttleCmd * damping, -1, 0); // Apply negative throttle for reverse thrust
+                } else {
+                     controls.throttle = clamp(throttleCmd * damping, 0, 1);
+                }
             },
             /**
              * Tick Orchestrator & Safety Guard
@@ -669,28 +718,19 @@
                 if (geofs.autothrottle.on) {
                     // Electrical System Dependency: Immediate emergency cut if power is lost.
                     if (window.failureSimulator?.fails?.electrical) {
-                        if (window.V40_NOTIF) window.V40_NOTIF.show("⚡ AUTOTHROTTLE DISENGAGED - ELECTRICAL FAILURE");
+                        if (window.V39_NOTIF) V39_NOTIF.critical("⚡ AUTOTHROTTLE DISENGAGED - ELECTRICAL FAILURE");
                         $(document).trigger("autothrottleOff");
                         return;
                     }
 
                     // Touchdown Guard: Immediate engine cut upon ground contact if ARMED
                     if (geofs.aircraft.instance.groundContact && geofs.autothrottle.armed) {
-                        controls.manipulatorSetters.setThrottle(0);
-                        if (controls.throttleLeft !== undefined) controls.throttleLeft = 0;
-                        if (controls.throttleRight !== undefined) controls.throttleRight = 0;
-                        if (controls.throttle1 !== undefined) controls.throttle1 = 0;
-                        if (controls.throttle2 !== undefined) controls.throttle2 = 0;
-                        if (controls.throttle3 !== undefined) controls.throttle3 = 0;
-                        if (controls.throttle4 !== undefined) controls.throttle4 = 0;
+                        controls.throttle = 0;
                         $(document).trigger("autothrottleOff");
                         return;
                     }
-                    const now = geofs.utils.now();
-                    const previous = geofs.autothrottle._tickTime;
-                    geofs.autothrottle._tickTime = now;
-                    const c = previous == null ? 0.016 : Math.max(0.001, Math.min((now - previous) / 1000, 0.1));
-                    const b = c * 1000;
+                    var b = a - geofs.utils.now();
+                    var c = b / 1E3;
                     try {
                         geofs.autothrottle.tick(c, b);
                     } catch (err) {
@@ -703,8 +743,8 @@
              */
             handleError: (a) => {
                 console.error(a);
-                if (window.V40_NOTIF) window.V40_NOTIF.critical('Autothrottle error: disabled. Check the console for details.');
-                else window.GeoFSV4Core.notify('Autothrottle error: disabled. Check the console for details.', 'error');
+                if (window.V39_NOTIF) window.V39_NOTIF.critical('Autothrottle error: disabled. Check the console for details.');
+                else ui.notification.show('Autothrottle error: disabled. Check the console for details.');
                 geofs.debug.log("meatbroc autothrottle error");
                 geofs.api.removeFrameCallback(geofs.autothrottle.callbackID);
                 $(document).trigger("autothrottleOff");
@@ -728,7 +768,7 @@
             const b = JSON.parse(a);
             geofs.autothrottle.armed = b;
             $("#armOn").toggleClass("green-pad active", b).attr("aria-pressed", String(b));
-            $("#armOff").toggleClass("landing-selected active", !b).attr("aria-pressed", String(!b));
+            $("#armOff").toggleClass("green-pad active", !b).attr("aria-pressed", String(!b));
         };
 
         /**
@@ -775,15 +815,19 @@
             $input.attr(isMach ? geofs.autothrottle._machSpeedAttributes : geofs.autothrottle._ktsSpeedAttributes);
             $input.val(isMach ? currentTarget.toFixed(6) : Math.round(currentTarget)); // Increased precision to maintain exact user values
 
-            if (window.V40_NOTIF) {
-                window.V40_NOTIF.show(`🔄 Speed Mode Switched to ${isMach ? 'Mach' : 'Knots'} (${currentTarget.toFixed(isMach ? 2 : 0)} ${isMach ? 'M' : 'kts'})`);
+            if (window.V39_NOTIF) {
+                V39_NOTIF.info(`🔄 Speed Mode Switched to ${isMach ? 'Mach' : 'Knots'} (${currentTarget.toFixed(isMach ? 2 : 0)} ${isMach ? 'M' : 'kts'})`);
             }
         }
 
-        if (window.V40_NOTIF) {
-            window.V40_NOTIF.show("GeoFS-V4.0_Autothrottle v1.0.1 Loaded.");
+        if (window.V39_NOTIF) {
+            window.V39_NOTIF.success("GeoFS-V3.9_Autothrottle V2.0.1 Loaded.");
         }
-        console.log("[GeoFS-V4.0_Autothrottle] >> Autothrottle System Initialized.");
+        console.log("[GeoFS-V3.9_Autothrottle] >> Autothrottle System Initialized.");
     }
-    window.GeoFSV4Core.initialize('Autothrottle', main).catch(() => {});
+    window.executeOnEventDone("geofsInitialized", main);
+})();
+
+
+
 })();

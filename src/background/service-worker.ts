@@ -1,6 +1,54 @@
 import type { LandingRecord } from '../types/settings';
 import { SerializedLogbookStore } from './logbook-store';
 
+interface CachedDiagEntry {
+  time: string;
+  code: string;
+  payload?: unknown;
+}
+
+interface TabLiveCache {
+  telemetry: unknown;
+  diagnostics: CachedDiagEntry[];
+  updatedAt: number;
+}
+
+const MAX_CACHED_DIAGS = 50;
+const liveTabCaches = new Map<number, TabLiveCache>();
+let lastActiveLiveTabId: number | null = null;
+
+function getOrCreateTabCache(tabId: number): TabLiveCache {
+  let cache = liveTabCaches.get(tabId);
+  if (!cache) {
+    cache = { telemetry: null, diagnostics: [], updatedAt: Date.now() };
+    liveTabCaches.set(tabId, cache);
+  }
+  return cache;
+}
+
+if (typeof chrome !== 'undefined' && chrome.tabs) {
+  chrome.tabs.onRemoved?.addListener((tabId) => {
+    liveTabCaches.delete(tabId);
+    if (lastActiveLiveTabId === tabId) {
+      let newestId: number | null = null;
+      let newestTime = -1;
+      for (const [id, entry] of liveTabCaches) {
+        if (entry.updatedAt > newestTime) {
+          newestTime = entry.updatedAt;
+          newestId = id;
+        }
+      }
+      lastActiveLiveTabId = newestId;
+    }
+  });
+
+  chrome.tabs.onUpdated?.addListener((tabId, changeInfo) => {
+    if (changeInfo.status === 'loading') {
+      liveTabCaches.delete(tabId);
+    }
+  });
+}
+
 const store = new SerializedLogbookStore({
   get: (key) =>
     new Promise((resolve) => {
@@ -14,7 +62,7 @@ const store = new SerializedLogbookStore({
     })
 });
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === 'GEOFS_EXT_APPEND_LOGBOOK' && msg.record) {
     store
       .append(msg.record as LandingRecord)
@@ -22,5 +70,50 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .catch(() => sendResponse({ ok: false }));
     return true;
   }
+
+  const senderTabId = sender?.tab?.id;
+  if (msg?.type === 'GEOFS_EXT_LIVE_TELEMETRY_EVENT' && senderTabId !== undefined) {
+    const cache = getOrCreateTabCache(senderTabId);
+    cache.telemetry = msg.telemetry ?? null;
+    cache.updatedAt = Date.now();
+    lastActiveLiveTabId = senderTabId;
+    return false;
+  }
+
+  if (msg?.type === 'GEOFS_EXT_DIAG_EVENT' && msg.entry && senderTabId !== undefined) {
+    const cache = getOrCreateTabCache(senderTabId);
+    cache.diagnostics.push(msg.entry as CachedDiagEntry);
+    if (cache.diagnostics.length > MAX_CACHED_DIAGS) {
+      cache.diagnostics.splice(0, cache.diagnostics.length - MAX_CACHED_DIAGS);
+    }
+    cache.updatedAt = Date.now();
+    lastActiveLiveTabId = senderTabId;
+    return false;
+  }
+
+  if (msg?.type === 'GET_CACHED_LIVE_STATE') {
+    const candidateIds: number[] = [];
+    if (typeof msg.tabId === 'number') candidateIds.push(msg.tabId);
+    if (lastActiveLiveTabId !== null && !candidateIds.includes(lastActiveLiveTabId)) {
+      candidateIds.push(lastActiveLiveTabId);
+    }
+    for (const id of liveTabCaches.keys()) {
+      if (!candidateIds.includes(id)) candidateIds.push(id);
+    }
+    for (const id of candidateIds) {
+      const cache = liveTabCaches.get(id);
+      if (cache && (cache.telemetry || cache.diagnostics.length > 0)) {
+        sendResponse({
+          tabId: id,
+          telemetry: cache.telemetry,
+          diagnostics: cache.diagnostics
+        });
+        return false;
+      }
+    }
+    sendResponse({ tabId: null, telemetry: null, diagnostics: [] });
+    return false;
+  }
+
   return false;
 });

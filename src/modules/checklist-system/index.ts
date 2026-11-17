@@ -1,128 +1,200 @@
-import { ARCHIVED_PROCEDURES, type ChecklistProcedure } from './procedures';
+import {
+  MANDATORY_PHASE_LABELS,
+  SITUATIONAL_GUIDES,
+  evaluateChecklistSync,
+  getMandatoryProcedures,
+  isHardwareSync,
+  type ChecklistProcedure
+} from './procedures';
 import { formatVSpeeds } from '../../core/aircraft-profile';
-import type { AircraftCategory, FlightTelemetry, IModule, ModuleContext } from '../../types/module';
+import type { AircraftProfile, FlightTelemetry, IModule, ModuleContext } from '../../types/module';
+import type { ExtensionSettings } from '../../types/settings';
 
-type ChecklistPhase =
-  | 'preflight'
-  | 'taxi'
-  | 'takeoff'
-  | 'climb'
-  | 'cruise'
-  | 'approach'
-  | 'landing'
-  | 'shutdown'
-  | 'emergency';
-
-interface ChecklistItem {
-  id: string;
-  label: string;
-  description?: string;
-  autoCheck?: (t: FlightTelemetry) => boolean;
+interface EmergencyEntry {
+  type: string;
+  procedure: ChecklistProcedure;
+  recoverable: boolean;
+  contingency: boolean;
 }
 
-const PHASE_LABELS: Record<ChecklistPhase, string> = {
-  preflight: 'PRE',
-  taxi: 'TAXI',
-  takeoff: 'T/O',
-  climb: 'CLB',
-  cruise: 'CRZ',
-  approach: 'APP',
-  landing: 'LDG',
-  shutdown: 'SDN',
-  emergency: 'EMERG'
-};
-
-const ROTORCRAFT_CHECKLISTS: Partial<Record<ChecklistPhase, ChecklistItem[]>> = {
-  preflight: [
-    { id: 'rotor-clear', label: 'Rotor And Tail Area Clear' },
-    { id: 'collective-low', label: 'Collective Fully Lowered', autoCheck: (t) => t.collective !== null && t.collective <= 0.05 },
-    { id: 'flight-controls', label: 'Cyclic And Anti-Torque Controls Checked' }
-  ],
-  takeoff: [
-    { id: 'takeoff-clear', label: 'Departure Path Clear' },
-    { id: 'hover', label: 'Hover And Control Response Checked' }
-  ],
-  cruise: [
-    { id: 'cruise-rotor', label: 'Rotor RPM And Power Checked' },
-    { id: 'cruise-trim', label: 'Airspeed And Flight Path Confirmed' }
-  ],
-  approach: [
-    { id: 'landing-zone', label: 'Landing Zone And Escape Path Clear' },
-    { id: 'approach-power', label: 'Approach Power And Descent Checked' }
-  ],
-  emergency: [
-    { id: 'emergency-rotor', label: 'Rotor RPM Checked' },
-    { id: 'emergency-zone', label: 'Landing Site Identified' },
-    { id: 'emergency-procedure', label: 'Aircraft Emergency Procedure Reviewed' }
-  ]
-};
-
-function getPhaseChecklist(category: AircraftCategory, phase: ChecklistPhase): ChecklistItem[] {
-  if (category === 'rotorcraft' && ROTORCRAFT_CHECKLISTS[phase]) {
-    return ROTORCRAFT_CHECKLISTS[phase]!;
+const CHECKLIST_STYLES = `
+  .geofs-ext-chk-root {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    font-family: Helvetica, Arial, sans-serif;
   }
-  if (category === 'rotorcraft') {
-    if (phase === 'emergency') {
-      return [
-        { id: 'heli-em-coll', label: 'Collective LOWER (Autorotation)', autoCheck: (t) => t.collective !== null && t.collective * 100 <= 25 },
-        { id: 'heli-em-spd', label: 'Best Glide / Auto 60-80 KTS', autoCheck: (t) => t.kias >= 55 && t.kias <= 85 },
-        { id: 'heli-em-flare', label: 'Flare & Level Before Touchdown', autoCheck: (t) => t.aglFeet < 50 && Math.abs(t.roll) < 8 }
-      ];
+  .geofs-ext-chk-phases {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px;
+  }
+  .geofs-ext-chk-phase {
+    background: #000000;
+    color: #cccccc;
+    border: 1px solid #888888;
+    border-radius: 15px;
+    padding: 3px 2px;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .geofs-ext-chk-phase.is-active {
+    background: #4caf50;
+    border-color: #4caf50;
+    color: #ffffff;
+  }
+  .geofs-ext-chk-phase.is-emergency {
+    border-color: #ef4444;
+    color: #ff8d8d;
+  }
+  .geofs-ext-chk-phase.is-emergency.is-active {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #ffffff;
+  }
+  .geofs-ext-chk-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 4px 5px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(136, 136, 136, 0.25);
+    cursor: pointer;
+  }
+  .geofs-ext-chk-item.is-done {
+    border-color: rgba(76, 175, 80, 0.5);
+    opacity: 0.72;
+  }
+  .geofs-ext-chk-box {
+    width: 12px;
+    height: 12px;
+    border: 1px solid #888888;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 900;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: #4caf50;
+  }
+  .geofs-ext-chk-item.is-done .geofs-ext-chk-box {
+    background: #4caf50;
+    border-color: #4caf50;
+    color: #ffffff;
+  }
+  .geofs-ext-chk-btn {
+    background: #000000;
+    color: #ffffff;
+    border: 1px solid #888888;
+    border-radius: 15px;
+    padding: 3px 7px;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .geofs-ext-chk-btn.is-active {
+    border-color: #4caf50;
+    color: #4caf50;
+  }
+  .geofs-ext-chk-recovery {
+    width: 100%;
+    padding: 5px 8px;
+    background: #000000;
+    border: 1px solid #eab308;
+    border-radius: 15px;
+    color: #facc15;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+  }
+`;
+
+export function executeChecklistHardwareAction(
+  sync: string | undefined,
+  telemetry: FlightTelemetry,
+  profile: AircraftProfile | null,
+  context: ModuleContext
+): boolean {
+  if (!sync || !profile) return false;
+  const c = window.controls as (Record<string, unknown> & typeof window.controls) | undefined;
+
+  if (sync === 'parkingBrake' || sync === 'parkingBrake:off') {
+    const want = sync === 'parkingBrake';
+    if (telemetry.parkingBrake !== want) {
+      if (typeof c?.setters?.setParkingBrake?.set === 'function') {
+        c.setters.setParkingBrake.set();
+      } else if (c) {
+        c.brakes = want ? 1 : 0;
+      }
+      return true;
     }
-    if (phase === 'taxi' || phase === 'takeoff') {
-      return [
-        { id: 'heli-to-coll', label: 'Collective RAISE Smoothly', autoCheck: (t) => t.collective !== null && t.collective * 100 > 45 },
-        { id: 'heli-to-hover', label: 'Hover Check (5-15 ft AGL)', autoCheck: (t) => !t.groundContact && t.aglFeet >= 3 },
-        { id: 'heli-to-etl', label: 'Effective Translational Lift > 20 KTS', autoCheck: (t) => t.kias >= 20 }
-      ];
-    }
-    if (phase === 'climb' || phase === 'cruise') {
-      return [
-        { id: 'heli-crz-trq', label: 'Torque Within Operating Limits' },
-        { id: 'heli-crz-alt', label: 'Cruise Altitude Stabilized', autoCheck: (t) => Math.abs(t.vs) < 250 }
-      ];
-    }
-    if (phase === 'approach' || phase === 'landing') {
-      return [
-        { id: 'heli-app-spd', label: 'Approach Decel < 70 KTS', autoCheck: (t) => t.kias < 70 },
-        { id: 'heli-app-lights', label: 'Landing Light ON', autoCheck: (t) => t.lightsOn },
-        { id: 'heli-app-hover', label: 'Stabilized Hover < 15 ft AGL', autoCheck: (t) => t.aglFeet <= 15 && t.kias < 15 }
-      ];
-    }
-    if (phase === 'shutdown') {
-      return [
-        { id: 'heli-sdn-coll', label: 'Collective FULL DOWN', autoCheck: (t) => t.collective !== null && t.collective * 100 <= 5 },
-        { id: 'heli-sdn-gnd', label: 'Skids / Gear Grounded', autoCheck: (t) => t.groundContact }
-      ];
-    }
-    return [
-      { id: 'heli-pre-coll', label: 'Collective FULL DOWN', autoCheck: (t) => t.collective !== null && t.collective * 100 <= 10 },
-      { id: 'heli-pre-lights', label: 'Anti-Collision / Nav Lights ON', autoCheck: (t) => t.lightsOn },
-      { id: 'heli-pre-ground', label: 'Skids / Gear Level On Ground', autoCheck: (t) => t.groundContact }
-    ];
+    return false;
   }
 
-  return [];
-}
+  if (sync === 'gear' || sync === 'gear:down' || sync === 'gear:up') {
+    const wantDown = sync !== 'gear:up';
+    if (profile.hasGear && telemetry.gearDown !== wantDown) {
+      context.sim.toggleGear();
+      return true;
+    }
+    return false;
+  }
 
-function aircraftProcedures(name: string): ChecklistProcedure[] {
-  const match = Object.keys(ARCHIVED_PROCEDURES).find((key) => name.toLowerCase().includes(key));
-  return ARCHIVED_PROCEDURES[match ?? 'generic'];
-}
+  if (sync === 'flaps') {
+    context.sim.setFlaps(telemetry.flapsTarget > 0 ? telemetry.flapsTarget : Math.min(profile.maxFlaps, 1));
+    return true;
+  }
+  if (sync === 'flaps:0') {
+    context.sim.setFlaps(0);
+    return true;
+  }
+  if (sync === 'flaps:full') {
+    context.sim.setFlaps(profile.maxFlaps);
+    return true;
+  }
+  if (sync.startsWith('flaps:')) {
+    const target = Number(sync.slice(6));
+    if (Number.isFinite(target)) {
+      context.sim.setFlaps(Math.min(profile.maxFlaps, Math.max(0, target)));
+      return true;
+    }
+  }
 
-function isProcedureItemComplete(sync: string | undefined, telemetry: FlightTelemetry): boolean {
-  if (sync === 'parkingBrake') return telemetry.parkingBrake;
-  if (sync === 'airbrakes') return (telemetry.airbrakesPosition ?? 0) > 0;
-  if (sync === 'flaps') return telemetry.flapsTarget > 0;
-  if (sync === 'flaps:full') return telemetry.flapsTarget === telemetry.aircraft?.maxFlaps;
-  if (sync?.startsWith('flaps:')) return telemetry.flapsTarget === Number(sync.slice(6));
+  if (sync === 'airbrakes' || sync === 'airbrakes:arm' || sync === 'airbrakes:off') {
+    const want = sync !== 'airbrakes:off';
+    if (c?.airbrakes) {
+      c.airbrakes.target = want ? 1 : 0;
+      c.setters?.setAirbrakes?.set?.();
+      return true;
+    }
+  }
+
+  if (sync === 'lightsOn' && c) {
+    const setters = c.setters as { setLights?: { set?: () => void } } | undefined;
+    if (!telemetry.lightsOn) {
+      setters?.setLights?.set?.();
+      return true;
+    }
+  }
+
   return false;
 }
 
 export class ChecklistSystemModule implements IModule {
   public readonly id = 'checklist-system';
   public readonly name = 'Checklist System';
-  public readonly description = '9-phase aircraft-category checklists with live switch verification.';
+  public readonly description = '4 mandatory flight-gate checklists with live auto-checks, situational guide & emergency QRH overrides.';
   public readonly supportedMajors = [3, 4] as const;
   public readonly defaultEnabled = true;
 
@@ -131,157 +203,363 @@ export class ChecklistSystemModule implements IModule {
   private unmounts: Array<() => void> = [];
   private activePhase = 0;
   private autoAdvance = false;
+  private showGuide = false;
   private phaseTitles: string[] = [];
-  private emergencies = new Map<string, ChecklistProcedure>();
+  private emergencies = new Map<string, EmergencyEntry>();
   private lastAircraftKey = '';
+  private lastTelemetry: FlightTelemetry | null = null;
   private lastRender = '';
+  private lastEmittedPhase = '';
   private manualDone = new Set<string>();
 
   public init(context: ModuleContext): void {
     this.ctx = context;
+    this.autoAdvance = Boolean(context.getSettings().checklistAutoAdvance);
+
+    if (typeof document !== 'undefined') {
+      const style = document.createElement('style');
+      style.id = 'geofs-ext-checklist-styles';
+      style.textContent = CHECKLIST_STYLES;
+      document.head?.appendChild(style);
+      this.unmounts.push(() => style.remove());
+    }
+
     const root = document.createElement('div');
+    root.className = 'geofs-ext-chk-root';
     this.rootEl = root;
-    this.unmounts.push(context.anchors.registerHudTab('chk', 'CHK', root));
+    this.unmounts.push(context.anchors.registerHudTab('checks', 'CHECKS', root));
 
     const cyclePhase = () => {
       if (!this.phaseTitles.length) return;
       this.activePhase = (this.activePhase + 1) % this.phaseTitles.length;
-      context.anchors.openHudTab('chk');
+      this.lastRender = '';
+      context.anchors.openHudTab('checks');
       context.anchors.showToast(`Checklist Phase: ${this.phaseTitles[this.activePhase]}`);
     };
 
-    const rightBtn = document.createElement('button');
-    rightBtn.type = 'button';
-    rightBtn.className = 'geofs-ext-pad';
-    rightBtn.textContent = 'CHK';
-    rightBtn.addEventListener('click', cyclePhase);
-    this.unmounts.push(context.anchors.mountControl('checklist-right-pad', 'right', rightBtn));
-
     const combo = context.getSettings().keybindings.toggleChecklist;
     this.unmounts.push(context.keybinds.register('checklist-cycle', combo, cyclePhase));
-    this.unmounts.push(context.onEvent<{ type: string; procedure?: ChecklistProcedure }>('failure:triggered', ({ type, procedure }) => {
-      if (!procedure) return;
-      this.emergencies.set(type, procedure);
-      context.anchors.openHudTab('chk');
-    }));
-    this.unmounts.push(context.onEvent<{ type: string }>('failure:cleared', ({ type }) => {
-      this.emergencies.delete(type);
-    }));
+
+    this.unmounts.push(
+      context.onEvent<{ type: string; procedure?: ChecklistProcedure; recoverable?: boolean }>(
+        'failure:triggered',
+        ({ type, procedure, recoverable }) => {
+          if (!procedure) return;
+          this.emergencies.set(type, {
+            type,
+            procedure,
+            recoverable: recoverable !== false,
+            contingency: false
+          });
+          // Switch directly to emergency QRH tab
+          this.activePhase = 4 + Array.from(this.emergencies.keys()).indexOf(type);
+          this.lastRender = '';
+          context.anchors.openHudTab('checks');
+        }
+      )
+    );
+
+    this.unmounts.push(
+      context.onEvent<{ type: string; procedure?: ChecklistProcedure }>(
+        'failure:contingency',
+        ({ type, procedure }) => {
+          if (!procedure) return;
+          const existing = this.emergencies.get(type);
+          this.emergencies.set(type, {
+            type,
+            procedure,
+            recoverable: false,
+            contingency: true
+          });
+          if (!existing) {
+            this.activePhase = 4 + Array.from(this.emergencies.keys()).indexOf(type);
+          }
+          this.lastRender = '';
+          context.anchors.openHudTab('checks');
+        }
+      )
+    );
+
+    this.unmounts.push(
+      context.onEvent<{ type: string }>('failure:cleared', ({ type }) => {
+        if (this.emergencies.delete(type)) {
+          this.lastRender = '';
+        }
+      })
+    );
+
     context.emitEvent('failure:request-active');
   }
 
-  public onSettingsChange(settings: import('../../types/settings').ExtensionSettings): void {
+  public onSettingsChange(settings: ExtensionSettings): void {
     this.ctx?.keybinds.updateCombo('checklist-cycle', settings.keybindings.toggleChecklist);
+    if (this.autoAdvance !== Boolean(settings.checklistAutoAdvance)) {
+      this.autoAdvance = Boolean(settings.checklistAutoAdvance);
+      this.lastRender = '';
+    }
   }
 
   public update(telemetry: FlightTelemetry): void {
-    if (!this.rootEl) return;
-    if (!telemetry.aircraft) {
+    this.lastTelemetry = telemetry;
+    if (!this.rootEl || !this.ctx) return;
+
+    const ac = telemetry.aircraft;
+    if (!ac) {
       if (this.lastRender) this.rootEl.replaceChildren();
       this.lastRender = '';
       this.lastAircraftKey = '';
       return;
     }
-    const cat = telemetry.aircraft.category;
-    const key = JSON.stringify([telemetry.aircraft.id, cat]);
+
+    const key = `${ac.id}:${ac.name}:${ac.maxFlaps}:${JSON.stringify(ac.vSpeeds ?? {})}`;
     if (key !== this.lastAircraftKey) {
       this.lastAircraftKey = key;
       this.manualDone.clear();
       this.activePhase = 0;
       this.emergencies.clear();
+      this.lastRender = '';
     }
 
-    const rotorPhases = Object.keys(PHASE_LABELS) as ChecklistPhase[];
-    const procedures = cat === 'rotorcraft' ? [] : aircraftProcedures(telemetry.aircraft.name);
-    const emergencies = [...this.emergencies.entries()];
-    const normalTitles = cat === 'rotorcraft' ? rotorPhases.map((phase) => PHASE_LABELS[phase]) : procedures.map(({ title }) => title);
-    this.phaseTitles = [...normalTitles, ...emergencies.map(([, { title }]) => title)];
+    const mandatory = getMandatoryProcedures(ac);
+    const emergencies = Array.from(this.emergencies.values());
+    const normalTitles = mandatory.map((p) => (p.gateId ? MANDATORY_PHASE_LABELS[p.gateId] : p.title));
+    this.phaseTitles = [...normalTitles, ...emergencies.map((e) => `QRH:${e.procedure.title.slice(0, 8)}`)];
+
     if (this.activePhase >= this.phaseTitles.length) this.activePhase = 0;
-    const emergency = emergencies[this.activePhase - normalTitles.length];
-    const procedure = emergency?.[1] ?? procedures[this.activePhase];
-    const source: ChecklistItem[] = procedure ? procedure.items.map((item, index) => ({
-      id: `${emergency?.[0] ?? this.activePhase}-${index}`, label: item.text, description: item.desc,
-      autoCheck: (snapshot) => isProcedureItemComplete(item.sync, snapshot)
-    })) : getPhaseChecklist(cat, rotorPhases[this.activePhase]);
-    const items = source.map((item) => ({
-      ...item,
-      checked: this.manualDone.has(item.id) || Boolean(item.autoCheck?.(telemetry))
-    }));
-    if (this.autoAdvance && items.length > 0 && items.every((i) => i.checked) && this.activePhase < this.phaseTitles.length - 1) {
+
+    const isEmergencyPhase = this.activePhase >= mandatory.length;
+    const activeEmergency = isEmergencyPhase ? emergencies[this.activePhase - mandatory.length] : undefined;
+    const activeProcedure = activeEmergency ? activeEmergency.procedure : mandatory[this.activePhase];
+
+    const items = activeProcedure.items.map((item, idx) => {
+      const id = `${activeEmergency ? `em-${activeEmergency.type}-${activeEmergency.contingency ? 'cont' : 'qrh'}` : `gate-${this.activePhase}`}-${idx}`;
+      const hardware = isHardwareSync(item.sync);
+      const autoDone = !activeEmergency && evaluateChecklistSync(item.sync, telemetry, ac);
+      const checked = this.manualDone.has(id) || autoDone;
+      return { id, item, hardware, autoDone, checked };
+    });
+
+    const pendingCount = items.filter((i) => !i.checked).length;
+    const phaseEmitKey = `${activeProcedure.title}:${pendingCount}`;
+    if (phaseEmitKey !== this.lastEmittedPhase) {
+      this.lastEmittedPhase = phaseEmitKey;
+      this.ctx.emitEvent('checklist:phase', { phase: activeProcedure.title, pending: pendingCount });
+    }
+
+    if (this.autoAdvance && !isEmergencyPhase && items.length > 0 && pendingCount === 0 && this.activePhase < mandatory.length - 1) {
       this.activePhase += 1;
       this.lastRender = '';
       return;
     }
-    const speeds = formatVSpeeds(telemetry.aircraft.vSpeeds, telemetry.aircraft.machSpeeds);
-    const render = JSON.stringify([key, telemetry.aircraft.name, this.activePhase, this.autoAdvance, this.phaseTitles, speeds, items.map((item) => [item.id, item.checked])]);
-    if (render === this.lastRender) return;
-    this.lastRender = render;
+
+    const speeds = formatVSpeeds(ac.vSpeeds, ac.machSpeeds);
+    const renderKey = JSON.stringify([
+      key,
+      this.activePhase,
+      this.autoAdvance,
+      this.showGuide,
+      this.phaseTitles,
+      activeEmergency?.contingency ?? false,
+      activeEmergency?.recoverable ?? false,
+      speeds,
+      items.map((i) => [i.id, i.checked])
+    ]);
+    if (renderKey === this.lastRender) return;
+    this.lastRender = renderKey;
+
     this.rootEl.replaceChildren();
 
-    const title = document.createElement('div');
-    title.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:6px;text-transform:uppercase;font-size:10px;gap:4px;';
-    const titleText = document.createElement('span');
-    titleText.textContent = `${telemetry.aircraft.name} • ${cat}`;
-    const actions = document.createElement('span');
-    actions.style.cssText = 'display:inline-flex;gap:3px;';
+    // Header row with aircraft + AUTO/GUIDE/RST controls
+    const topBar = document.createElement('div');
+    topBar.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:4px;';
+
+    const acLabel = document.createElement('span');
+    acLabel.style.cssText = 'font-size:10px;font-weight:700;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    acLabel.textContent = `${ac.name} (${pendingCount} left)`;
+    acLabel.title = ac.name;
+
+    const btnGroup = document.createElement('span');
+    btnGroup.style.cssText = 'display:inline-flex;gap:3px;flex-shrink:0;';
+
     const autoBtn = document.createElement('button');
     autoBtn.type = 'button';
-    autoBtn.className = `geofs-ext-hud-tab ${this.autoAdvance ? 'is-active' : ''}`;
+    autoBtn.className = `geofs-ext-chk-btn ${this.autoAdvance ? 'is-active' : ''}`;
     autoBtn.textContent = 'AUTO';
-    autoBtn.title = 'Auto-advance phase when all items checked';
+    autoBtn.title = 'Auto-advance through mandatory phases';
     autoBtn.addEventListener('click', () => {
       this.autoAdvance = !this.autoAdvance;
+      this.ctx?.updateSettings({ checklistAutoAdvance: this.autoAdvance });
       this.lastRender = '';
     });
-    const resetBtn = document.createElement('button');
-    resetBtn.type = 'button';
-    resetBtn.className = 'geofs-ext-hud-tab';
-    resetBtn.textContent = 'RST';
-    resetBtn.title = 'Reset manual ticks';
-    resetBtn.addEventListener('click', () => {
+
+    const guideBtn = document.createElement('button');
+    guideBtn.type = 'button';
+    guideBtn.className = `geofs-ext-chk-btn ${this.showGuide ? 'is-active' : ''}`;
+    guideBtn.textContent = 'GUIDE';
+    guideBtn.title = 'Toggle Situational Procedure Guide';
+    guideBtn.addEventListener('click', () => {
+      this.showGuide = !this.showGuide;
+      this.lastRender = '';
+    });
+
+    const rstBtn = document.createElement('button');
+    rstBtn.type = 'button';
+    rstBtn.className = 'geofs-ext-chk-btn';
+    rstBtn.textContent = 'RST';
+    rstBtn.title = 'Reset All Checklist Items';
+    rstBtn.addEventListener('click', () => {
       this.manualDone.clear();
       this.lastRender = '';
     });
-    actions.append(autoBtn, resetBtn);
-    title.append(titleText, actions);
-    this.rootEl.appendChild(title);
 
+    btnGroup.append(autoBtn, guideBtn, rstBtn);
+    topBar.append(acLabel, btnGroup);
+    this.rootEl.appendChild(topBar);
+
+    // Phase selector pills (Mandatory 4 gates + dynamic QRH pills)
     const phaseBar = document.createElement('div');
-    phaseBar.style.cssText = 'display:flex;gap:3px;margin-bottom:6px;flex-wrap:wrap;';
-    this.phaseTitles.forEach((phaseTitle, p) => {
+    phaseBar.className = 'geofs-ext-chk-phases';
+    this.phaseTitles.forEach((label, idx) => {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = `geofs-ext-hud-tab ${this.activePhase === p ? 'is-active' : ''}`;
-      btn.textContent = phaseTitle;
+      const isEmg = idx >= mandatory.length;
+      btn.className = `geofs-ext-chk-phase ${!this.showGuide && idx === this.activePhase ? 'is-active' : ''} ${isEmg ? 'is-emergency' : ''}`;
+      btn.textContent = label;
+      btn.title = label;
       btn.addEventListener('click', () => {
-        this.activePhase = p;
+        this.showGuide = false;
+        this.activePhase = idx;
+        this.lastRender = '';
       });
       phaseBar.appendChild(btn);
     });
     this.rootEl.appendChild(phaseBar);
 
-    const speedCard = document.createElement('div');
-    speedCard.style.cssText = 'margin-bottom:6px;font-size:10px;';
-    speedCard.textContent = speeds;
-    this.rootEl.appendChild(speedCard);
+    if (speeds) {
+      const speedBanner = document.createElement('div');
+      speedBanner.style.cssText = 'font-size:9px;color:#aaaaaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      speedBanner.textContent = speeds;
+      speedBanner.title = speeds;
+      this.rootEl.appendChild(speedBanner);
+    }
 
-    for (const item of items) {
-      const { checked } = item;
-      const row = document.createElement('label');
-      row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;font-size:11px;';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.checked = checked;
-      cb.addEventListener('change', () => {
+    if (activeEmergency && !this.showGuide) {
+      const qrhHeader = document.createElement('div');
+      qrhHeader.style.cssText = 'padding:5px 7px;border-radius:6px;background:rgba(239,68,68,0.18);border:1px solid #ef4444;display:flex;flex-direction:column;gap:5px;';
+      const qrhTitle = document.createElement('div');
+      qrhTitle.style.cssText = 'font-size:10px;font-weight:700;color:#fca5a5;';
+      qrhTitle.textContent = activeEmergency.contingency
+        ? `CONTINGENCY SOLUTION: ${activeEmergency.procedure.title}`
+        : `EMERGENCY QRH: ${activeEmergency.procedure.title}`;
+      qrhHeader.appendChild(qrhTitle);
+
+      if (activeEmergency.recoverable) {
+        const recoverBtn = document.createElement('button');
+        recoverBtn.type = 'button';
+        recoverBtn.className = 'geofs-ext-chk-recovery';
+        recoverBtn.textContent = 'ATTEMPT RECOVERY';
+        recoverBtn.addEventListener('click', () => {
+          this.ctx?.emitEvent('failure:attempt-recovery', { type: activeEmergency.type });
+        });
+        qrhHeader.appendChild(recoverBtn);
+      }
+      this.rootEl.appendChild(qrhHeader);
+    }
+
+    if (this.showGuide) {
+      const guideBox = document.createElement('div');
+      guideBox.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+      const guideHeading = document.createElement('div');
+      guideHeading.style.cssText = 'font-size:9.5px;font-weight:700;color:#4caf50;text-transform:uppercase;letter-spacing:0.4px;';
+      guideHeading.textContent = 'Situational Procedures Guide';
+      guideBox.appendChild(guideHeading);
+
+      const detailEls: HTMLDetailsElement[] = [];
+      for (const guide of SITUATIONAL_GUIDES) {
+        const det = document.createElement('details');
+        det.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.25);border-radius:6px;padding:4px 6px;';
+        const sum = document.createElement('summary');
+        sum.style.cssText = 'font-size:10px;font-weight:700;color:#ffffff;cursor:grab;';
+        sum.textContent = guide.title;
+        det.appendChild(sum);
+        const ul = document.createElement('ul');
+        ul.style.cssText = 'margin:4px 0 2px 14px;padding:0;font-size:9px;color:#cccccc;line-height:1.3;';
+        for (const step of guide.steps) {
+          const li = document.createElement('li');
+          li.textContent = step;
+          ul.appendChild(li);
+        }
+        det.appendChild(ul);
+        det.addEventListener('toggle', () => {
+          if (det.open) {
+            for (const other of detailEls) {
+              if (other !== det && other.open) other.open = false;
+            }
+          }
+        });
+        detailEls.push(det);
+        guideBox.appendChild(det);
+      }
+      this.rootEl.appendChild(guideBox);
+      return;
+    }
+
+    for (const entry of items) {
+      const row = document.createElement('div');
+      row.className = `geofs-ext-chk-item ${entry.checked ? 'is-done' : ''}`;
+      row.setAttribute('role', 'checkbox');
+      row.setAttribute('aria-checked', String(entry.checked));
+      row.tabIndex = 0;
+
+      const box = document.createElement('span');
+      box.className = 'geofs-ext-chk-box';
+      box.textContent = entry.checked ? '✓' : '';
+
+      const textCol = document.createElement('div');
+      textCol.style.cssText = 'flex:1;min-width:0;';
+
+      const titleRow = document.createElement('div');
+      titleRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:10.5px;font-weight:700;color:#ffffff;';
+      const itemText = document.createElement('span');
+      itemText.textContent = entry.item.text;
+      if (entry.checked) itemText.style.textDecoration = 'line-through';
+      titleRow.appendChild(itemText);
+
+      if (entry.item.sync) {
+        const badge = document.createElement('span');
+        badge.style.cssText = 'font-size:9px;flex-shrink:0;color:' + (entry.hardware ? '#facc15' : '#38bdf8') + ';';
+        badge.textContent = entry.hardware ? '⚡' : '⏱';
+        badge.title = entry.hardware ? 'Click to execute simulator control' : 'Auto-verified by live flight telemetry';
+        titleRow.appendChild(badge);
+      }
+
+      const desc = document.createElement('div');
+      desc.style.cssText = 'font-size:8.5px;font-style:italic;color:#aaaaaa;margin-top:1px;line-height:1.25;';
+      desc.textContent = entry.item.desc;
+
+      textCol.append(titleRow, desc);
+      row.append(box, textCol);
+
+      const handleActivate = () => {
+        if (entry.hardware && this.lastTelemetry && this.ctx) {
+          executeChecklistHardwareAction(entry.item.sync, this.lastTelemetry, ac, this.ctx);
+        }
+        if (this.manualDone.has(entry.id)) {
+          this.manualDone.delete(entry.id);
+        } else {
+          this.manualDone.add(entry.id);
+        }
         this.lastRender = '';
-        if (cb.checked) this.manualDone.add(item.id);
-        else this.manualDone.delete(item.id);
+      };
+
+      row.addEventListener('click', handleActivate);
+      row.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleActivate();
+        }
       });
-      const span = document.createElement('span');
-      span.textContent = item.label;
-      if (item.description) span.title = item.description;
-      if (checked) span.style.textDecoration = 'line-through';
-      row.append(cb, span);
+
       this.rootEl.appendChild(row);
     }
   }
@@ -291,10 +569,13 @@ export class ChecklistSystemModule implements IModule {
     this.unmounts = [];
     this.rootEl = null;
     this.lastRender = '';
+    this.lastEmittedPhase = '';
     this.lastAircraftKey = '';
+    this.lastTelemetry = null;
     this.manualDone.clear();
     this.emergencies.clear();
     this.activePhase = 0;
     this.phaseTitles = [];
+    this.ctx = null;
   }
 }

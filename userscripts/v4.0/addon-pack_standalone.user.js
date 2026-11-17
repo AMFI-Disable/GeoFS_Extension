@@ -1,62 +1,63 @@
 // ==UserScript==
-// @name                GeoFS-V3.9_Addon-Pack
-// @name:vi             GeoFS-V3.9_Gói-Tiện-Ích
-// @name:zh-CN          GeoFS-V3.9_插件包
-// @name:zh-TW          GeoFS-V3.9_插件包
-// @name:ja             GeoFS-V3.9_アドオンパック
-// @name:ko             GeoFS-V3.9_애드온-팩
-// @name:fr             GeoFS-V3.9_Pack-Addons
-// @name:de             GeoFS-V3.9_Addon-Paket
-// @name:es             GeoFS-V3.9_Paquete-Addons
-// @name:pt-BR          GeoFS-V3.9_Pacote-de-Addons
-// @name:pt-PT          GeoFS-V3.9_Pacote-de-Addons
-// @name:ru             GeoFS-V3.9_Пакет-Аддонов
-// @name:ar             GeoFS-V3.9_حزمة-الإضافات
-// @name:tr             GeoFS-V3.9_Eklenti-Paketi
-// @name:id             GeoFS-V3.9_Paket-Addon
-// @name:th             GeoFS-V3.9_แพ็คแอดออน
-// @name:pl             GeoFS-V3.9_Pakiet-Dodatków
-// @name:nl             GeoFS-V3.9_Addon-pakket
-// @name:it             GeoFS-V3.9_Pacchetto-Addon
-// @name:sv             GeoFS-V3.9_Addon-Pack
-// @name:da             GeoFS-V3.9_Addon-Pakke
-// @name:fi             GeoFS-V3.9_Lisäosa-Paketti
-// @name:nb             GeoFS-V3.9_Addon-Pakke
-// @name:cs             GeoFS-V3.9_Balíček-Doplňků
-// @name:hu             GeoFS-V3.9_Addon-Csomag
-// @name:ro             GeoFS-V3.9_Pachet-Addon
-// @name:uk             GeoFS-V3.9_Пакет-Аддонів
-// @name:hi             GeoFS-V3.9_एडऑन-पैक
-// @name:bn             GeoFS-V3.9_অ্যাডঅন-প্যাক
-// @name:fa             GeoFS-V3.9_بسته-افزونه
-// @name:he             GeoFS-V3.9_חבילת-תוספים
-// @name:ms             GeoFS-V3.9_Pek-Addon
-// @name:fil            GeoFS-V3.9_Addon-Pack
-// @name:el             GeoFS-V3.9_Πακέτο-Προσθέτων
-// @name:hr             GeoFS-V3.9_Paket-Dodataka
-// @name:sk             GeoFS-V3.9_Balík-Doplnkov
-// @name:bg             GeoFS-V3.9_Пакет-Добавки
-// @name:sr             GeoFS-V3.9_Пакет-Додатака
-// @name:lt             GeoFS-V3.9_Priedų-Paketas
-// @name:lv             GeoFS-V3.9_Papildinājumu-Pakotne
-// @name:et             GeoFS-V3.9_Lisaosade-Pakett
-// @name:sl             GeoFS-V3.9_Paket-Dodatkov
-// @name:ca             GeoFS-V3.9_Paquet-d-Addons
-// @name:af             GeoFS-V3.9_Addon-Pakket
-// @name:sw             GeoFS-V3.9_Kifurushi-Cha-Addon
-// @name:zu             GeoFS-V3.9_I-Addon-Pack
-// @name:mn             GeoFS-V3.9_Аддон-Багц
-// @name:my             GeoFS-V3.9_Addon-Pack
-// @name:km             GeoFS-V3.9_កញ្ចប់បន្ថែម
-// @name:lo             GeoFS-V3.9_Addon-Pack
-// @name:ur             GeoFS-V3.9_ایڈ-آن-پیک
-// @description         12 bundled modules with polished UI, draggable HUD, real aircraft procedures! © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
+// @name                GeoFS-V4.0_Addon-Pack
+// @name:vi             GeoFS-V4.0_Gói-Tiện-Ích
+// @name:zh-CN          GeoFS-V4.0_插件包
+// @name:zh-TW          GeoFS-V4.0_插件包
+// @name:ja             GeoFS-V4.0_アドオンパック
+// @name:ko             GeoFS-V4.0_애드온-팩
+// @name:fr             GeoFS-V4.0_Pack-Addons
+// @name:de             GeoFS-V4.0_Addon-Paket
+// @name:es             GeoFS-V4.0_Paquete-Addons
+// @name:pt-BR          GeoFS-V4.0_Pacote-de-Addons
+// @name:pt-PT          GeoFS-V4.0_Pacote-de-Addons
+// @name:ru             GeoFS-V4.0_Пакет-Аддонов
+// @name:ar             GeoFS-V4.0_حزمة-الإضافات
+// @name:tr             GeoFS-V4.0_Eklenti-Paketi
+// @name:id             GeoFS-V4.0_Paket-Addon
+// @name:th             GeoFS-V4.0_แพ็คแอดออน
+// @name:pl             GeoFS-V4.0_Pakiet-Dodatków
+// @name:nl             GeoFS-V4.0_Addon-pakket
+// @name:it             GeoFS-V4.0_Pacchetto-Addon
+// @name:sv             GeoFS-V4.0_Addon-Pack
+// @name:da             GeoFS-V4.0_Addon-Pakke
+// @name:fi             GeoFS-V4.0_Lisäosa-Paketti
+// @name:nb             GeoFS-V4.0_Addon-Pakke
+// @name:cs             GeoFS-V4.0_Balíček-Doplňků
+// @name:hu             GeoFS-V4.0_Addon-Csomag
+// @name:ro             GeoFS-V4.0_Pachet-Addon
+// @name:uk             GeoFS-V4.0_Пакет-Аддонів
+// @name:hi             GeoFS-V4.0_एडऑन-पैक
+// @name:bn             GeoFS-V4.0_অ্যাডঅন-প্যাক
+// @name:fa             GeoFS-V4.0_بسته-افزونه
+// @name:he             GeoFS-V4.0_חבילת-תוספים
+// @name:ms             GeoFS-V4.0_Pek-Addon
+// @name:fil            GeoFS-V4.0_Addon-Pack
+// @name:el             GeoFS-V4.0_Πακέτο-Προσθέτων
+// @name:hr             GeoFS-V4.0_Paket-Dodataka
+// @name:sk             GeoFS-V4.0_Balík-Doplnkov
+// @name:bg             GeoFS-V4.0_Пакет-Добавки
+// @name:sr             GeoFS-V4.0_Пакет-Додатака
+// @name:lt             GeoFS-V4.0_Priedų-Paketas
+// @name:lv             GeoFS-V4.0_Papildinājumu-Pakotne
+// @name:et             GeoFS-V4.0_Lisaosade-Pakett
+// @name:sl             GeoFS-V4.0_Paket-Dodatkov
+// @name:ca             GeoFS-V4.0_Paquet-d-Addons
+// @name:af             GeoFS-V4.0_Addon-Pakket
+// @name:sw             GeoFS-V4.0_Kifurushi-Cha-Addon
+// @name:zu             GeoFS-V4.0_I-Addon-Pack
+// @name:mn             GeoFS-V4.0_Аддон-Багц
+// @name:my             GeoFS-V4.0_Addon-Pack
+// @name:km             GeoFS-V4.0_កញ្ចប់បន្ថែម
+// @name:lo             GeoFS-V4.0_Addon-Pack
+// @name:ur             GeoFS-V4.0_ایڈ-آن-پیک
+// @description         11 bundled modules with polished UI, draggable HUD, real aircraft procedures! © 2026 AMFI-Disable. Part of the GeoFS-V4.0_Ecosystem.
 
 // @namespace           https://greasyfork.org/users/1594049
-// @version             3.9.0
+// @version             0.1.0
 // @author              AMFI-Disable
-// @homepageURL         https://sites.google.com/view/geofs-v39-ecosystem/home
+// @homepageURL         https://sites.google.com/view/geofs-v40-ecosystem/home
 // @icon                https://www.geo-fs.com/images/icons/favicon.ico
+// @match               https://beta.geo-fs.com/geofs.php*
 // @match               https://www.geo-fs.com/geofs.php*
 // @grant               none
 // @license             MIT
@@ -69,138 +70,165 @@
 // @compatible          opera
 // ==/UserScript==
 
-// Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
-(function waitForGeoFSVersion() {
-    const version = window.geofs?.version;
-    if (version === undefined || version === null || version === '') {
-        setTimeout(waitForGeoFSVersion, 250);
-        return;
-    }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Addon-Pack] Inactive: GeoFS ' + version + ' is not V3.9.');
-        return;
-    }
-
-
-/**
- * GeoFS-V3.9_Addon-Pack
- * 
- * Unified ecosystem master bundle combining all official V3.9 addons:
- *  1. GeoFS-V3.9_Core-Library
- *  2. GeoFS-V3.9_Design-System
- *  3. GeoFS-V3.9_Autothrottle
- *  4. GeoFS-V3.9_Checklist-System
- *  5. GeoFS-V3.9_Failure-Simulator
- *  6. GeoFS-V3.9_Flight-Path-Vector
- *  7. GeoFS-V3.9_Fuel-Simulator
- *  8. GeoFS-V3.9_Information-Display
- *  9. GeoFS-V3.9_Landing-Statistics
- * 10. GeoFS-V3.9_Overpowered-Engines
- * 11. GeoFS-V3.9_Realism-Pack
- * 12. GeoFS-V3.9_Satellite-Imagery
- * 
- * © 2026 AMFI-Disable. Licensed under the MIT License.
- * Part of the GeoFS-V3.9_Ecosystem (https://sites.google.com/view/geofs-v39-ecosystem/home).
- */
-
+// MODULE: GeoFS-V4.0_Core-Library
 (() => {
-    "use strict";
-
-    /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this bundle to execute only when GeoFS reports version 3.9.
-     */
-    function isUnsupportedGeoFS() {
-        const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
-    }
-
-    if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Addon-Pack] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
-        return;
-    }
-
-    console.info('[GeoFS-V3.9_Addon-Pack] >> V1.0.0 Master Bundle Initializing...');
-
-// ============================================================
-// MODULE 1: GeoFS-V3.9_Core-Library
-// ============================================================
-// Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
-(function waitForGeoFSVersion() {
-    const version = window.geofs?.version;
-    if (version === undefined || version === null || version === '') {
-        setTimeout(waitForGeoFSVersion, 250);
-        return;
-    }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Core-Library] Inactive: GeoFS ' + version + ' is not V3.9.');
-        return;
-    }
-
-
 (() => {
-    /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this core library to execute only when GeoFS reports version 3.9.
-     */
-    function isUnsupportedGeoFS() {
-        const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
-    }
-
-    if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Core-Library] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
-        return;
-    }
-
-    // Cached older dependencies can still create the original emoji startup toast.
-    // Remove only that legacy Core message, even if the old dependency runs later.
-    if (!window.__v39LegacyCoreToastObserver && document.documentElement) {
-        const removeLegacyCoreToast = root => {
-            if (!(root instanceof Element)) return;
-            const candidates = root.matches('.v39-toast') ? [root] : root.querySelectorAll('.v39-toast');
-            for (const toast of candidates) {
-                if (toast.closest('#v39-notif-container') &&
-                    /GeoFS-V3\.9_Core-Library\s+Loaded\./i.test(toast.textContent)) toast.remove();
+    'use strict';
+    const KEY = 'GeoFSV4Core';
+    if (window[KEY]) return;
+    const api = {
+        version: '0.3.2',
+        state: 'waiting',
+        simulatorVersion: null,
+        modules: new Map(),
+        onReady(callback) {
+            if (typeof callback !== 'function') throw new TypeError('callback must be a function');
+            return ready.then(() => callback(api));
+        },
+        async initialize(name, callback) {
+            if (api.modules.has(name)) return api.modules.get(name);
+            const task = api.onReady(() => callback(api)).catch(error => {
+                console.error(`[GeoFS-V4.0] ${name} failed to initialize`, error);
+                api.notify(`${name} failed to initialize. See the console.`, 'error');
+                throw error;
+            });
+            api.modules.set(name, task);
+            return task;
+        },
+        clamp(value, min, max) { return Math.min(max, Math.max(min, value)); },
+        storage: {
+            get(key, fallback = null) {
+                try { const value = localStorage.getItem(`geofs-v4:${key}`); return value === null ? fallback : JSON.parse(value); }
+                catch (_) { return fallback; }
+            },
+            set(key, value) {
+                try { localStorage.setItem(`geofs-v4:${key}`, JSON.stringify(value)); return true; }
+                catch (_) { return false; }
             }
+        },
+        watchAircraft(callback, interval = 1000) {
+            let previous = window.geofs?.aircraft?.instance;
+            const timer = setInterval(() => {
+                const current = window.geofs?.aircraft?.instance;
+                if (current !== previous) { previous = current; callback(current); }
+            }, interval);
+            return () => clearInterval(timer);
+        },
+        notify(message, level = 'info') {
+            const host = document.body;
+            if (!host) return;
+            let region = document.getElementById('geofs-v4-notifications');
+            if (!region) {
+                region = document.createElement('div');
+                region.id = 'geofs-v4-notifications';
+                region.setAttribute('aria-live', 'polite');
+                Object.assign(region.style, {position:'fixed', top:'12px', right:'12px', zIndex:'2147483647', display:'grid', gap:'8px', maxWidth:'min(360px, 90vw)', pointerEvents:'none'});
+                host.appendChild(region);
+            }
+            const note = document.createElement('div');
+            note.textContent = String(message);
+            Object.assign(note.style, {padding:'10px 14px', borderRadius:'6px', background: level === 'error' ? '#722c2c' : '#262626', color:'#fff', font:'14px/1.4 sans-serif', boxShadow:'0 2px 8px #0008'});
+            region.appendChild(note);
+            setTimeout(() => { note.remove(); if (!region.childElementCount) region.remove(); }, 5000);
+        }
+    };
+    window[KEY] = api;
+    const ready = new Promise((resolve, reject) => {
+        const started = Date.now();
+        const check = () => {
+            const sim = window.geofs;
+            if (sim && sim.version != null) {
+                const major = String(sim.version).match(/^\s*(\d+)/);
+                if (!major || Number(major[1]) !== 4) {
+                    api.state = 'unsupported';
+                    reject(new Error(`Unsupported GeoFS version: ${sim.version}`));
+                    return;
+                }
+                api.simulatorVersion = String(sim.version);
+                if (sim.aircraft?.instance && document.body) {
+                    api.state = 'ready';
+                    console.info('[GeoFS-V4.0_Core-Library] Ready on GeoFS', api.simulatorVersion);
+                    resolve(api);
+                    return;
+                }
+            }
+            if (Date.now() - started >= 60000) {
+                api.state = 'timeout';
+                reject(new Error('GeoFS did not become ready within 60 seconds'));
+                return;
+            }
+            setTimeout(check, 250);
         };
-        removeLegacyCoreToast(document.documentElement);
-        const observer = new MutationObserver(records => {
-            for (const record of records) for (const node of record.addedNodes) removeLegacyCoreToast(node);
-        });
-        observer.observe(document.documentElement, { childList: true, subtree: true });
-        window.__v39LegacyCoreToastObserver = observer;
-    }
+        check();
+    });
+    ready.catch(error => console.warn('[GeoFS-V4.0_Core-Library]', error.message));
+})();
 
+// V3.9 shared HUD and notification foundations, adapted to the V4 readiness lifecycle.
+
+window.getAircraftProfile = function(ac) {
+    if (!ac) return null;
+    const acId = String(ac.id ?? ac.aircraftRecord?.id ?? '');
+    
+    // 1. Direct hit in master registry
+    if (window.AIRCRAFT_DATA && window.AIRCRAFT_DATA[acId]) {
+        return Object.assign({ id: acId }, window.AIRCRAFT_DATA[acId]);
+    }
+    
+    // 2. Query GeoFS runtime catalog (geofs.aircraftList)
+    const catalogEntry = window.geofs?.aircraftList?.[acId] || ac.aircraftRecord;
+    const catalogName = catalogEntry?.name || ac.definition?.name || ac.definition?.externalName;
+    
+    // 3. Dynamic synthesis from physics definition
+    const def = ac.definition || {};
+    const mass = Number(def.mass || ac.setup?.mass || 1200);
+    const maxThrust = Number(def.maxThrust || 0);
+    const hasGear = def.hasGear !== undefined ? !!def.hasGear : (def.gearPositions?.length > 0 || ac.parts?.gear !== undefined);
+    const hasSpoilers = def.hasAirbrakes !== undefined ? !!def.hasAirbrakes : (ac.parts?.airbrakes !== undefined || ac.parts?.spoilers !== undefined);
+    
+    const estimatedOew = Math.round(mass * 0.55);
+    const estimatedMtow = Math.round(mass * 1.25);
+    const estimatedFuel = Math.round(mass * 0.35);
+
+    return {
+        id: acId,
+        name: catalogName || (acId ? `Aircraft ${acId}` : "Current Aircraft"),
+        maxFlaps: def.flapsSteps || (def.flapsPositions ? def.flapsPositions.length - 1 : 0),
+        hasGear,
+        hasSpoilers,
+        oew: estimatedOew,
+        mtow: estimatedMtow,
+        maxFuel: estimatedFuel,
+        isDynamic: true
+    };
+};
+
+window.GeoFSV4Core?.initialize('V4-Shared-Foundation', () => {
     // Physical Constants: Standardized conversion coefficients
     window.DEGREES_TO_RAD = window.DEGREES_TO_RAD || 0.017453292519943295;
     window.RAD_TO_DEGREES = window.RAD_TO_DEGREES || 57.29577951308232;
     window.METERS_TO_FEET = window.METERS_TO_FEET || 3.280839895;
 
     /** Startup status and independent in-flight notification banners. */
-    window.V39_NOTIF = window.V39_NOTIF?._v39StartupV2 ? window.V39_NOTIF : (() => {
-        document.getElementById('V39-notif-container')?.remove();
-        const modules = ['Core-Library', 'Design-System', 'Information-Display', 'Checklist-System',
-            'Fuel-Simulator', 'Failure-Simulator', 'Realism-Pack', 'Landing-Statistics',
-            'Flight-Path-Vector', 'Autothrottle', 'Overpowered-Engines', 'Satellite-Imagery'];
+    window.V40_NOTIF = window.V40_NOTIF?._v40StartupV2 ? window.V40_NOTIF : (() => {
+        document.getElementById('V40-notif-container')?.remove();
+        const modules = ['Core-Library', 'Design-System', 'Autothrottle'];
         const states = new Map();
         let panel, details, banners, dismissTimer, closed = false, startup = true;
         const nameOf = text => {
-            const match = String(text).match(/GeoFS-V3\.9_([\w-]+)/i);
+            const match = String(text).match(/GeoFS-V4\.0_([\w-]+)/i);
             return match && modules.find(name => name.toLowerCase() === match[1].toLowerCase());
         };
         function ensurePanel() {
             if (panel?.isConnected || !document.body) return;
             panel = document.createElement('section');
-            panel.id = 'V39-notif-container';
+            panel.id = 'V40-notif-container';
             panel.setAttribute('aria-label', 'GeoFS add-on startup status');
             panel.setAttribute('role', 'status');
             panel.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999999;width:min(320px,calc(100vw - 40px));box-sizing:border-box;padding:12px;background:rgba(40,40,40,.96);border:1px solid #777;border-radius:4px;color:#eee;font:13px Arial,sans-serif;box-shadow:0 2px 8px #0008;';
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;';
-            const heading = document.createElement('strong'); heading.textContent = 'GeoFS-V3.9_Ecosystem';
+            const heading = document.createElement('strong'); heading.textContent = 'GeoFS-V4.0_Ecosystem';
             const close = document.createElement('button');
             close.textContent = '×'; close.type = 'button'; close.setAttribute('aria-label', 'Dismiss add-on status');
             close.style.cssText = 'border:0;background:transparent;color:inherit;font-size:20px;cursor:pointer;line-height:1;';
@@ -211,7 +239,7 @@
         }
         function scanModules() {
             const checks = {
-                'Core-Library': () => !!window.SafeInit,
+                'Core-Library': () => !!window.GeoFSV4Core,
                 'Design-System': () => !!document.getElementById('geofs-design-system'),
                 'Information-Display': () => !!window.initHUDInformationDisplayPro,
                 'Checklist-System': () => !!window.initChecklistSystem,
@@ -247,7 +275,7 @@
             if (!document.body) return;
             if (!banners?.isConnected) {
                 banners = document.createElement('div');
-                banners.id = 'V39-notif-banners';
+                banners.id = 'V40-notif-banners';
                 banners.setAttribute('aria-live', 'polite');
                 banners.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999999;display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none;';
                 document.body.appendChild(banners);
@@ -261,7 +289,7 @@
             setTimeout(() => { item.remove(); if (!banners.children.length) banners.remove(); }, Math.max(duration, type === 'critical' ? 10000 : 4000));
         }
         const api = {
-            _v39Unified: 210, _v39StartupV2: true,
+            _v40Unified: 210, _v40StartupV2: true,
             show(text, type = 'info', duration = 4000) {
                 const module = nameOf(text);
                 if (module && /\bloaded\.$/i.test(text)) { states.set(module, 'ready'); render(); return; }
@@ -288,19 +316,19 @@
      * @param {boolean} silent - Suppresses initialization-start alerts
      */
     window.SafeInit = (moduleName, func, silent = true) => {
-        if (isUnsupportedGeoFS()) {
-            console.warn("[GeoFS-V3.9_Core-Library] >> [MODULE BLOCKED] " + moduleName + " disabled: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        if (window.GeoFSV4Core?.state !== 'ready') {
+            console.warn("[GeoFS-V4.0_Core-Library] >> [MODULE BLOCKED] " + moduleName + " disabled: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4).");
             return;
         }
-        console.info(`[GeoFS-V3.9_Core-Library] >> [MODULE] Initializing: ${moduleName}`);
-        if (!silent) window.V39_NOTIF.info(`Initializing ${moduleName}...`);
+        console.info(`[GeoFS-V4.0_Core-Library] >> [MODULE] Initializing: ${moduleName}`);
+        if (!silent) window.V40_NOTIF.info(`Initializing ${moduleName}...`);
         try {
             func();
-            console.log(`[GeoFS-V3.9_Core-Library] >> [MODULE SUCCESS] ${moduleName} Active.`);
-            window.V39_NOTIF.success(`${moduleName} Loaded.`);
+            console.log(`[GeoFS-V4.0_Core-Library] >> [MODULE SUCCESS] ${moduleName} Active.`);
+            window.V40_NOTIF.success(`${moduleName} Loaded.`);
         } catch (e) {
-            console.error(`[GeoFS-V3.9_Core-Library] >> [MODULE ERROR] CRITICAL FAILURE in ${moduleName}:`, e);
-            window.V39_NOTIF.critical(`${moduleName} Boot Failure.`);
+            console.error(`[GeoFS-V4.0_Core-Library] >> [MODULE ERROR] CRITICAL FAILURE in ${moduleName}:`, e);
+            window.V40_NOTIF.critical(`${moduleName} Boot Failure.`);
         }
     };
 
@@ -371,7 +399,7 @@
         if (!document.getElementById('hud-unified-tabs')) {
             const handle = document.createElement('div');
             handle.className = 'hud-drag-handle';
-            handle.textContent = 'GeoFS-V3.9_HUD';
+            handle.textContent = 'GeoFS-V4.0_HUD';
             
             const tabs = document.createElement('div');
             tabs.id = 'hud-unified-tabs';
@@ -587,14 +615,14 @@
         window.addEventListener('DOMContentLoaded', () => window.ensureSharedHUD());
     }
 
-    console.log("[GeoFS-V3.9_Core-Library] >> Core foundations loaded and ready.");
-    if (window.V39_NOTIF?.status) window.V39_NOTIF.status('GeoFS-V3.9_Core-Library', 'ready');
+    console.log("[GeoFS-V4.0_Core-Library] >> Core foundations loaded and ready.");
+    if (window.V40_NOTIF?.status) window.V40_NOTIF.status('GeoFS-V4.0_Core-Library', 'ready');
 
 /**
- * GeoFS-V3.9 Aircraft Technical Registry
+ * GeoFS-V4.0 Aircraft Technical Registry
  * 
  * Master data source for physical modeling across the ecosystem.
- * Contains validated OEW (Operating Empty Weight), MTOW (Maximum Takeoff Weight), 
+ * Contains provisional OEW (Operating Empty Weight), MTOW (Maximum Takeoff Weight),
  * and system capabilities for every core GeoFS aircraft.
  */
 window.AIRCRAFT_DATA = {
@@ -615,10 +643,11 @@ window.AIRCRAFT_DATA = {
     "15": { "name": "Lockheed P-38 Lightning F-5B", "maxFlaps": 3, "hasGear": true, "hasSpoilers": false, "oew": 5800, "mtow": 9800, "maxFuel": 1100 },
     "16": { "name": "Douglas DC-3", "maxFlaps": 3, "hasGear": true, "hasSpoilers": false, "oew": 7650, "mtow": 11430, "maxFuel": 1800 },
     "18": { "name": "Sukhoi Su-35", "maxFlaps": 2, "hasGear": true, "hasSpoilers": true, "oew": 18400, "mtow": 34500, "maxFuel": 11500 },
-    "19": { "name": "Concorde", "maxFlaps": 0, "hasGear": true, "hasSpoilers": false, "oew": 78700, "mtow": 185000, "maxFuel": 95600 },
-    "20": { "name": "Zlin Z-50", "maxFlaps": 0, "hasGear": false, "hasSpoilers": false, "oew": 570, "mtow": 840, "maxFuel": 45 },
-    "21": { "name": "Piper PA-28 161 Warrior II", "maxFlaps": 3, "hasGear": false, "hasSpoilers": false, "oew": 612, "mtow": 1107, "maxFuel": 145 },
-    "22": { "name": "Boeing 737-800", "maxFlaps": 8, "hasGear": true, "hasSpoilers": true, "oew": 41140, "mtow": 79010, "maxFuel": 20816 },
+    "20": { "name": "Concorde", "maxFlaps": 0, "hasGear": true, "hasSpoilers": false, "oew": 78700, "mtow": 185000, "maxFuel": 95600 },
+
+    "22": { "name": "Cessna 152", "maxFlaps": 3, "hasGear": false, "hasSpoilers": false },
+    "23": { "name": "Piper PA-28 161 Warrior II", "maxFlaps": 3, "hasGear": false, "hasSpoilers": false, "oew": 612, "mtow": 1107, "maxFuel": 145 },
+
     "24": { "name": "Airbus A350-900", "maxFlaps": 5, "hasGear": true, "hasSpoilers": true, "oew": 142400, "mtow": 280000, "maxFuel": 112600 },
     "25": { "name": "Boeing 777-300ER", "maxFlaps": 6, "hasGear": true, "hasSpoilers": true, "oew": 167800, "mtow": 351500, "maxFuel": 145538 },
     "27": { "name": "Boeing F/A-18F Super Hornet", "maxFlaps": 3, "hasGear": true, "hasSpoilers": true, "oew": 14552, "mtow": 29937, "maxFuel": 6200 },
@@ -626,10 +655,9 @@ window.AIRCRAFT_DATA = {
     "29": { "name": "Dassault Rafale", "maxFlaps": 0, "hasGear": true, "hasSpoilers": false, "oew": 10300, "mtow": 24500, "maxFuel": 4700 },
     "31": { "name": "Potez 25", "maxFlaps": 0, "hasGear": false, "hasSpoilers": false, "oew": 1490, "mtow": 2558, "maxFuel": 250 },
     "32": { "name": "Northrop T-38 Talon", "maxFlaps": 2, "hasGear": true, "hasSpoilers": true, "oew": 3270, "mtow": 5670, "maxFuel": 1800 },
-    "240": { "name": "Boeing 777-200ER", "maxFlaps": 6, "hasGear": true, "hasSpoilers": true, "oew": 138100, "mtow": 297550, "maxFuel": 137460 },
+
     "242": { "name": "Airbus A321neo", "maxFlaps": 5, "hasGear": true, "hasSpoilers": true, "oew": 50100, "mtow": 97000, "maxFuel": 26000 },
-    "243": { "name": "Airbus A319-100", "maxFlaps": 5, "hasGear": true, "hasSpoilers": true, "oew": 40800, "mtow": 75500, "maxFuel": 18600 },
-    "244": { "name": "Airbus A320neo", "maxFlaps": 5, "hasGear": true, "hasSpoilers": true, "oew": 44300, "mtow": 79000, "maxFuel": 19046 },
+
     "2844": { "name": "Falcon 9 (SpaceX)", "maxFlaps": 0, "hasGear": true, "hasSpoilers": true, "oew": 22200, "mtow": 549054, "maxFuel": 395700 },
     "2948": { "name": "North American XB-70 Valkyrie", "maxFlaps": 0, "hasGear": true, "hasSpoilers": false, "oew": 115031, "mtow": 245847, "maxFuel": 140000 },
     "2953": { "name": "Space Shuttle Atlantis (OV104)", "maxFlaps": 1, "hasGear": true, "hasSpoilers": true, "oew": 78000, "mtow": 110000, "maxFuel": 0 },
@@ -652,61 +680,79 @@ window.AIRCRAFT_DATA = {
     "5527": { "name": "Boeing 747-400", "maxFlaps": 6, "hasGear": true, "hasSpoilers": true, "oew": 183520, "mtow": 396890, "maxFuel": 173472 },
     "5551": { "name": "Comac C919-100", "maxFlaps": 5, "hasGear": true, "hasSpoilers": true, "oew": 42000, "mtow": 71500, "maxFuel": 15600 },
     "5566": { "name": "Embraer E175", "maxFlaps": 5, "hasGear": true, "hasSpoilers": true, "oew": 21886, "mtow": 38790, "maxFuel": 9335 },
-    "5585": { "name": "Boeing 767-300ER", "maxFlaps": 6, "hasGear": true, "hasSpoilers": true, "oew": 90010, "mtow": 186880, "maxFuel": 72900 },
-    "1013": { "name": "ATR 42-600", "maxFlaps": 4, "hasGear": true, "hasSpoilers": true, "oew": 11700, "mtow": 18600, "maxFuel": 4500 },
-    "1015": { "name": "Challenger 650", "maxFlaps": 3, "hasGear": true, "hasSpoilers": true, "oew": 12300, "mtow": 21863, "maxFuel": 9072 },
-    "1016": { "name": "CRJ900", "maxFlaps": 4, "hasGear": true, "hasSpoilers": true, "oew": 21433, "mtow": 38330, "maxFuel": 8800 },
-    "2808": { "name": "Supermarine Spitfire Mk IX", "maxFlaps": 1, "hasGear": true, "hasSpoilers": false, "oew": 2300, "mtow": 4300, "maxFuel": 380 },
-    "2843": { "name": "Airbus A321-200", "maxFlaps": 5, "hasGear": true, "hasSpoilers": true, "oew": 48500, "mtow": 93500, "maxFuel": 24000 },
+
     "4402": { "name": "Boeing 777-200F", "maxFlaps": 6, "hasGear": true, "hasSpoilers": true, "oew": 144400, "mtow": 347800, "maxFuel": 145000 },
     "5229": { "name": "F-35B Lightning II", "maxFlaps": 0, "hasGear": true, "hasSpoilers": true, "oew": 14700, "mtow": 27200, "maxFuel": 6125 },
     "5486": { "name": "Aviat A-1B Husky", "maxFlaps": 3, "hasGear": false, "hasSpoilers": false, "oew": 531, "mtow": 907, "maxFuel": 190 },
-    "5642": { "name": "Tupolev Tu-144", "maxFlaps": 0, "hasGear": true, "hasSpoilers": false, "oew": 99200, "mtow": 207000, "maxFuel": 95000 },
-    "5678": { "name": "Boeing 757-200", "maxFlaps": 5, "hasGear": true, "hasSpoilers": true, "oew": 58440, "mtow": 115680, "maxFuel": 34500 },
-    "5712": { "name": "McDonnell Douglas MD-11", "maxFlaps": 5, "hasGear": true, "hasSpoilers": true, "oew": 117356, "mtow": 286000, "maxFuel": 116926 },
-    "5791": { "name": "Lockheed C-5M Galaxy", "maxFlaps": 5, "hasGear": true, "hasSpoilers": true, "oew": 172370, "mtow": 381000, "maxFuel": 150800 },
-    "5847": { "name": "Boeing 727-200", "maxFlaps": 8, "hasGear": true, "hasSpoilers": true, "oew": 45360, "mtow": 95000, "maxFuel": 30600 }
+
 };
+
+}).catch(() => {});
 })();
 
+// MODULE: GeoFS-V4.0_Design-System
+(() => {
+(() => {
+    'use strict';
+    if (window.GeoFSV4Design) return;
+    const core = window.GeoFSV4Core;
+    if (!core) { console.error('[GeoFS-V4.0_Design-System] Core Library missing'); return; }
+    const api = {
+        version: '0.2.1',
+        button(label, action) {
+            const button = document.createElement('button');
+            button.type = 'button'; button.className = 'g4-button'; button.textContent = label;
+            button.addEventListener('click', action); return button;
+        },
+        panel(title) {
+            const section = document.createElement('section'); section.className = 'g4-panel';
+            const heading = document.createElement('h2'); heading.className = 'g4-title'; heading.textContent = title;
+            section.appendChild(heading); return section;
+        }
+    };
+    window.GeoFSV4Design = api;
+    core.initialize('Design-System', () => {
+        if (document.getElementById('geofs-v4-design')) return;
+        const style = document.createElement('style'); style.id = 'geofs-v4-design';
+        style.textContent = `.g4-panel{box-sizing:border-box;background:#252525;color:#eee;font:14px Arial,sans-serif;border:1px solid #666;border-radius:3px;padding:10px;box-shadow:0 3px 12px #0009}.g4-panel *{box-sizing:border-box}.g4-title{font-size:14px;font-weight:600;margin:0 0 10px;color:#fff}.g4-button{font:inherit;cursor:pointer;color:#eee;background:#444;border:1px solid #777;border-radius:3px;padding:6px 10px}.g4-button:hover,.g4-button:focus-visible{background:#5a5a5a}.g4-button[aria-pressed=true]{background:#467c3a;border-color:#8caf82}.g4-panel input,.g4-panel select{font:inherit;color:#fff;background:#333;border:1px solid #777;border-radius:2px;padding:5px}.g4-panel label{display:flex;gap:8px;align-items:center}.g4-panel :focus-visible{outline:2px solid #ffb13b;outline-offset:2px}`;
+        document.head.appendChild(style);
+    }).catch(() => {});
 })();
 
-// ============================================================
-// MODULE 2: GeoFS-V3.9_Design-System
-// ============================================================
+
 // Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
+// Unknown, older, and newer versions never activate this V4.0 release.
 (function waitForGeoFSVersion() {
     const version = window.geofs?.version;
     if (version === undefined || version === null || version === '') {
         setTimeout(waitForGeoFSVersion, 250);
         return;
     }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Design-System] Inactive: GeoFS ' + version + ' is not V3.9.');
+    if (!/^(?:v)?4(?:\.\d+)*$/i.test(String(version).trim())) {
+        console.warn('[GeoFS-V4.0_Design-System] Inactive: GeoFS ' + version + ' is not V4.0.');
         return;
     }
 
 
 (() => {
     /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this module to execute only when GeoFS reports version 3.9.
+     * Runtime Version Guard: GeoFS-V4.0 Suite Compatibility
+     * Allows this module to execute only when GeoFS reports version 4.0.
      */
     function isUnsupportedGeoFS() {
         const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
+        return !/^(?:v)?4(?:\.\d+)*$/i.test(String(raw ?? '').trim());
     }
 
     if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Design-System] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        console.warn("[GeoFS-V4.0_Design-System] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
         return;
     }
 
     if (document.getElementById('geofs-design-system')) return;
     
     const css = `
-/* ── GeoFS-V3.9_Design-System ── */
+/* ── GeoFS-V4.0_Design-System ── */
 /* Features: Native GeoFS styling layout with native in-flight controls and neutral colors. */
 
 /* ── Addon-Pack dropdown items ── */
@@ -1237,60 +1283,34 @@ window.AIRCRAFT_DATA = {
     style.textContent = css;
     document.head.appendChild(style);
     
-    console.log("[GeoFS-V3.9_Design-System] >> Styles injected via library wrapper.");
-    if (window.V39_NOTIF) window.V39_NOTIF.success("GeoFS-V3.9_Design-System V2.0.1 Loaded.");
+    console.log("[GeoFS-V4.0_Design-System] >> Styles injected via library wrapper.");
+    if (window.V40_NOTIF) window.V40_NOTIF.success("GeoFS-V4.0_Design-System v0.2.1 Loaded.");
 })();
 
 })();
+})();
 
-// ============================================================
-// MODULE 3: GeoFS-V3.9_Autothrottle
-// ============================================================
-// Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
-(function waitForGeoFSVersion() {
-    const version = window.geofs?.version;
-    if (version === undefined || version === null || version === '') {
-        setTimeout(waitForGeoFSVersion, 250);
-        return;
-    }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Autothrottle] Inactive: GeoFS ' + version + ' is not V3.9.');
-        return;
-    }
-
-
-/**
- * GeoFS-V3.9_Autothrottle | Standalone
- * 
- * Implements a high-precision PID-based speed maintenance system. 
- * Features automatic Mach/Knots conversion, Landing Mode (Auto-Retard) 
- * with touchdown detection, and joystick input suppression.
- * 
- * Part of the GeoFS-V3.9_Ecosystem.
- * 
- * © 2026 AMFI-Disable. Licensed under the MIT License.
- */
-
+// MODULE: GeoFS-V4.0_Autothrottle
 (() => {
-    /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this module to execute only when GeoFS reports version 3.9.
-     */
-    function isUnsupportedGeoFS() {
-        const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
-    }
-
-    if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Autothrottle] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
-        return;
-    }
-
+(() => {
+    'use strict';
+    if (!window.GeoFSV4Core || !window.GeoFSV4Design) { console.error('[GeoFS-V4.0_Autothrottle] Missing dependency'); return; }
     function main () {
-        if (isUnsupportedGeoFS()) {
-            console.warn("[GeoFS-V3.9_Autothrottle] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
-            return;
+        let previousOpState = null;
+        function releaseOpSync() {
+            if (!geofs.autothrottle.opSyncActive) return;
+            geofs.autothrottle.opSyncActive = false;
+            document.dispatchEvent(new CustomEvent('V40_opSyncStateChanged', { detail: { active: false } }));
+            if (!previousOpState) return;
+            if (Number.isFinite(previousOpState.multiplier)) {
+                window.opMultiplier = previousOpState.multiplier;
+                document.dispatchEvent(new CustomEvent('V40_opMultiplierUpdated', { detail: { value: window.opMultiplier } }));
+            }
+            if (!previousOpState.thrust && globalThis.isThrustActive && window.toggleThrustMode) {
+                window.toggleThrustMode();
+            }
+            if (!previousOpState.ceiling && globalThis.isCeilingActive && window.toggleCeilingMode) window.toggleCeilingMode();
+            previousOpState = null;
         }
         geofs.autothrottle = {
             on: !1,
@@ -1316,17 +1336,17 @@ window.AIRCRAFT_DATA = {
                         </div>
                         <div class="ext-autothrottle-controls" style="display: none;">
                             <div class="ext-autothrottle-control" style="position: relative;">
-                                <div id="V39-at-rev" style="display: none; font-size: 8px; color: #ef4444; font-weight: 900; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); letter-spacing: 1px; text-shadow: 0 0 5px #ef4444;">[REV]</div>
-                                <a class="ext-autothrottle-numberDown numberDown ext-autothrottle-control">-</a><input class="ext-autothrottle-numberValue numberValue ext-autothrottle-speed" min="0" data-smallstep="5" data-stepthreshold="100" step="10" data-method="setSpeed" maxlength="4" max="9999" value="0"><a class="ext-autothrottle-numberUp numberUp">+</a>
+                                <div id="V40-at-rev" style="display: none; font-size: 8px; color: #ef4444; font-weight: 900; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); letter-spacing: 1px; text-shadow: 0 0 5px #ef4444;">[REV]</div>
+                                <a class="ext-autothrottle-numberDown numberDown ext-autothrottle-control">-</a><input class="ext-autothrottle-numberValue numberValue ext-autothrottle-speed" min="0" smallstep="5" stepthreshold="100" step="10" data-method="setSpeed" maxlength="4" max="9999" value="0"><a class="ext-autothrottle-numberUp numberUp">+</a>
                                 <span class="ext-autothrottle-switch ext-autothrottle-speedMode">
                                     <a class="ext-autothrottle-switchLeft switchLeft green-pad" data-method="setAutothrottleSpeedMode" value="knots" id="knotsMode">KTS</a>
                                     <a class="ext-autothrottle-switchRight switchRight" data-method="setAutothrottleSpeedMode" value="mach" id="machMode">M.</a>
                                 </span>
                             </div>
-                            <div class="geofs-autopilot-control" style="display: inline-block; vertical-align: bottom; margin-left: 5px; text-align: center;">
-                                <span style="display: block; font-size: 10px; font-weight: bold; color: #aaa; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;">LANDING</span>
+                            <div class="ext-autothrottle-control ext-autothrottle-landing" style="position: relative;">
+                                <span class="ext-autothrottle-landing-label">LANDING</span>
                                 <span class="ext-autothrottle-switch ext-autothrottle-mode" id="autothrottle-landing-mode-switch" role="group" aria-label="Landing mode">
-                                    <a class="ext-autothrottle-switchLeft switchLeft landing-selected" data-method="setArm" value="false" id="armOff" role="button" tabindex="0" aria-pressed="true">OFF</a>
+                                    <a class="ext-autothrottle-switchLeft switchLeft green-pad active" data-method="setArm" value="false" id="armOff" role="button" tabindex="0" aria-pressed="true">OFF</a>
                                     <a class="ext-autothrottle-switchRight switchRight" data-method="setArm" value="true" id="armOn" role="button" tabindex="0" aria-pressed="false">ARM</a>
                                 </span>
                             </div>
@@ -1416,10 +1436,10 @@ window.AIRCRAFT_DATA = {
                     geofs.autopilot.setSpeed(targetVal);
                     $input.val(isMach ? targetVal.toFixed(6) : Math.round(targetVal));
                     
-                    if (window.V39_NOTIF) {
-                        V39_NOTIF.success(`🛫 Autothrottle Engaged - Holding ${targetVal.toFixed(isMach ? 2 : 0)} ${isMach ? 'Mach' : 'Knots'}`);
+                    if (window.V40_NOTIF) {
+                        V40_NOTIF.show(`🛫 Autothrottle Engaged - Holding ${targetVal.toFixed(isMach ? 2 : 0)} ${isMach ? 'Mach' : 'Knots'}`);
                     }
-                    document.dispatchEvent(new CustomEvent('V39_autothrottleStateChanged', { detail: { active: !0 } }));
+                    document.dispatchEvent(new CustomEvent('V40_autothrottleStateChanged', { detail: { active: !0 } }));
                 });
 
                 // Triggered when the system is disengaged.
@@ -1432,18 +1452,8 @@ window.AIRCRAFT_DATA = {
                         $("#autothrottle-button").removeClass("red-pad");
                     }, 3000);
                     
-                    if (geofs.autothrottle.opSyncActive) {
-                        geofs.autothrottle.opSyncActive = false;
-                        document.dispatchEvent(new CustomEvent('V39_opSyncStateChanged', { detail: { active: false } }));
-                        
-                        if (globalThis.isThrustActive && window.toggleThrustMode) {
-                            window.toggleThrustMode();
-                        }
-                        if (globalThis.isCeilingActive && window.toggleCeilingMode) {
-                            window.toggleCeilingMode();
-                        }
-                    }
-                    
+                    releaseOpSync();
+
                     if (geofs.autothrottle.reverseEngaged) {
                         geofs.autothrottle.reverseEngaged = false;
                         if (geofs.aircraft.instance.definition && geofs.autothrottle._origReverse !== undefined) {
@@ -1452,8 +1462,9 @@ window.AIRCRAFT_DATA = {
                     }
 
                     // Remove REV visual indicator in case it was active during disengagement
-                    $("#V39-at-rev").hide();
+                    $("#V40-at-rev").hide();
                     // Reset our tracking values to prevent spikes on subsequent engagements
+                    geofs.autothrottle._tickTime = null;
                     geofs.autothrottle._lastFrameTime = null;
                     geofs.autothrottle._prevKias = null;
                     geofs.autothrottle._currentAccelKts = 0;
@@ -1461,15 +1472,15 @@ window.AIRCRAFT_DATA = {
                     geofs.autopilot.setSpeedMode(geofs.autopilot.speedMode);
                     geofs.autothrottle.on = !1;
                     
-                    if (window.V39_NOTIF) {
-                        V39_NOTIF.info("🛬 Autothrottle Disengaged - Control Returned to Pilot");
+                    if (window.V40_NOTIF) {
+                        V40_NOTIF.show("🛬 Autothrottle Disengaged - Control Returned to Pilot");
                     }
-                    document.dispatchEvent(new CustomEvent('V39_autothrottleStateChanged', { detail: { active: !1 } }));
+                    document.dispatchEvent(new CustomEvent('V40_autothrottleStateChanged', { detail: { active: !1 } }));
                 });
 
                 // Safety: Automatically disengage if the main Autopilot is turned on.
                 $(document).on("autopilotOn", () => {
-                    geofs.autopilot.setSpeedMode("knots");
+                    geofs.autopilot.setSpeedMode("kias");
                     geofs.autopilot.setSpeed(geofs.animation.values.kias);
                     geofs.autothrottle.on && $(document).trigger("autothrottleOff")
                 });
@@ -1548,12 +1559,13 @@ window.AIRCRAFT_DATA = {
                        display: inline-block;
                        width: 35px;
                        height: 17px;
-                       line-height: 19px;
+                       line-height: 15px;
+                       font-size: 10px;
+                       font-weight: 400;
                        cursor: pointer;
                        color: white;
                        background: #000;
                        margin: 2px 0px;
-                       display: inline-block;
                        border: 1px solid white;
                        box-shadow: 0px 0px 5px #000;
                    }
@@ -1564,6 +1576,20 @@ window.AIRCRAFT_DATA = {
                        color: white;
                        line-height: 25px;
                        display: inline-block;
+                       vertical-align: top;
+                   }
+                   .ext-autothrottle-control .ext-autothrottle-landing-label {
+                       display: block;
+                       height: 25px;
+                       line-height: 25px;
+                       font-family: 'LCD-Bold', monospace;
+                       font-size: 20px;
+                       font-weight: 400;
+                       letter-spacing: 1px;
+                       color: #ffffff;
+                       text-shadow: 0px 0px 5px #000;
+                       white-space: nowrap;
+                       user-select: none;
                    }
                    .ext-autothrottle-bar .ext-autothrottle-speed {
                        width: 50px !important;
@@ -1621,10 +1647,6 @@ window.AIRCRAFT_DATA = {
                        border-color: #ef4444 !important;
                        box-shadow: 0 0 10px rgba(239, 68, 68, 0.4) !important;
                     }
-                    #autothrottle-landing-mode-switch .landing-selected {
-                       background: #555;
-                       border-color: #888;
-                    }
                 `;
                 document.head.appendChild(style);
             },
@@ -1639,7 +1661,7 @@ window.AIRCRAFT_DATA = {
                 if (!geofs.autothrottle.on) {
                     // Electrical System Dependency: Block engagement if no power.
                     if (window.failureSimulator?.fails?.electrical) {
-                        if (window.V39_NOTIF) V39_NOTIF.critical("⚡ AUTOTHROTTLE OFFLINE - NO ELECTRICAL POWER");
+                        if (window.V40_NOTIF) V40_NOTIF.show("⚡ AUTOTHROTTLE OFFLINE - NO ELECTRICAL POWER");
                         return;
                     }
 
@@ -1690,28 +1712,32 @@ window.AIRCRAFT_DATA = {
                         geofs.autothrottle._origReverse = geofs.aircraft.instance.definition.reverse;
                         geofs.aircraft.instance.definition.reverse = true;
                     }
-                    $("#V39-at-rev").show();
+                    $("#V40-at-rev").show();
                 } else if (f <= e * 1.05 && geofs.autothrottle.reverseEngaged) {
                     geofs.autothrottle.reverseEngaged = false;
                     // Restore original reverse property of aircraft definition
                     if (geofs.aircraft.instance.definition && geofs.autothrottle._origReverse !== undefined) {
                         geofs.aircraft.instance.definition.reverse = geofs.autothrottle._origReverse;
                     }
-                    $("#V39-at-rev").hide();
+                    $("#V40-at-rev").hide();
                 }
 
                 /**
                  * --- 2. [Integration] Seamless OP Engines Bridge ---
                  */
-                const mass = geofs.aircraft.instance.setup.mass || 1000; // Default to 1 ton if missing
+                const mass = geofs.aircraft.instance.setup?.mass || 1000; // Default to 1 ton if missing
                 const OP_LIMIT_KNOTS = (mass < 10000) ? 200 : 500;
                 
                 // Keep OP Engines engaged if targeting supersonic, OR if air-braking from supersonic
                 if (e > OP_LIMIT_KNOTS || (geofs.autothrottle.reverseEngaged && f > OP_LIMIT_KNOTS)) {
+                    // Preserve the pilot's settings before automatic management begins.
+                    if (!geofs.autothrottle.opSyncActive && (window.toggleThrustMode || window.toggleCeilingMode)) {
+                        previousOpState = { thrust: !!globalThis.isThrustActive, ceiling: !!globalThis.isCeilingActive, multiplier: window.opMultiplier };
+                    }
                     // Auto-activate OP Engines if target speed exceeds physical aircraft limits
                     if (!globalThis.isThrustActive && window.toggleThrustMode) {
                         window.toggleThrustMode();
-                        if (window.V39_NOTIF) V39_NOTIF.warn(`🚀 Physical limit (${OP_LIMIT_KNOTS}kts) exceeded. OP Engines engaged.`);
+                        if (window.V40_NOTIF) V40_NOTIF.show(`🚀 Physical limit (${OP_LIMIT_KNOTS}kts) exceeded. OP Engines engaged.`);
                     }
                     
                     // Auto-activate Ceiling Bypass to handle extreme high-altitude atmospheric heights
@@ -1721,7 +1747,7 @@ window.AIRCRAFT_DATA = {
                     
                     if (!geofs.autothrottle.opSyncActive) {
                         geofs.autothrottle.opSyncActive = true;
-                        document.dispatchEvent(new CustomEvent('V39_opSyncStateChanged', { detail: { active: true } }));
+                        document.dispatchEvent(new CustomEvent('V40_opSyncStateChanged', { detail: { active: true } }));
                     }
                     
                     if (globalThis.isThrustActive) {
@@ -1729,39 +1755,24 @@ window.AIRCRAFT_DATA = {
                         const rawError = Math.abs(e - f); // Absolute error
                         const baseMult = activeSpeed / 500;
                         
-                        // Scale errorBoost aggressively for massive hypersonic target differences
-                        let errorBoost = rawError / 100;
-                        if (rawError > 1000) {
-                            errorBoost = (rawError / 10) * (1 + (rawError / 10000));
+                        const clampedError = Math.min(rawError, 5000);
+                        let errorBoost = clampedError / 100;
+                        if (clampedError > 1000) {
+                            errorBoost = (clampedError / 25) * (1 + (clampedError / 10000));
                         }
                         
-                        const targetMult = clamp(baseMult + errorBoost, 1, 1000000000);
+                        const targetMult = clamp(Math.min(activeSpeed, 5000) / 500 + errorBoost, 1, 250);
                         
                         // Smoothly slide the multiplier towards the optimal target
-                        window.opMultiplier += (targetMult - window.opMultiplier) * 0.15;
-                        
-                        window.opMultiplier = clamp(window.opMultiplier, 1, 1000000000);
+                        const currentMult = Number.isFinite(window.opMultiplier) && window.opMultiplier >= 1 ? window.opMultiplier : 1;
+                        window.opMultiplier = clamp(currentMult + (targetMult - currentMult) * 0.15, 1, 250);
                         
                         // Broadcast live updates to sync the Overpowered Engines UI
-                        document.dispatchEvent(new CustomEvent('V39_opMultiplierUpdated', { detail: { value: window.opMultiplier } }));
+                        document.dispatchEvent(new CustomEvent('V40_opMultiplierUpdated', { detail: { value: window.opMultiplier } }));
                     }
                 } else {
-                    // Target is achievable within standard flight envelope
-                    if (geofs.autothrottle.opSyncActive) {
-                        geofs.autothrottle.opSyncActive = false;
-                        document.dispatchEvent(new CustomEvent('V39_opSyncStateChanged', { detail: { active: false } }));
-                        
-                        // Gracefully relinquish control and disable overpowered engines
-                        if (globalThis.isThrustActive && window.toggleThrustMode) {
-                             window.toggleThrustMode();
-                             if (window.V39_NOTIF) V39_NOTIF.warn("🛬 Returned to standard flight envelope. OP Engines disengaged.");
-                        }
-                        
-                        // Restore standard atmospheric limits
-                        if (globalThis.isCeilingActive && window.toggleCeilingMode) {
-                             window.toggleCeilingMode();
-                        }
-                    }
+                    // Restore the pilot's settings when automatic management ends.
+                    releaseOpSync();
                 }
 
                 const mult = (globalThis.isThrustActive && window.opMultiplier) ? window.opMultiplier : 1.0;
@@ -1818,11 +1829,16 @@ window.AIRCRAFT_DATA = {
                      throttleCmd *= (100 / currentAccel); // Proportional cut to maintain exactly 100 kts/sec
                 }
 
-                if (geofs.autothrottle.reverseEngaged) {
-                     controls.throttle = clamp(-throttleCmd * damping, -1, 0); // Apply negative throttle for reverse thrust
-                } else {
-                     controls.throttle = clamp(throttleCmd * damping, 0, 1);
-                }
+                const targetVal = geofs.autothrottle.reverseEngaged ? 
+                     clamp(-throttleCmd * damping, -1, 0) : 
+                     clamp(throttleCmd * damping, 0, 1);
+                controls.manipulatorSetters.setThrottle(targetVal);
+                if (controls.throttleLeft !== undefined) controls.throttleLeft = targetVal;
+                if (controls.throttleRight !== undefined) controls.throttleRight = targetVal;
+                if (controls.throttle1 !== undefined) controls.throttle1 = targetVal;
+                if (controls.throttle2 !== undefined) controls.throttle2 = targetVal;
+                if (controls.throttle3 !== undefined) controls.throttle3 = targetVal;
+                if (controls.throttle4 !== undefined) controls.throttle4 = targetVal;
             },
             /**
              * Tick Orchestrator & Safety Guard
@@ -1833,19 +1849,28 @@ window.AIRCRAFT_DATA = {
                 if (geofs.autothrottle.on) {
                     // Electrical System Dependency: Immediate emergency cut if power is lost.
                     if (window.failureSimulator?.fails?.electrical) {
-                        if (window.V39_NOTIF) V39_NOTIF.critical("⚡ AUTOTHROTTLE DISENGAGED - ELECTRICAL FAILURE");
+                        if (window.V40_NOTIF) V40_NOTIF.show("⚡ AUTOTHROTTLE DISENGAGED - ELECTRICAL FAILURE");
                         $(document).trigger("autothrottleOff");
                         return;
                     }
 
                     // Touchdown Guard: Immediate engine cut upon ground contact if ARMED
                     if (geofs.aircraft.instance.groundContact && geofs.autothrottle.armed) {
-                        controls.throttle = 0;
+                        controls.manipulatorSetters.setThrottle(0);
+                        if (controls.throttleLeft !== undefined) controls.throttleLeft = 0;
+                        if (controls.throttleRight !== undefined) controls.throttleRight = 0;
+                        if (controls.throttle1 !== undefined) controls.throttle1 = 0;
+                        if (controls.throttle2 !== undefined) controls.throttle2 = 0;
+                        if (controls.throttle3 !== undefined) controls.throttle3 = 0;
+                        if (controls.throttle4 !== undefined) controls.throttle4 = 0;
                         $(document).trigger("autothrottleOff");
                         return;
                     }
-                    var b = a - geofs.utils.now();
-                    var c = b / 1E3;
+                    const now = geofs.utils.now();
+                    const previous = geofs.autothrottle._tickTime;
+                    geofs.autothrottle._tickTime = now;
+                    const c = previous == null ? 0.016 : Math.max(0.001, Math.min((now - previous) / 1000, 0.1));
+                    const b = c * 1000;
                     try {
                         geofs.autothrottle.tick(c, b);
                     } catch (err) {
@@ -1858,7 +1883,7 @@ window.AIRCRAFT_DATA = {
              */
             handleError: (a) => {
                 console.error(a);
-                if (window.V39_NOTIF) window.V39_NOTIF.critical('Autothrottle error: disabled. Check the console for details.');
+                if (window.V40_NOTIF) window.V40_NOTIF.critical('Autothrottle error: disabled. Check the console for details.');
                 else ui.notification.show('Autothrottle error: disabled. Check the console for details.');
                 geofs.debug.log("meatbroc autothrottle error");
                 geofs.api.removeFrameCallback(geofs.autothrottle.callbackID);
@@ -1883,7 +1908,7 @@ window.AIRCRAFT_DATA = {
             const b = JSON.parse(a);
             geofs.autothrottle.armed = b;
             $("#armOn").toggleClass("green-pad active", b).attr("aria-pressed", String(b));
-            $("#armOff").toggleClass("landing-selected active", !b).attr("aria-pressed", String(!b));
+            $("#armOff").toggleClass("green-pad active", !b).attr("aria-pressed", String(!b));
         };
 
         /**
@@ -1930,52 +1955,48 @@ window.AIRCRAFT_DATA = {
             $input.attr(isMach ? geofs.autothrottle._machSpeedAttributes : geofs.autothrottle._ktsSpeedAttributes);
             $input.val(isMach ? currentTarget.toFixed(6) : Math.round(currentTarget)); // Increased precision to maintain exact user values
 
-            if (window.V39_NOTIF) {
-                V39_NOTIF.info(`🔄 Speed Mode Switched to ${isMach ? 'Mach' : 'Knots'} (${currentTarget.toFixed(isMach ? 2 : 0)} ${isMach ? 'M' : 'kts'})`);
+            if (window.V40_NOTIF) {
+                V40_NOTIF.show(`🔄 Speed Mode Switched to ${isMach ? 'Mach' : 'Knots'} (${currentTarget.toFixed(isMach ? 2 : 0)} ${isMach ? 'M' : 'kts'})`);
             }
         }
 
-        if (window.V39_NOTIF) {
-            window.V39_NOTIF.success("GeoFS-V3.9_Autothrottle V2.0.1 Loaded.");
+        if (window.V40_NOTIF) {
+            window.V40_NOTIF.show("GeoFS-V4.0_Autothrottle v0.1.4 Loaded.");
         }
-        console.log("[GeoFS-V3.9_Autothrottle] >> Autothrottle System Initialized.");
+        console.log("[GeoFS-V4.0_Autothrottle] >> Autothrottle System Initialized.");
     }
-    window.executeOnEventDone("geofsInitialized", main);
+    window.GeoFSV4Core.initialize('Autothrottle', main).catch(() => {});
+})();
 })();
 
-
-
-})();
-
-// ============================================================
-// MODULE 4: GeoFS-V3.9_Checklist-System
-// ============================================================
+// MODULE: GeoFS-V4.0_Checklist-System
+(() => {
 // Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
+// Unknown, older, and newer versions never activate this V4.0 release.
 (function waitForGeoFSVersion() {
     const version = window.geofs?.version;
     if (version === undefined || version === null || version === '') {
         setTimeout(waitForGeoFSVersion, 250);
         return;
     }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Checklist-System] Inactive: GeoFS ' + version + ' is not V3.9.');
+    if (!/^(?:v)?4(?:\.\d+)*$/i.test(String(version).trim())) {
+        console.warn('[GeoFS-V4.0_Checklist-System] Inactive: GeoFS ' + version + ' is not V4.0.');
         return;
     }
 
 
 (() => {
     /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this module to execute only when GeoFS reports version 3.9.
+     * Runtime Version Guard: GeoFS-V4.0 Suite Compatibility
+     * Allows this module to execute only when GeoFS reports version 4.0.
      */
     function isUnsupportedGeoFS() {
         const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
+        return !/^(?:v)?4(?:\.\d+)*$/i.test(String(raw ?? '').trim());
     }
 
     if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Checklist-System] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        console.warn("[GeoFS-V4.0_Checklist-System] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
         return;
     }
 
@@ -1984,16 +2005,16 @@ window.AIRCRAFT_DATA = {
      */
     window.initChecklistSystem = () => {
         if (isUnsupportedGeoFS()) {
-            console.warn("[GeoFS-V3.9_Checklist-System] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+            console.warn("[GeoFS-V4.0_Checklist-System] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
             return;
         }
         if (window.checklistSystem) return;
 
-        console.log("[GeoFS-V3.9_Checklist-System] >> INITIALIZING CHECKLIST ENGINE...");
+        console.log("[GeoFS-V4.0_Checklist-System] >> INITIALIZING CHECKLIST ENGINE...");
 
         // Dependency Validation: Ensure HUD framework is available
         if (typeof window.registerHUDTab !== 'function') {
-            console.error("[GeoFS-V3.9_Checklist-System] >> FATAL: registerHUDTab not found! Foundations missing.");
+            console.error("[GeoFS-V4.0_Checklist-System] >> FATAL: registerHUDTab not found! Foundations missing.");
             return;
         }
 
@@ -2140,7 +2161,7 @@ window.AIRCRAFT_DATA = {
             detectAircraft: function() {
                 let name = "Generic Aircraft";
                 if (geofs.aircraft.instance) {
-                    name = (geofs.aircraft.instance.definition.externalName || geofs.aircraft.instance.definition.name || "").toLowerCase();
+                    name = (geofs.aircraft.instance.definition?.externalName || geofs.aircraft.instance.definition?.name || "").toLowerCase();
                 }
                 this.currentAircraft = name;
                 
@@ -2154,18 +2175,24 @@ window.AIRCRAFT_DATA = {
                 }
                 if (!found) this.currentChecklist = JSON.parse(JSON.stringify(DEFAULT_CHECKLISTS["generic"]));
                 
-                const acId = geofs.aircraft.instance?.id || "none";
+                const ac = geofs.aircraft.instance;
+                const acId = ac?.id ?? "none";
                 if (window._checkCurrId !== acId) {
                     window._checkCurrId = acId;
                     this.completedItems.clear();
                     this.emergencies = [];
                     
-                    const acData = (window.AIRCRAFT_DATA && acId !== "none") ? window.AIRCRAFT_DATA[acId] : null;
-                    this.isUnregistered = !acData;
+                    const profile = typeof window.getAircraftProfile === 'function' ? window.getAircraftProfile(ac) : null;
+                    const acData = profile || ((window.AIRCRAFT_DATA && acId !== "none") ? window.AIRCRAFT_DATA[acId] : null);
+                    this.isUnregistered = !acData || acData.isDynamic;
                     this.missingId = (acId === "none") ? null : acId;
 
                     if (acData && acData.name) {
                         this.currentAircraft = acData.name;
+                    } else if (ac?.definition) {
+                        this.currentAircraft = ac.definition.externalName || ac.definition.name || "Default Checklist";
+                    } else {
+                        this.currentAircraft = "Default Checklist";
                     }
 
 
@@ -2183,7 +2210,7 @@ window.AIRCRAFT_DATA = {
                 if (idx >= 0 && idx < this.currentChecklist.length) {
                     this.currentPhase = idx;
                     this.updateUI();
-                    if (window.V39_NOTIF) window.V39_NOTIF.info(`Checklist Phase: ${this.currentChecklist[idx].title}`);
+                    if (window.V40_NOTIF) window.V40_NOTIF.info(`Checklist Phase: ${this.currentChecklist[idx].title}`);
                 }
             },
 
@@ -2277,7 +2304,7 @@ window.AIRCRAFT_DATA = {
                 
                 const anim = geofs.animation.values;
                 const ac = geofs.aircraft.instance;
-                const maxFlaps = (ac.definition.flapsSteps || ac.definition.flapsPositions || []).length - 1;
+                const maxFlaps = Number.isFinite(ac.definition?.flapsSteps) ? ac.definition.flapsSteps : Math.max(0, (ac.definition?.flapsPositions?.length || 1) - 1);
 
                 const getSyncState = (syncStr) => {
                     if (!syncStr) return false;
@@ -2287,13 +2314,13 @@ window.AIRCRAFT_DATA = {
                     
                     switch(key) {
                         case 'parkingBrake': return !!anim.parkingBrake;
-                        case 'gear': return anim.gear > 0.5;
+                        case 'gear': return anim.gearPosition > 0.5;
                         case 'lights': return !!(anim.lights || ac.lights);
-                        case 'airbrakes': return anim.airbrakes > 0;
+                        case 'airbrakes': return anim.airbrakesPosition > 0;
                         case 'flaps': {
                             const target = anim.flapsTarget || 0;
                             // Physical Logic: Robust flap detection across different airframe definitions
-                            let effectiveMax = (acData && acData.maxFlaps !== undefined) ? acData.maxFlaps : (ac.definition.flapsSteps ? ac.definition.flapsSteps.length - 1 : (ac.definition.flapsPositions ? ac.definition.flapsPositions.length - 1 : 1));
+                            let effectiveMax = maxFlaps || ((acData && acData.maxFlaps) || 1);
                             if (effectiveMax < 1) effectiveMax = 1;
 
                             if (val === 'full') return target >= effectiveMax;
@@ -2364,7 +2391,7 @@ window.AIRCRAFT_DATA = {
                 const ac = geofs.aircraft.instance;
                 const anim = geofs.animation.values;
                 const [key, val] = syncStr.split(':');
-                const maxFlaps = ac.definition.flapsSteps ? ac.definition.flapsSteps.length - 1 : 1;
+                const maxFlaps = Number.isFinite(ac.definition?.flapsSteps) ? ac.definition.flapsSteps : Math.max(0, (ac.definition?.flapsPositions?.length || 1) - 1);
                 
                 switch(key) {
                     case 'parkingBrake':
@@ -2376,22 +2403,20 @@ window.AIRCRAFT_DATA = {
                         break;
                     case 'gear':
                         // Handle gear toggle more safely
-                        if (ac.toggleGear) ac.toggleGear();
-                        else if (anim.gear !== undefined) {
-                            geofs.animation.values.gear = anim.gear > 0.5 ? 0 : 1;
-                        }
+                        if (typeof controls !== 'undefined' && controls.setters?.setGear?.set) controls.setters.setGear.set();
                         break;
                     case 'flaps': {
                         const acId = geofs.aircraft.instance?.id;
                         const acData = (window.AIRCRAFT_DATA && acId) ? window.AIRCRAFT_DATA[acId] : null;
-                        let actionMax = (acData && acData.maxFlaps !== undefined) ? acData.maxFlaps : maxFlaps;
+                        let actionMax = maxFlaps || ((acData && acData.maxFlaps) || 0);
                         if (actionMax < 1) actionMax = 1;
 
-                        if (val === 'full') ac.setFlaps(actionMax);
-                        else if (val !== undefined) ac.setFlaps(parseInt(val));
-                        else {
-                            const cur = anim.flapsTarget || 0;
-                            ac.setFlaps(cur === 0 ? (actionMax > 1 ? 1 : 1) : 0);
+                        if (typeof controls !== 'undefined' && controls.flaps && controls.setters?.setFlaps?.set) {
+                            const target = val === 'full' ? actionMax : val !== undefined ? Number.parseInt(val, 10) : (anim.flapsTarget ? 0 : 1);
+                            if (Number.isFinite(target)) {
+                                controls.flaps.target = Math.max(0, Math.min(maxFlaps, target));
+                                controls.setters.setFlaps.set();
+                            }
                         }
                         break;
                     }
@@ -2427,44 +2452,46 @@ window.AIRCRAFT_DATA = {
         }, 3000);
     };
 
-    if (window.SafeInit) {
-        window.SafeInit('GeoFS-V3.9_Checklist-System', window.initChecklistSystem);
-    } else {
-        window.initChecklistSystem();
-    }
+    const bootChecker = setInterval(() => {
+        if (isUnsupportedGeoFS()) { clearInterval(bootChecker); return; }
+        if (typeof window.registerHUDTab !== 'function') return;
+        clearInterval(bootChecker);
+        if (window.SafeInit) window.SafeInit('GeoFS-V4.0_Checklist-System', window.initChecklistSystem);
+        else window.initChecklistSystem();
+    }, 100);
 })();
 
 })();
+})();
 
-// ============================================================
-// MODULE 5: GeoFS-V3.9_Failure-Simulator
-// ============================================================
+// MODULE: GeoFS-V4.0_Failure-Simulator
+(() => {
 // Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
+// Unknown, older, and newer versions never activate this V4.0 release.
 (function waitForGeoFSVersion() {
     const version = window.geofs?.version;
     if (version === undefined || version === null || version === '') {
         setTimeout(waitForGeoFSVersion, 250);
         return;
     }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Failure-Simulator] Inactive: GeoFS ' + version + ' is not V3.9.');
+    if (!/^(?:v)?4(?:\.\d+)*$/i.test(String(version).trim())) {
+        console.warn('[GeoFS-V4.0_Failure-Simulator] Inactive: GeoFS ' + version + ' is not V4.0.');
         return;
     }
 
 
 (() => {
     /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this module to execute only when GeoFS reports version 3.9.
+     * Runtime Version Guard: GeoFS-V4.0 Suite Compatibility
+     * Allows this module to execute only when GeoFS reports version 4.0.
      */
     function isUnsupportedGeoFS() {
         const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
+        return !/^(?:v)?4(?:\.\d+)*$/i.test(String(raw ?? '').trim());
     }
 
     if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Failure-Simulator] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        console.warn("[GeoFS-V4.0_Failure-Simulator] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
         return;
     }
 
@@ -2510,7 +2537,7 @@ window.AIRCRAFT_DATA = {
                 engines: []
             };
 
-            for (let i = 0; i < ac.engines.length; i++) {
+            for (let i = 0; i < (ac.engines?.length || 0); i++) {
                 this.fails.engines.push({i: false});
                 this.chances.engines.push(0);
             }
@@ -2541,7 +2568,7 @@ window.AIRCRAFT_DATA = {
                 const idx = parseInt(system.replace("engine", ""));
                 if (!this.fails.engines[idx].i) {
                     // Engine Fire & Flameout Simulation
-                    if (window.V39_NOTIF) window.V39_NOTIF.critical(`🔥 ENGINE ${idx+1} FAILURE - SHUT DOWN IMMEDIATELY`);
+                    if (window.V40_NOTIF) window.V40_NOTIF.critical(`🔥 ENGINE ${idx+1} FAILURE - SHUT DOWN IMMEDIATELY`);
                     this.fails.engines[idx].i = true;
                     ac.engines[idx]._p_thrust = ac.engines[idx].thrust; // Cache nominal thrust
                     ac.engines[idx].thrust = 0; // Trigger flameout
@@ -2584,7 +2611,7 @@ window.AIRCRAFT_DATA = {
                     case "gearFront":
                         // Nose Gear Collapse: Static suspension offset injection
                         if (!this.fails.landingGear.front) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ NOSE GEAR COLLAPSE - STEERING LOST");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ NOSE GEAR COLLAPSE - STEERING LOST");
                             this.fails.landingGear.front = true;
                             let fG = 0;
                             // Search for primary steering suspension
@@ -2592,57 +2619,57 @@ window.AIRCRAFT_DATA = {
                                 const n = s.name ? s.name.toLowerCase() : "";
                                 if(n.includes("front") || n.includes("nose") || n.includes("tail") || n.includes("steer")) fG = i; 
                             });
-                            this.activeFailures.set("gearFront", setInterval(() => { if(ac.suspensions[fG]) ac.suspensions[fG].collisionPoints[0][2] = 30; }, 1000));
+                            this.activeFailures.set("gearFront", setInterval(() => { if(ac.suspensions[fG]) ac.suspensions[fG].collisionPoints[0][2] = 0.5; }, 1000));
                         }
                         break;
                     case "gearLeft":
                         if (!this.fails.landingGear.left) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ LEFT MAIN GEAR FAILURE");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ LEFT MAIN GEAR FAILURE");
                             this.fails.landingGear.left = true;
                             let lG = 1;
                             ac.suspensions.forEach((s, i) => { 
                                 const n = s.name ? s.name.toLowerCase() : "";
                                 if(n.includes("left") || n.includes("l_g") || n.includes("main l") || n.includes("l-gear")) lG = i; 
                             });
-                            this.activeFailures.set("gearLeft", setInterval(() => { if(ac.suspensions[lG]) ac.suspensions[lG].collisionPoints[0][2] = 30; }, 1000));
+                            this.activeFailures.set("gearLeft", setInterval(() => { if(ac.suspensions[lG]) ac.suspensions[lG].collisionPoints[0][2] = 0.5; }, 1000));
                         }
                         break;
                     case "gearRight":
                         if (!this.fails.landingGear.right) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ RIGHT MAIN GEAR FAILURE");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ RIGHT MAIN GEAR FAILURE");
                             this.fails.landingGear.right = true;
                             let rG = 2;
                             ac.suspensions.forEach((s, i) => { 
                                 const n = s.name ? s.name.toLowerCase() : "";
                                 if(n.includes("right") || n.includes("r_g") || n.includes("main r") || n.includes("r-gear")) rG = i; 
                             });
-                            this.activeFailures.set("gearRight", setInterval(() => { if(ac.suspensions[rG]) ac.suspensions[rG].collisionPoints[0][2] = 30; }, 1000));
+                            this.activeFailures.set("gearRight", setInterval(() => { if(ac.suspensions[rG]) ac.suspensions[rG].collisionPoints[0][2] = 0.5; }, 1000));
                         }
                         break;
                     case "ailerons":
                         if (!this.fails.flightCtrl.ailerons) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ AILERON JAM - ROLL CONTROL LOST");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ AILERON JAM - ROLL CONTROL LOST");
                             this.fails.flightCtrl.ailerons = true;
                             this.activeFailures.set("ailerons", setInterval(() => { ac.airfoils.forEach(a => { if(a.name.toLowerCase().includes("aileron")) a.object3d._scale = [0,0,0]; }); }, 1000));
                         }
                         break;
                     case "elevators":
                         if (!this.fails.flightCtrl.elevators) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ ELEVATOR JAM - PITCH CONTROL LOST");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ ELEVATOR JAM - PITCH CONTROL LOST");
                             this.fails.flightCtrl.elevators = true;
                             this.activeFailures.set("elevators", setInterval(() => { ac.airfoils.forEach(a => { if(a.name.toLowerCase().includes("elevator")) a.object3d._scale = [0,0,0]; }); }, 1000));
                         }
                         break;
                     case "rudder":
                         if (!this.fails.flightCtrl.rudder) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ RUDDER JAM - YAW CONTROL LOST");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ RUDDER JAM - YAW CONTROL LOST");
                             this.fails.flightCtrl.rudder = true;
                             this.activeFailures.set("rudder", setInterval(() => { ac.airfoils.forEach(a => { if(a.name.toLowerCase().includes("rudder")) a.object3d._scale = [0,0,0]; }); }, 1000));
                         }
                         break;
                     case "flaps":
                         if (!this.fails.hydraulic.flaps) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ HYDRAULIC FAILURE - FLAPS INOPERATIVE");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ HYDRAULIC FAILURE - FLAPS INOPERATIVE");
                             this.fails.hydraulic.flaps = true;
                             this.activeFailures.set("flaps", setInterval(() => { 
                                 window.controls.flaps.target = Math.floor(0.682 * (window.geofs.animation.values.flapsSteps * 2));
@@ -2652,14 +2679,14 @@ window.AIRCRAFT_DATA = {
                         break;
                     case "brakes":
                         if (!this.fails.hydraulic.brakes) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ HYDRAULIC FAILURE - BRAKES INOPERATIVE");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ HYDRAULIC FAILURE - BRAKES INOPERATIVE");
                             this.fails.hydraulic.brakes = true;
                             this.activeFailures.set("brakes", setInterval(() => { window.controls.brakes = 0; }, 500));
                         }
                         break;
                     case "spoilers":
                         if (!this.fails.hydraulic.spoilers) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ HYDRAULIC FAILURE - SPOILERS INOPERATIVE");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ HYDRAULIC FAILURE - SPOILERS INOPERATIVE");
                             this.fails.hydraulic.spoilers = true;
                             this.activeFailures.set("spoilers", setInterval(() => { 
                                 window.controls.airbrakes.target = 0.2; // Jam spoilers at 20% extension
@@ -2674,7 +2701,7 @@ window.AIRCRAFT_DATA = {
                          * column override or stabilizer trim cutout.
                          */
                         if (!this.fails.mcas) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("🚨 MCAS FAILURE - UNCOMMANDED NOSE DOWN");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("🚨 MCAS FAILURE - UNCOMMANDED NOSE DOWN");
                             this.fails.mcas = true;
                             
                             // Procedural Injection: Emergency Checklist
@@ -2703,7 +2730,7 @@ window.AIRCRAFT_DATA = {
                         break;
                     case "electrical":
                         if (!this.fails.electrical) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚡ TOTAL ELECTRICAL FAILURE - INSTRUMENTS LOST");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚡ TOTAL ELECTRICAL FAILURE - INSTRUMENTS LOST");
                             this.fails.electrical = true;
                             this.activeFailures.set("electrical", setInterval(() => { 
                                 window.geofs.autopilot.turnOff(); 
@@ -2723,7 +2750,7 @@ window.AIRCRAFT_DATA = {
                          * flameout after a fixed 120-second grace period.
                          */
                         if (!this.fails.fuelLeak) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⛽ MAJOR FUEL LEAK - ENGINES STARVING");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⛽ MAJOR FUEL LEAK - ENGINES STARVING");
                             this.fails.fuelLeak = true;
 
                             if (window.checklistSystem) {
@@ -2740,14 +2767,14 @@ window.AIRCRAFT_DATA = {
                         break;
                     case "structural":
                         if (!this.fails.structural) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ STRUCTURAL INTEGRITY LOSS - SPEED LIMIT RECOMMENDED");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ STRUCTURAL INTEGRITY LOSS - SPEED LIMIT RECOMMENDED");
                             this.fails.structural = true;
                             this.activeFailures.set("structural", setInterval(() => { window.weather.definition.turbulences = 3; }, 1000));
                         }
                         break;
                     case "pressurization":
                         if (!this.fails.pressurization) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("💨 CABIN DEPRESSURIZATION - DESCEND IMMEDIATELY");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("💨 CABIN DEPRESSURIZATION - DESCEND IMMEDIATELY");
                             this.fails.pressurization = true;
                             this.activeFailures.set("pressurization", setInterval(() => {
                                 if (window.geofs.animation.values.altitude > 9000) window.weather.definition.turbulences = (window.geofs.animation.values.altitude - 9000) / 5000;
@@ -2757,7 +2784,7 @@ window.AIRCRAFT_DATA = {
                         break;
                     case "pitotStatic":
                         if (!this.fails.pitotStatic) {
-                            if (window.V39_NOTIF) window.V39_NOTIF.critical("⚠️ PITOT-STATIC FAILURE - INSTRUMENT DATA UNRELIABLE");
+                            if (window.V40_NOTIF) window.V40_NOTIF.critical("⚠️ PITOT-STATIC FAILURE - INSTRUMENT DATA UNRELIABLE");
                             this.fails.pitotStatic = true;
                             this.activeFailures.set("pitotStatic", setInterval(() => { 
                                 window.geofs.animation.values.kias = 0; 
@@ -2790,7 +2817,7 @@ window.AIRCRAFT_DATA = {
                 const idx = parseInt(system.replace("engine", ""));
                 this.fails.engines[idx].i = false;
                 // Restore nominal thrust coefficients
-                ac.engines[idx].thrust = ac.engines[idx]._p_thrust || 50000;
+                ac.engines[idx].thrust = ac.engines[idx]._p_thrust ?? 0;
                 
                 // Cleanup Visual FX
                 if (this.engineFX.has(idx)) {
@@ -2799,7 +2826,7 @@ window.AIRCRAFT_DATA = {
                     if (fx.emitter) fx.emitter.destroy();
                     this.engineFX.delete(idx);
                 }
-                if (window.V39_NOTIF) window.V39_NOTIF.success(`Engine ${idx+1} Restored.`);
+                if (window.V40_NOTIF) window.V40_NOTIF.success(`Engine ${idx+1} Restored.`);
             } else {
                 // Restoration Registry: Reset physical state per component
                 switch(system) {
@@ -2823,7 +2850,7 @@ window.AIRCRAFT_DATA = {
                     case "pressurization": this.fails.pressurization = false; window.weather.definition.turbulences = 0; break;
                     case "pitotStatic": this.fails.pitotStatic = false; break;
                 }
-                if (window.V39_NOTIF) window.V39_NOTIF.success(`${system.toUpperCase()} Restored.`);
+                if (window.V40_NOTIF) window.V40_NOTIF.success(`${system.toUpperCase()} Restored.`);
             }
         }
 
@@ -2868,12 +2895,12 @@ window.AIRCRAFT_DATA = {
         }
 
         groupAuto(groupId) {
-            if (window.V39_NOTIF) window.V39_NOTIF.info(`Auto-probability active for group: ${groupId.toUpperCase()}`);
+            if (window.V40_NOTIF) window.V40_NOTIF.info(`Auto-probability active for group: ${groupId.toUpperCase()}`);
             if (groupId === "gear") { ["1", "2", "3"].forEach(id => this.setProbability(id=="1"?"landingGear.gearFront":id=="2"?"landingGear.left":"landingGear.right", Math.random() * 0.1, id)); }
             if (groupId === "ctrl") { ["4", "5", "6"].forEach((id, i) => this.setProbability(["flightCtrl.ailerons", "flightCtrl.elevators", "flightCtrl.rudder"][i], Math.random() * 0.1, id)); }
             if (groupId === "hyd") { ["11", "12", "13"].forEach((id, i) => this.setProbability(["hydraulic.flaps", "hydraulic.brakes", "hydraulic.spoilers"][i], Math.random() * 0.1, id)); }
             if (groupId === "adv") { ["14", "7", "8", "9", "10", "15"].forEach((id, i) => this.setProbability(["electrical", "fuelLeak", "structural", "pressurization", "mcas", "pitotStatic"][i], Math.random() * 0.05, id)); }
-            if (groupId === "eng") { for (let i = 0; i < window.geofs.aircraft.instance.engines.length; i++) this.setProbability(`engines[${i}]`, Math.random() * 0.1, `Eng${i}`); }
+            if (groupId === "eng") { for (let i = 0; i < (window.geofs.aircraft.instance.engines?.length || 0); i++) this.setProbability(`engines[${i}]`, Math.random() * 0.1, `Eng${i}`); }
         }
 
         groupFail(groupId) {
@@ -2882,7 +2909,7 @@ window.AIRCRAFT_DATA = {
             if (groupId === "ctrl") systems = ["ailerons", "elevators", "rudder"];
             if (groupId === "hyd") systems = ["flaps", "brakes", "spoilers"];
             if (groupId === "adv") systems = ["electrical", "fuelLeak", "structural", "pressurization", "mcas", "pitotStatic"];
-            if (groupId === "eng") { for (let i = 0; i < window.geofs.aircraft.instance.engines.length; i++) systems.push("engine" + i); }
+            if (groupId === "eng") { for (let i = 0; i < (window.geofs.aircraft.instance.engines?.length || 0); i++) systems.push("engine" + i); }
             systems.forEach(s => this.fail(s));
         }
 
@@ -2892,7 +2919,7 @@ window.AIRCRAFT_DATA = {
             if (groupId === "ctrl") systems = ["ailerons", "elevators", "rudder"];
             if (groupId === "hyd") systems = ["flaps", "brakes", "spoilers"];
             if (groupId === "adv") systems = ["electrical", "fuelLeak", "structural", "pressurization", "mcas", "pitotStatic"];
-            if (groupId === "eng") { for (let i = 0; i < window.geofs.aircraft.instance.engines.length; i++) systems.push("engine" + i); }
+            if (groupId === "eng") { for (let i = 0; i < (window.geofs.aircraft.instance.engines?.length || 0); i++) systems.push("engine" + i); }
             systems.forEach(s => this.fix(s));
         }
 
@@ -3045,7 +3072,7 @@ window.AIRCRAFT_DATA = {
                           buildRow("Pitot-Static", "Sensor failure. All primary flight instruments will read zero.", "15", "pitotStatic", "pitotStatic");
             html += section("Advanced Emergencies", "adv", advHtml);
 
-            const numEng = window.geofs.aircraft.instance.engines.length;
+            const numEng = (window.geofs.aircraft.instance.engines?.length || 0);
             let engHtml = "";
             for (let i = 0; i < numEng; i++) engHtml += buildRow(`Engine ${i+1}`, "Thrust loss and heavy smoke. Expect heavy yaw and loss of climb performance.", `Eng${i}`, `engine${i}`, `engines[${i}]`);
             html += section("Engines", "eng", engHtml);
@@ -3077,14 +3104,14 @@ window.AIRCRAFT_DATA = {
 
     function check() {
         if (isUnsupportedGeoFS()) {
-            console.warn("[GeoFS-V3.9_Failure-Simulator] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+            console.warn("[GeoFS-V4.0_Failure-Simulator] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
             return;
         }
         if (window.geofs && window.geofs.aircraft && window.geofs.aircraft.instance) window.initFailures();
         else setTimeout(check, 1000);
     }
     if (window.SafeInit) {
-        window.SafeInit('GeoFS-V3.9_Failure-Simulator', check);
+        window.SafeInit('GeoFS-V4.0_Failure-Simulator', check);
     } else {
         check();
     }
@@ -3093,31 +3120,31 @@ window.AIRCRAFT_DATA = {
 
 
 })();
+})();
 
-// ============================================================
-// MODULE 6: GeoFS-V3.9_Flight-Path-Vector
-// ============================================================
+// MODULE: GeoFS-V4.0_Flight-Path-Vector
+(() => {
 // Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
+// Unknown, older, and newer versions never activate this V4.0 release.
 (function waitForGeoFSVersion() {
     const version = window.geofs?.version;
     if (version === undefined || version === null || version === '') {
         setTimeout(waitForGeoFSVersion, 250);
         return;
     }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Flight-Path-Vector] Inactive: GeoFS ' + version + ' is not V3.9.');
+    if (!/^(?:v)?4(?:\.\d+)*$/i.test(String(version).trim())) {
+        console.warn('[GeoFS-V4.0_Flight-Path-Vector] Inactive: GeoFS ' + version + ' is not V4.0.');
         return;
     }
 
 
 /**
- * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
- * Allows this module to execute only when GeoFS reports version 3.9.
+ * Runtime Version Guard: GeoFS-V4.0 Suite Compatibility
+ * Allows this module to execute only when GeoFS reports version 4.0.
  */
 function isUnsupportedGeoFS() {
     const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
+        return !/^(?:v)?4(?:\.\d+)*$/i.test(String(raw ?? '').trim());
 }
 
 function cF(x, y, z) {
@@ -3125,11 +3152,11 @@ function cF(x, y, z) {
 }
 function waitForEntities() {
     if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Flight-Path-Vector] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        console.warn("[GeoFS-V4.0_Flight-Path-Vector] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
         return;
     }
     try {
-        if (geofs.api) {
+        if (geofs.api?.viewer?.entities && geofs.camera?.lla && geofs.animation?.values && window.Cesium) {
             // Entities are already defined, no need to wait
             window.DEGREES_TO_RAD = window.DEGREES_TO_RAD || 0.017453292519943295769236907684886127134428718885417254560971914401710091146034494436822415696345094822123044925073790592483854692275281012398474218934047117319168245015010769561697553581238605305168789;
             window.RAD_TO_DEGREES = window.RAD_TO_DEGREES || 57.295779513082320876798154814105170332405472466564321549160243861202847148321552632440968995851110944186223381632864893281448264601248315036068267863411942122526388097467267926307988702893110767938261;
@@ -3144,16 +3171,16 @@ function waitForEntities() {
     setTimeout(waitForEntities, 1000);
 }
 window.lastLoc = null;
-window.onload = setTimeout(waitForEntities, 10000);
+setTimeout(waitForEntities, 1000);
 window.howFar = 15; //                                THIS DETERMINES HOW FAR AWAY THE DOT IS. IT IS A FACTOR, AND THE ACTUAL DISTANCE IS DIRECTLY RELATED TO THE TRUE AIRSPEED.
 function main() {
     if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Flight-Path-Vector] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        console.warn("[GeoFS-V4.0_Flight-Path-Vector] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
         return;
     }
     (() => {
         
-        if (window.V39_NOTIF) window.V39_NOTIF.success("GeoFS-V3.9_Flight-Path-Vector V2.0.1 Loaded.");
+        if (window.V40_NOTIF) window.V40_NOTIF.success("GeoFS-V4.0_Flight-Path-Vector v0.1.0 Loaded.");
         const initialLoc = Cesium.Cartesian3.fromDegrees(geofs.camera.lla[1], geofs.camera.lla[0], (geofs.animation.values.groundElevationFeet/3.2808399));
 
         window.y = geofs.api.viewer.entities.add({
@@ -3199,7 +3226,7 @@ function main() {
                 window.lastLoc = currLoc;
 
                 // Retrieve and format the required values
-                var agl = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? Math.round((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
+                var agl = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? Math.round((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + ((geofs.aircraft.instance.collisionPoints?.at(-2)?.worldPosition?.[2] || 0)*3.2808399)) : 'N/A';
                 var glideslope;
                 if (geofs.animation.getValue("NAV1Direction") && (geofs.animation.getValue("NAV1Distance") !== 600)) { //The second part to the if statement prevents the divide by 0 error.
                     glideslope = (geofs.animation.getValue("NAV1Direction") === "to") ? (Math.atan((agl*0.3048) / (geofs.animation.getValue("NAV1Distance")+600))*RAD_TO_DEGREES).toFixed(1) : (Math.atan((agl*0.3048) / Math.abs(geofs.animation.getValue("NAV1Distance")-600))*RAD_TO_DEGREES).toFixed(1); //The center of the aiming point is exactly 600 meters from the start of the runway (in GeoFS).
@@ -3210,20 +3237,24 @@ function main() {
                 let reticleColor = Cesium.Color.LIME; // Default: Bright HUD Lime Green
                 const aoa = geofs.animation.values.aoa;
                 const vs = geofs.animation.values.verticalSpeed; // in ft/min, downward is negative
-                const isWarningState = (aoa !== undefined && aoa > 14) || ac.stalling;
+                const kias = Number(geofs.animation.values.kias);
+                const hagl = Number(geofs.animation.values.haglFeet);
+                const aboveFlare = !Number.isFinite(hagl) || hagl > 20;
+                const airborneValid = !ac.groundContact && aboveFlare && Number.isFinite(kias) && kias >= 35;
+                const safeAoa = Number.isFinite(aoa) ? aoa : 0;
+                const highAoaWarning = safeAoa > 18 && safeAoa < 75 && kias < 180;
+                const isWarningState = airborneValid && (Boolean(ac.stalling) || highAoaWarning);
 
                 if (isWarningState) {
                     reticleColor = Cesium.Color.RED;
-                } else if (vs !== undefined) {
-                    const maxVS = 3000;
-                    const clampedVS = Math.max(-maxVS, Math.min(maxVS, vs));
+                } else if (Number.isFinite(vs)) {
                     let hue = 120; // 120 is Green
-                    if (clampedVS > 0) {
+                    if (vs > 0) {
                         // Gradual transition from green (120) to sky-blue/cyan (200) during climb
-                        hue = 120 + (clampedVS / maxVS) * 80;
+                        hue = 120 + Math.min(1, vs / 3000) * 80;
                     } else {
-                        // Gradual transition from green (120) to warning red (0) during descent
-                        hue = 120 + (clampedVS / maxVS) * 120; // clampedVS is negative, this subtracts from 120
+                        // Gradual transition from green (120) through yellow to amber (30) during descent
+                        hue = 120 - Math.min(1, Math.abs(vs) / 5000) * 90;
                     }
                     reticleColor = Cesium.Color.fromHsl(hue / 360, 1.0, 0.5);
                 }
@@ -3272,7 +3303,7 @@ function main() {
 
         // Update flight data display every 100ms
         window.fpvEnabled = true;
-        setInterval(updateFlightDataDisplay, (geofs.debug.fps ? (1/(Number(geofs.debug.fps)))+5 : 100)); //The +5 gives a buffer and the : 100 is an attempt to prevent a huge lag spike on touchdown that I was encountering.
+        setInterval(updateFlightDataDisplay, (geofs.debug?.fps ? Math.max(20, 1000 / Number(geofs.debug.fps)) : 100)); //The +5 gives a buffer and the : 100 is an attempt to prevent a huge lag spike on touchdown that I was encountering.
         document.addEventListener('keydown', (event) => {
             if (event.key === 'l') {
                 window.fpvEnabled = !window.fpvEnabled;
@@ -3285,40 +3316,40 @@ function main() {
 }
 
 })();
+})();
 
-// ============================================================
-// MODULE 7: GeoFS-V3.9_Fuel-Simulator
-// ============================================================
+// MODULE: GeoFS-V4.0_Fuel-Simulator
+(() => {
 // Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
+// Unknown, older, and newer versions never activate this V4.0 release.
 (function waitForGeoFSVersion() {
     const version = window.geofs?.version;
     if (version === undefined || version === null || version === '') {
         setTimeout(waitForGeoFSVersion, 250);
         return;
     }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Fuel-Simulator] Inactive: GeoFS ' + version + ' is not V3.9.');
+    if (!/^(?:v)?4(?:\.\d+)*$/i.test(String(version).trim())) {
+        console.warn('[GeoFS-V4.0_Fuel-Simulator] Inactive: GeoFS ' + version + ' is not V4.0.');
         return;
     }
 
 
 (() => {
     /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this module to execute only when GeoFS reports version 3.9.
+     * Runtime Version Guard: GeoFS-V4.0 Suite Compatibility
+     * Allows this module to execute only when GeoFS reports version 4.0.
      */
     function isUnsupportedGeoFS() {
         const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
+        return !/^(?:v)?4(?:\.\d+)*$/i.test(String(raw ?? '').trim());
     }
 
     if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Fuel-Simulator] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        console.warn("[GeoFS-V4.0_Fuel-Simulator] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
         return;
     }
 
-    console.log("[GeoFS-V3.9_Fuel-Simulator] >> Initializing simulation logic...");
+    console.log("[GeoFS-V4.0_Fuel-Simulator] >> Initializing simulation logic...");
 
     const fuelSimulatorSuite = {
         /**
@@ -3331,12 +3362,14 @@ function main() {
             emptyMass: 0,
             payload: 0,
             maxPayload: 0,
-            autoRefuel: localStorage.getItem('geofs-V39-fuel-auto') === 'true',
+            autoRefuel: localStorage.getItem('geofs-V40-fuel-auto') === 'true',
             immersiveRefuel: true,
-            dynamicSFC: localStorage.getItem('geofs-V39-fuel-dyn') === 'true',
-            realisticTanks: localStorage.getItem('geofs-V39-fuel-tanks') === 'true',
+            dynamicSFC: localStorage.getItem('geofs-V40-fuel-dyn') === 'true',
+            realisticTanks: localStorage.getItem('geofs-V40-fuel-tanks') === 'true',
             tanks: { left: 0, center: 0, right: 0 },
             initialized: false,
+            aircraft: null,
+            stoppedForFuel: false,
             _alertLow: false,
             _alertBingo: false
         },
@@ -3350,22 +3383,12 @@ function main() {
             "1":    { name: "Piper Cub", oew: 331, mtow: 553, fuel: 45 },
             "2":    { name: "Cessna 172", oew: 767, mtow: 1157, fuel: 176 },
             "3":    { name: "Alphajet", oew: 3515, mtow: 8000, fuel: 1575 },
-            "7":    { name: "Boeing 737-800", oew: 42730, mtow: 79015, fuel: 20896 },
-            "8":    { name: "Boeing 737-700", oew: 37648, mtow: 70080, fuel: 20131 }, 
+
             "10":   { name: "Airbus A380", oew: 276800, mtow: 575000, fuel: 253983 },
             "16":   { name: "Douglas DC-3", oew: 7650, mtow: 11432, fuel: 1900 },
-            "18":   { name: "F-16", oew: 8573, mtow: 19187, fuel: 3249 },
+
             "20":   { name: "Concorde", oew: 78700, mtow: 186880, fuel: 95680 },
-            "1001": { name: "737-900ER", oew: 44677, mtow: 85139, fuel: 20896 },
-            "1005": { name: "777-300ER", oew: 167800, mtow: 351500, fuel: 145500 },
-            "1012": { name: "A380 (Addon)", oew: 276800, mtow: 575000, fuel: 253983 },
-            "1013": { name: "ATR 42-600", oew: 11700, mtow: 18600, fuel: 4500 },
-            "1015": { name: "Challenger 650", oew: 12340, mtow: 21860, fuel: 9070 },
-            "1016": { name: "CRJ900", oew: 21500, mtow: 38300, fuel: 8880 },
-            "1018": { name: "Embraer E190/Phenom", oew: 3235, mtow: 4800, fuel: 1272 },
-            "2003": { name: "KC-135R", oew: 44663, mtow: 146000, fuel: 90718 },
-            "2806": { name: "UH-60 Black Hawk", oew: 4819, mtow: 10660, fuel: 1361 },
-            "2951": { name: "Il-96", oew: 120000, mtow: 250000, fuel: 116000 },
+
             "2973": { name: "Airbus A350", oew: 155700, mtow: 316000, fuel: 110600 },
             "3534": { name: "Airbus A320", oew: 42600, mtow: 78000, fuel: 19000 },
             "dhc6":   { name: "Twin Otter", oew: 3365, mtow: 5670, fuel: 1021 },
@@ -3396,17 +3419,17 @@ function main() {
         },
 
         /**
-         * Notification Proxy: Routes simulation messages through the V3.9 
+         * Notification Proxy: Routes simulation messages through the V4.0 
          * notification engine if available.
          * 
          * @param {string} text - The text content of the notification.
          * @param {string} [type="success"] - The status level of the notification.
          */
         notify: (text, type = "success") => {
-            if (window.V39_NOTIF) {
-                window.V39_NOTIF.show(text, type);
+            if (window.V40_NOTIF) {
+                window.V40_NOTIF.show(text, type);
             } else {
-                console.log(`[GeoFS-V3.9_Fuel-Simulator] >> ${text}`);
+                console.log(`[GeoFS-V4.0_Fuel-Simulator] >> ${text}`);
             }
         },
 
@@ -3418,10 +3441,12 @@ function main() {
         init: function() {
             if (this.state.initialized || !window.geofs?.aircraft?.instance) return;
             const ac = geofs.aircraft.instance;
-            const acId = ac.id.toString();
-            const acName = ac.definition.externalName?.toLowerCase() || ac.definition.name?.toLowerCase() || "";
+            // GeoFS creates the instance before its definition is populated.
+            if (ac.id == null || !ac.definition) return;
+            const acId = String(ac.id ?? "");
+            const acName = ac.definition?.externalName?.toLowerCase() || ac.definition?.name?.toLowerCase() || "";
             
-            console.log(`[GeoFS-V3.9_Fuel-Simulator] >> Bootstrapping profile: ${acId}`);
+            console.log(`[GeoFS-V4.0_Fuel-Simulator] >> Bootstrapping profile: ${acId}`);
 
             // Exception Handling: Space Shuttle Atlantis (Aircraft-side bug causes mass instability)
             if (acName.includes("atlantis") || acId === "2953") {
@@ -3429,25 +3454,31 @@ function main() {
             }
 
             // Database Lookup: Resolve OEW and Capacity
-            let data = (window.AIRCRAFT_DATA && window.AIRCRAFT_DATA[acId]) ? window.AIRCRAFT_DATA[acId] : null;
+            let data = (window.AIRCRAFT_DATA && window.AIRCRAFT_DATA[acId]) || null;
             if (!data || data.oew === undefined) {
                 data = this.performanceDB[acId];
                 if (!data) {
-                    const key = Object.keys(this.performanceDB).find(k => isNaN(k) && (acName.includes(k)));
+                    const key = Object.keys(this.performanceDB).find(k => isNaN(k) && acName.includes(k));
                     if (key) data = this.performanceDB[key];
                 }
+            }
+            if ((!data || data.oew === undefined) && typeof window.getAircraftProfile === 'function') {
+                data = window.getAircraftProfile(ac);
             }
 
             if (data && data.oew !== undefined) {
                 // Profile Match: Load high-fidelity constants
                 this.state.emptyMass = data.oew || 1000;
-                this.state.initialFuel = (data.maxFuel !== undefined) ? data.maxFuel : (data.fuel || 500);
+                this.state.initialFuel = (data.maxFuel !== undefined) ? data.maxFuel : (data.fuel ?? 500);
                 this.state.maxPayload = Math.max(data.mtow * 0.1 || 100, (data.mtow || 2000) - this.state.emptyMass - this.state.initialFuel);
             } else {
                 // Generic Fallback: Use physical mass derivatives
-                const baseMass = ac.definition.mass;
+                const baseMass = ac.definition?.mass;
                 if (!baseMass || isNaN(baseMass)) {
-                    this.notify("Aircraft unsupported. Simulation disabled.", "warn");
+                    if (this.state.unsupportedAircraft !== ac) {
+                        this.notify("Aircraft unsupported. Simulation disabled.", "warn");
+                        this.state.unsupportedAircraft = ac;
+                    }
                     this.state.initialized = false;
                     return;
                 }
@@ -3461,10 +3492,13 @@ function main() {
             this.state.payload = this.state.maxPayload * 0.5;
             this.state.fuel = this.state.initialFuel;
             this.distributeFuel(this.state.fuel);
+            this.state.aircraft = ac;
+            this.state.unsupportedAircraft = null;
+            this.state.stoppedForFuel = false;
             this.state.initialized = true;
 
             this.updateAircraftMass();
-            console.log("[GeoFS-V3.9_Fuel-Simulator] >> Profile resolved and mass synchronized.");
+            console.log("[GeoFS-V4.0_Fuel-Simulator] >> Profile resolved and mass synchronized.");
         },
 
         /**
@@ -3485,8 +3519,11 @@ function main() {
         updateAircraftMass: function() {
             if (!geofs.aircraft.instance || !this.state.initialized) return;
             const mass = (this.state.emptyMass || 0) + (this.state.payload || 0) + (this.state.fuel || 0);
-            if (!isNaN(mass) && mass > 0) {
-                geofs.aircraft.instance.definition.mass = mass;
+            if (Number.isFinite(mass) && mass > 0) {
+                const ac = geofs.aircraft.instance;
+                if (ac === this.state.aircraft && ac.definition) {
+                    ac.definition.mass = Math.max(1, Math.min(10000000, mass));
+                }
             }
         },
 
@@ -3494,7 +3531,7 @@ function main() {
          * UI Construction: Builds the HUD tab for fuel monitoring and configuration.
          */
         createUI: function() {
-            console.log("[GeoFS-V3.9_Fuel-Simulator] >> Registering UI Tab...");
+            console.log("[GeoFS-V4.0_Fuel-Simulator] >> Registering UI Tab...");
             const content = `
                 <div style="display: flex; flex-direction: column; gap: 12px; padding: 10px; background: transparent;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -3553,7 +3590,9 @@ function main() {
          */
         setFuel: function(pct) {
             if (!this.state.initialized) return;
-            this.state.fuel = (pct / 100) * this.state.initialFuel;
+            const fraction = Math.max(0, Math.min(100, Number(pct) || 0));
+            this.state.fuel = (fraction / 100) * this.state.initialFuel;
+            if (this.state.fuel > 0) this.restoreFuelEngine();
             this.distributeFuel(this.state.fuel);
             this.updateAircraftMass();
             this.notify(`Fuel set to ${pct}%`);
@@ -3564,7 +3603,7 @@ function main() {
          */
         toggleDynamicSFC: function() {
             this.state.dynamicSFC = !this.state.dynamicSFC;
-            localStorage.setItem('geofs-V39-fuel-dyn', this.state.dynamicSFC);
+            localStorage.setItem('geofs-V40-fuel-dyn', this.state.dynamicSFC);
             const btn = document.getElementById('fuel-btn-dyn');
             if (btn) btn.style.background = this.state.dynamicSFC ? "rgba(34,197,94,0.2)" : "rgba(255,255,255,0.05)";
             this.notify(`Dynamic SFC ${this.state.dynamicSFC ? 'ON' : 'OFF'}`);
@@ -3575,7 +3614,7 @@ function main() {
          */
         toggleRealisticTanks: function() {
             this.state.realisticTanks = !this.state.realisticTanks;
-            localStorage.setItem('geofs-V39-fuel-tanks', this.state.realisticTanks);
+            localStorage.setItem('geofs-V40-fuel-tanks', this.state.realisticTanks);
             const btn = document.getElementById('fuel-btn-tanks');
             if (btn) btn.style.background = this.state.realisticTanks ? "rgba(34,197,94,0.2)" : "rgba(255,255,255,0.05)";
             this.notify(`Realistic Tanks ${this.state.realisticTanks ? 'ON' : 'OFF'}`);
@@ -3586,7 +3625,7 @@ function main() {
          */
         toggleAutoRefuel: function() {
             this.state.autoRefuel = !this.state.autoRefuel;
-            localStorage.setItem('geofs-V39-fuel-auto', this.state.autoRefuel);
+            localStorage.setItem('geofs-V40-fuel-auto', this.state.autoRefuel);
             const btn = document.getElementById('fuel-btn-auto');
             if (btn) btn.style.background = this.state.autoRefuel ? "rgba(76,175,80,0.5)" : "rgba(255,255,255,0.05)";
             this.notify(`Auto-Refuel ${this.state.autoRefuel ? 'ON' : 'OFF'}`);
@@ -3597,7 +3636,22 @@ function main() {
          * Calculates dynamic fuel burn rates based on thrust, altitude, and 
          * atmospheric density. Manages tank logic and provides cockpit alerts.
          */
+        restoreFuelEngine: function() {
+            const ac = geofs.aircraft?.instance;
+            if (this.state.stoppedForFuel && ac === this.state.aircraft && typeof ac.startEngines === 'function') {
+                ac.startEngines();
+                this.state.stoppedForFuel = false;
+            }
+        },
+
         tick: function() {
+            const current = geofs.aircraft?.instance;
+            if (this.state.aircraft && current !== this.state.aircraft) {
+                this.state.initialized = false;
+                this.state.aircraft = null;
+                this.state.stoppedForFuel = false;
+                this.state._alertLow = this.state._alertBingo = false;
+            }
             // Lifecycle: Attempt profile resolution if uninitialized
             if (!this.state.initialized) {
                 this.init();
@@ -3606,8 +3660,8 @@ function main() {
 
             if (!geofs.aircraft.instance || geofs.isPaused()) return;
             const ac = geofs.aircraft.instance;
-            const acId = ac.id.toString();
-            const acName = ac.definition.externalName?.toLowerCase() || ac.definition.name?.toLowerCase() || "";
+            const acId = String(ac.id ?? "");
+            const acName = ac.definition?.externalName?.toLowerCase() || ac.definition?.name?.toLowerCase() || "";
             const alt = geofs.animation.values.altitude || 0;
             
             // Environmental Factors: Specific fuel consumption derivatives
@@ -3623,12 +3677,28 @@ function main() {
             }
 
             // SFC Logic: Base consumption rate adjusted for aircraft class
-            const sfcBase = isRocket ? 0.85 : ((ac.definition.maxThrust || 0) > 50000 ? 0.0075 : 0.0095);
+            const sfcBase = isRocket ? 0.85 : ((ac.definition?.maxThrust || 0) > 50000 ? 0.0075 : 0.0095);
             
             // Atmospheric Scaling: SFC decreases in thinner air
             const altMult = this.state.dynamicSFC ? Math.max(0.1, 1 - (alt / 50000)) ** 1.1 : 1;
-            const totalThrust = ac.engines ? ac.engines.reduce((sum, eng) => sum + Math.max(0, eng.thrust || 0), 0) : 0;
-            const burnRate = totalThrust * sfcBase * altMult;
+            // Multi-Engine Thrust & Reverser Scaling
+            let totalThrust = 0;
+            if (Array.isArray(ac.engines) && ac.engines.length > 0) {
+                totalThrust = ac.engines.reduce((sum, eng) => sum + Math.max(0, eng.thrust || 0), 0);
+            } else if (ac.parts) {
+                // GeoFS 4 parts inspection for engine components
+                Object.values(ac.parts).forEach(part => {
+                    if (part && part.thrust) totalThrust += Math.max(0, part.thrust);
+                });
+            }
+            if (totalThrust <= 0 && ac.definition?.maxThrust) {
+                const thrFraction = Math.abs(Number(controls?.throttle) || 0);
+                totalThrust = (ac.definition.maxThrust || 0) * thrFraction;
+            }
+
+            const isReversing = geofs.animation?.values?.reverser || (typeof controls !== 'undefined' && controls.reversers);
+            const revMult = isReversing ? 1.35 : 1.0; // Reverse thrust produces higher specific consumption
+            const burnRate = totalThrust * sfcBase * altMult * revMult;
 
             // Integration: Calculate mass delta per second
             let drainAmount = burnRate * (1 / 3600);
@@ -3637,7 +3707,7 @@ function main() {
 
             // Integrity Check: Prevent NaN-induced engine shutdown
             if (isNaN(this.state.fuel)) {
-                console.warn("[GeoFS-V3.9_Fuel-Simulator] >> NaN state recovered. Syncing mass...");
+                console.warn("[GeoFS-V4.0_Fuel-Simulator] >> NaN state recovered. Syncing mass...");
                 this.state.fuel = this.state.initialFuel || 1000;
             }
 
@@ -3658,26 +3728,32 @@ function main() {
 
                 // Physics Simulation: Roll moment due to fuel imbalance
                 const imbalance = this.state.tanks.left - this.state.tanks.right;
-                if (Math.abs(imbalance) > 10) {
-                    const rollMoment = imbalance * 0.000001; 
-                    ac.rigidBody.applyTorque(window.V3.scale(ac.object3d.worldRotation[0], rollMoment));
+                const axis = ac.object3d?.worldRotation?.[0];
+                if (!ac.groundContact && Number.isFinite(imbalance) && Math.abs(imbalance) > 10 && Array.isArray(axis) && axis.length >= 3 && axis.every(Number.isFinite)) {
+                    const axisLen = Math.hypot(axis[0], axis[1], axis[2]);
+                    const rollMoment = Math.max(-5, Math.min(5, imbalance * 0.000001));
+                    if (axisLen > 0.001 && Number.isFinite(rollMoment) && typeof ac.rigidBody?.applyTorque === 'function') {
+                        const inv = 1 / axisLen;
+                        ac.rigidBody.applyTorque([axis[0] * inv * rollMoment, axis[1] * inv * rollMoment, axis[2] * inv * rollMoment]);
+                    }
                 }
             } else {
                 // Parallel Architecture: Uniform distribution
                 this.distributeFuel(this.state.fuel);
             }
 
-            // Flameout Logic: Automatic shutdown on exhaustion
-            if (this.state.fuel <= 0) {
-                this.state.fuel = 0;
-                this.distributeFuel(0);
-                ac.stopEngine();
-            }
-
-            // Configuration Overrides
-            if (this.state.autoRefuel) {
+            // Refuel before exhaustion handling, and never flame out a zero-capacity aircraft.
+            if (this.state.autoRefuel && this.state.initialFuel > 0) {
                 this.state.fuel = this.state.initialFuel;
                 this.distributeFuel(this.state.fuel);
+                this.restoreFuelEngine();
+            } else if (this.state.initialFuel > 0 && this.state.fuel <= 0) {
+                this.state.fuel = 0;
+                this.distributeFuel(0);
+                if (!this.state.stoppedForFuel && ac.engine?.on && typeof ac.stopEngines === 'function') {
+                    ac.stopEngines();
+                    this.state.stoppedForFuel = true;
+                }
             }
 
             // Mass Sync: Update physical gross weight
@@ -3685,12 +3761,12 @@ function main() {
             this.updateUI(burnRate);
 
             // Warning Logic: Threshold-based notifications
-            const fuelPct = (this.state.fuel / this.state.initialFuel) * 100;
-            if (fuelPct < 5 && !this.state._alertBingo) {
-                if (window.V39_NOTIF) window.V39_NOTIF.critical("🚨 BINGO FUEL - EMERGENCY DECLARED");
+            const fuelPct = this.state.initialFuel > 0 ? (this.state.fuel / this.state.initialFuel) * 100 : 0;
+            if (this.state.initialFuel > 0 && fuelPct < 5 && !this.state._alertBingo) {
+                if (window.V40_NOTIF) window.V40_NOTIF.critical("🚨 BINGO FUEL - EMERGENCY DECLARED");
                 this.state._alertBingo = true;
-            } else if (fuelPct < 15 && !this.state._alertLow) {
-                if (window.V39_NOTIF) window.V39_NOTIF.warn("⚠️ LOW FUEL ALERT");
+            } else if (this.state.initialFuel > 0 && fuelPct < 15 && !this.state._alertLow) {
+                if (window.V40_NOTIF) window.V40_NOTIF.warn("⚠️ LOW FUEL ALERT");
                 this.state._alertLow = true;
             }
             if (fuelPct > 16) { this.state._alertLow = false; this.state._alertBingo = false; }
@@ -3702,7 +3778,7 @@ function main() {
          * @param {number} burnRate - The current fuel consumption rate in kg/h.
          */
         updateUI: function(burnRate) {
-            const fuelPct = (this.state.fuel / this.state.initialFuel) * 100;
+            const fuelPct = this.state.initialFuel > 0 ? (this.state.fuel / this.state.initialFuel) * 100 : 0;
             const fuelEl = document.getElementById('fuel-pct-val');
             const burnEl = document.getElementById('fuel-burn-val');
             const weightEl = document.getElementById('fuel-weight-val');
@@ -3723,7 +3799,7 @@ function main() {
 
     window.initFuelSimulatorPro = () => {
         if (isUnsupportedGeoFS()) {
-            console.warn("[GeoFS-V3.9_Fuel-Simulator] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+            console.warn("[GeoFS-V4.0_Fuel-Simulator] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
             return;
         }
         if (window.fuelSimulatorTabRegistered) return;
@@ -3733,7 +3809,7 @@ function main() {
     };
 
     if (window.SafeInit) {
-        window.SafeInit('GeoFS-V3.9_Fuel-Simulator', window.initFuelSimulatorPro);
+        window.SafeInit('GeoFS-V4.0_Fuel-Simulator', window.initFuelSimulatorPro);
     } else {
         const checker = setInterval(() => {
             if (isUnsupportedGeoFS()) {
@@ -3749,36 +3825,36 @@ function main() {
 })();
 
 })();
+})();
 
-// ============================================================
-// MODULE 8: GeoFS-V3.9_Information-Display
-// ============================================================
+// MODULE: GeoFS-V4.0_Information-Display
+(() => {
 // Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
+// Unknown, older, and newer versions never activate this V4.0 release.
 (function waitForGeoFSVersion() {
     const version = window.geofs?.version;
     if (version === undefined || version === null || version === '') {
         setTimeout(waitForGeoFSVersion, 250);
         return;
     }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Information-Display] Inactive: GeoFS ' + version + ' is not V3.9.');
+    if (!/^(?:v)?4(?:\.\d+)*$/i.test(String(version).trim())) {
+        console.warn('[GeoFS-V4.0_Information-Display] Inactive: GeoFS ' + version + ' is not V4.0.');
         return;
     }
 
 
 (() => {
     /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this module to execute only when GeoFS reports version 3.9.
+     * Runtime Version Guard: GeoFS-V4.0 Suite Compatibility
+     * Allows this module to execute only when GeoFS reports version 4.0.
      */
     function isUnsupportedGeoFS() {
         const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
+        return !/^(?:v)?4(?:\.\d+)*$/i.test(String(raw ?? '').trim());
     }
 
     if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Information-Display] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        console.warn("[GeoFS-V4.0_Information-Display] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
         return;
     }
 
@@ -3788,16 +3864,16 @@ function main() {
      */
     window.initHUDInformationDisplayPro = () => {
         if (isUnsupportedGeoFS()) {
-            console.warn("[GeoFS-V3.9_Information-Display] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+            console.warn("[GeoFS-V4.0_Information-Display] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
             return;
         }
         if (window.hudInformationDisplayPro) return;
         
-        console.log("[GeoFS-V3.9_Information-Display] >> Initializing telemetry display...");
+        console.log("[GeoFS-V4.0_Information-Display] >> Initializing telemetry display...");
         
         // Validation: Verify presence of HUD registry helpers
         if (typeof window.registerHUDTab !== 'function' || typeof window.hudCell !== 'function') {
-            console.error("[GeoFS-V3.9_Information-Display] >> HUD helpers missing. Kernel might be unstable.");
+            console.error("[GeoFS-V4.0_Information-Display] >> HUD helpers missing. Kernel might be unstable.");
             return;
         }
 
@@ -3831,13 +3907,14 @@ function main() {
             ${safeCell('FT ALT', 'N/A', '', 'hud-alt')}
             ${safeCell('FPM V/S', 'N/A', '', 'hud-vs')}
             ${safeCell('DEG HDG', 'N/A', '', 'hud-hdg')}
+            ${safeCell('% THR', 'N/A', '', 'hud-thr')}
             <div class="hud-section-header full-width">Additional data</div>
             ${safeCell('M MACH', 'N/A', '', 'hud-mach')}
             ${safeCell('DEG AOA', 'N/A', '', 'hud-aoa')}
             ${safeCell('G G-FORCE', 'N/A', '', 'hud-g')}
             ${safeCell('FT AGL', 'N/A', '', 'hud-agl')}
             ${safeCell('KTS GS', 'N/A', '', 'hud-gs')} 
-            ${safeCell('DEG GSLOPE', 'N/A', '', 'hud-gslope')}
+            ${safeCell('DEG GS DEV', 'N/A', '', 'hud-gslope')}
         `;
         
         // Registration: Inject into the HUD tab manager
@@ -3853,9 +3930,9 @@ function main() {
             // Halt if the display panel is obscured
             if (!y || y.style.display === 'none') return;
             
-            const v = geofs.animation.values;
-            const ac = geofs.aircraft.instance;
-            if (!v || !ac) return;
+            const v = geofs.animation?.values;
+            const ac = geofs.aircraft?.instance;
+            if (!v || !ac || ac.id == null || !ac.definition) return;
 
             // Identity Resolution: Resolve aircraft names and registries
             if (ac.id !== lastAcId) {
@@ -3863,15 +3940,18 @@ function main() {
                 const nameEl = document.getElementById('hud-ac-name');
                 const badgeEl = document.getElementById('hud-ac-id-badge');
                 if (nameEl && badgeEl) {
-                    const data = (window.AIRCRAFT_DATA && window.AIRCRAFT_DATA[ac.id]) ? window.AIRCRAFT_DATA[ac.id] : null;
+                    const profile = typeof window.getAircraftProfile === 'function' ? window.getAircraftProfile(ac) : null;
+                    const data = profile || ((window.AIRCRAFT_DATA && window.AIRCRAFT_DATA[ac.id]) ? window.AIRCRAFT_DATA[ac.id] : null);
                     
-                    if (data) {
-                        // Known Aircraft: Use registry name
+                    if (data && data.name && !data.isDynamic) {
                         nameEl.textContent = data.name;
                         badgeEl.style.background = "#dddddd"; 
                         badgeEl.textContent = `REG: ${ac.id}`;
+                    } else if (data && data.name) {
+                        nameEl.textContent = data.name;
+                        badgeEl.style.background = "#38bdf8"; 
+                        badgeEl.textContent = `AUTO: ${ac.id}`;
                     } else {
-                        // Unknown Aircraft: Stochastic "Identity Obfuscation" Logic
                         const jokes = [
                             "Mystery Flying Object", "Classified Area 51 Project", "Paper Plane with Jet Engines",
                             "UFO (Unidentified Flying Object)", "Identity Obscured by Clouds", "Skunkworks Prototype",
@@ -3879,14 +3959,13 @@ function main() {
                         ];
                         const joke = jokes[Math.floor(Math.random() * jokes.length)];
                         
-                        const rawName = ac.definition.externalName || ac.definition.name || "Unknown Aircraft";
+                        const rawName = ac.definition?.externalName || ac.definition?.name || "Unknown Aircraft";
                         const cleanName = rawName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                         
                         nameEl.innerHTML = `<span style="opacity: 0.6; font-style: italic;">${joke}</span><br><span style="font-size: 10px; font-weight: 400;">(${cleanName})</span>`;
                         badgeEl.style.background = "#94a3b8"; 
                         badgeEl.textContent = `ID: ${ac.id}`;
                     }
-
                 }
             }
 
@@ -3919,14 +3998,45 @@ function main() {
             const aoaColor = v.aoa > 16 ? "#ef4444" : (v.aoa > 12 ? "#eab308" : "#fff");
 
             // Element Synchronization
-            updateCell('hud-kias', (v.kias ? v.kias.toFixed(1) : "N/A") + trend);
-            updateCell('hud-mach', v.mach ? v.mach.toFixed(2) : "N/A");
-            updateCell('hud-alt', v.altitude ? Math.round(v.altitude).toLocaleString() : "N/A");
+            updateCell('hud-kias', (Number.isFinite(v.kias) ? v.kias.toFixed(1) : "N/A") + trend);
+            updateCell('hud-mach', Number.isFinite(v.mach) ? v.mach.toFixed(2) : "N/A");
+            updateCell('hud-alt', Number.isFinite(v.altitude) ? Math.round(v.altitude).toLocaleString() : "N/A");
             updateCell('hud-vs', (v.verticalSpeed !== undefined ? Math.round(v.verticalSpeed) : "N/A"), vsColor);
-            updateCell('hud-hdg', v.heading360 ? Math.round(v.heading360).toString().padStart(3, '0') : "N/A");
-            updateCell('hud-g', (v.loadFactor ? v.loadFactor.toFixed(1) : "N/A"), gColor);
-            updateCell('hud-aoa', (v.aoa ? v.aoa.toFixed(1) : "N/A"), aoaColor);
-            updateCell('hud-gs', v.groundSpeed ? v.groundSpeed.toFixed(1) : "N/A");
+            updateCell('hud-hdg', Number.isFinite(v.heading360) ? Math.round(v.heading360).toString().padStart(3, '0') : "N/A");
+            updateCell('hud-g', (Number.isFinite(v.loadFactor) ? v.loadFactor.toFixed(1) : "N/A"), gColor);
+            updateCell('hud-aoa', (Number.isFinite(v.aoa) ? v.aoa.toFixed(1) : "N/A"), aoaColor);
+            updateCell('hud-gs', Number.isFinite(v.groundSpeedKnt) ? v.groundSpeedKnt.toFixed(1) : "N/A");
+            updateCell('hud-agl', Number.isFinite(v.haglFeet) ? Math.round(v.haglFeet).toLocaleString() : 'N/A');
+            updateCell('hud-gslope', v.NAVVNAV && Number.isFinite(v.NAVGlideAngleDeviation) ? v.NAVGlideAngleDeviation.toFixed(1) : 'N/A');
+
+            // Multi-Engine Throttle / N1 Readings
+            let thrStr = "0%";
+            const revActive = v.reverser || (typeof controls !== 'undefined' && controls.reversers);
+            const revPrefix = revActive ? "[REV] " : "";
+            if (typeof controls !== 'undefined') {
+                if (controls.throttle1 !== undefined && controls.throttle2 !== undefined) {
+                    const t1 = Math.round((controls.throttle1 || 0) * 100);
+                    const t2 = Math.round((controls.throttle2 || 0) * 100);
+                    if (controls.throttle3 !== undefined && controls.throttle4 !== undefined) {
+                        const t3 = Math.round((controls.throttle3 || 0) * 100);
+                        const t4 = Math.round((controls.throttle4 || 0) * 100);
+                        thrStr = `${revPrefix}${t1}/${t2}/${t3}/${t4}%`;
+                    } else {
+                        thrStr = `${revPrefix}${t1}/${t2}%`;
+                    }
+                } else if (controls.throttleLeft !== undefined && controls.throttleRight !== undefined) {
+                    const tl = Math.round((controls.throttleLeft || 0) * 100);
+                    const tr = Math.round((controls.throttleRight || 0) * 100);
+                    thrStr = `${revPrefix}L:${tl}% R:${tr}%`;
+                } else if (Number.isFinite(controls.throttle)) {
+                    thrStr = `${revPrefix}${Math.round(controls.throttle * 100)}%`;
+                } else if (Number.isFinite(v.rpm)) {
+                    thrStr = `${revPrefix}${Math.round(v.rpm)} RPM`;
+                }
+            } else if (Number.isFinite(v.rpm)) {
+                thrStr = `${revPrefix}${Math.round(v.rpm)} RPM`;
+            }
+            updateCell('hud-thr', thrStr, revActive ? '#f97316' : '#fff');
         }, 100);
     };
 
@@ -3935,7 +4045,7 @@ function main() {
      * Ensures the display module initializes only when core HUD dependencies are met.
      */
     if (window.SafeInit) {
-        window.SafeInit('GeoFS-V3.9_Information-Display', window.initHUDInformationDisplayPro);
+        window.SafeInit('GeoFS-V4.0_Information-Display', window.initHUDInformationDisplayPro);
     } else {
         const checker = setInterval(() => {
             if (isUnsupportedGeoFS()) {
@@ -3951,36 +4061,36 @@ function main() {
 })();
 
 })();
+})();
 
-// ============================================================
-// MODULE 9: GeoFS-V3.9_Landing-Statistics
-// ============================================================
+// MODULE: GeoFS-V4.0_Landing-Statistics
+(() => {
 // Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
+// Unknown, older, and newer versions never activate this V4.0 release.
 (function waitForGeoFSVersion() {
     const version = window.geofs?.version;
     if (version === undefined || version === null || version === '') {
         setTimeout(waitForGeoFSVersion, 250);
         return;
     }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Landing-Statistics] Inactive: GeoFS ' + version + ' is not V3.9.');
+    if (!/^(?:v)?4(?:\.\d+)*$/i.test(String(version).trim())) {
+        console.warn('[GeoFS-V4.0_Landing-Statistics] Inactive: GeoFS ' + version + ' is not V4.0.');
         return;
     }
 
 
 (() => {
     /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this module to execute only when GeoFS reports version 3.9.
+     * Runtime Version Guard: GeoFS-V4.0 Suite Compatibility
+     * Allows this module to execute only when GeoFS reports version 4.0.
      */
     function isUnsupportedGeoFS() {
         const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
+        return !/^(?:v)?4(?:\.\d+)*$/i.test(String(raw ?? '').trim());
     }
 
     if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Landing-Statistics] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        console.warn("[GeoFS-V4.0_Landing-Statistics] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
         return;
     }
 
@@ -4022,40 +4132,16 @@ function main() {
     window.hardLanding = new Audio('https://geofs-assets.evengao6688.workers.dev/audio/hard_landing.wav');
     window.crashLanding = new Audio('https://geofs-assets.evengao6688.workers.dev/audio/crash_landing.wav');
 
-    /**
-     * Sends telemetry event to track standalone usage.
-     * 
-     * @returns {Promise<void>} Resolves when the telemetry request finishes.
-     */
-    async function track() {
-        if (true) {
-            const SCRIPT_NAME = "Landing_Stats";
-            let userId = localStorage.getItem("myScriptUserId");
-            if (!userId) {
-                userId = crypto.randomUUID();
-                localStorage.setItem("myScriptUserId", userId);
-            }
-            try {
-                await fetch("https://track.tylerbialowas-bard.workers.dev", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ script: SCRIPT_NAME, userId: userId }),
-                });
-            } catch (error) { console.error("Failed to track event:", error); }
-        }
-    }
-    track();
-
     // Technical Module Initialization Entrypoint (called by SafeInit)
     window.initLandingStats = () => {
         if (isUnsupportedGeoFS()) {
-            console.warn("[GeoFS-V3.9_Landing-Statistics] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+            console.warn("[GeoFS-V4.0_Landing-Statistics] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
             return;
         }
         if (window.isStatsLoaded) return;
         window.isStatsLoaded = true;
 
-        console.log("[GeoFS-V3.9_Landing-Stats] >> INITIALIZING LANDING STATISTICS ENGINE...");
+        console.log("[GeoFS-V4.0_Landing-Stats] >> INITIALIZING LANDING STATISTICS ENGINE...");
 
         // Inject Custom Styles
         if (!document.getElementById('statsStyles')) {
@@ -4386,11 +4472,11 @@ function main() {
             window.crashLanding.currentTime = 0;
             quality.sound.play();
         } catch (e) {
-            console.error("[GeoFS-V3.9_Landing-Stats] >> Audio error:", e);
+            console.error("[GeoFS-V4.0_Landing-Stats] >> Audio error:", e);
         }
 
         // Notification Integration
-        if (window.V39_NOTIF) {
+        if (window.V40_NOTIF) {
             let prefix = "🛬";
             if (quality.notifType === "warn") prefix = "⚠️";
             else if (quality.notifType === "critical") prefix = "🚨";
@@ -4400,10 +4486,10 @@ function main() {
                 ? `${prefix} BOUNCE #${window.bounces} TOUCHDOWN: ${quality.label} (-${vsVal} FPM)` 
                 : `${prefix} TOUCHDOWN: ${quality.label} (-${vsVal} FPM)`;
             
-            if (quality.notifType === "success") window.V39_NOTIF.success(notifMsg);
-            else if (quality.notifType === "info") window.V39_NOTIF.info(notifMsg);
-            else if (quality.notifType === "warn") window.V39_NOTIF.warn(notifMsg);
-            else if (quality.notifType === "critical") window.V39_NOTIF.critical(notifMsg);
+            if (quality.notifType === "success") window.V40_NOTIF.success(notifMsg);
+            else if (quality.notifType === "info") window.V40_NOTIF.info(notifMsg);
+            else if (quality.notifType === "warn") window.V40_NOTIF.warn(notifMsg);
+            else if (quality.notifType === "critical") window.V40_NOTIF.critical(notifMsg);
         }
 
         const content = window.statsCard.querySelector('.addonpack-card-content');
@@ -4489,7 +4575,7 @@ function main() {
         if (!window.geofs || !window.geofs.animation || !window.geofs.animation.values || !window.geofs.aircraft || !window.geofs.aircraft.instance) {
             return;
         }
-        if (window.geofs.cautiousWithTerrain === false && !window.geofs.isPaused() && !(window.sd && window.sd.cam && window.sd.cam.data)) {
+        if (window.geofs.cautiousWithTerrain !== true && !window.geofs.isPaused() && !(window.sd && window.sd.cam && window.sd.cam.data)) {
             // AGL Calculation: Resolves altitude vs ground elevation with collision offset
             let collisionOffset = 0;
             const inst = window.geofs.aircraft.instance;
@@ -4505,7 +4591,7 @@ function main() {
                 : 'N/A';
             
             if (ldgAGL !== 'N/A' && ldgAGL < 500) {
-                const groundContact = !!window.geofs.animation.values.groundContact;
+                const groundContact = !!(window.geofs.aircraft.instance.groundContact ?? window.geofs.animation.values.groundContact);
                 window.justLanded = (groundContact && !window.isGrounded);
                 
                 if (window.justLanded) {
@@ -4605,7 +4691,7 @@ function main() {
             if (nearestRwDist > testDist) nearestRwDist = testDist;
             return nearestRwDist < 600;
         } catch (e) {
-            console.warn("[GeoFS-V3.9_Landing-Stats] >> Touchdown zone calculation failed:", e);
+            console.warn("[GeoFS-V4.0_Landing-Stats] >> Touchdown zone calculation failed:", e);
             return false;
         }
     };
@@ -4633,12 +4719,12 @@ function main() {
         try {
             window.updateLndgStats();
         } catch (e) {
-            console.error("[GeoFS-V3.9_Landing-Stats] >> Error in stats loop:", e);
+            console.error("[GeoFS-V4.0_Landing-Stats] >> Error in stats loop:", e);
         }
         setTimeout(window.statsLoop, window.refreshRate);
     };
     if (window.SafeInit) {
-        window.SafeInit('GeoFS-V3.9_Landing-Statistics', window.initLandingStats);
+        window.SafeInit('GeoFS-V4.0_Landing-Statistics', window.initLandingStats);
     } else {
         window.initLandingStats();
     }
@@ -4646,40 +4732,40 @@ function main() {
 })();
 
 })();
+})();
 
-// ============================================================
-// MODULE 10: GeoFS-V3.9_Overpowered-Engines
-// ============================================================
+// MODULE: GeoFS-V4.0_Overpowered-Engines
+(() => {
 // Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
+// Unknown, older, and newer versions never activate this V4.0 release.
 (function waitForGeoFSVersion() {
     const version = window.geofs?.version;
     if (version === undefined || version === null || version === '') {
         setTimeout(waitForGeoFSVersion, 250);
         return;
     }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Overpowered-Engines] Inactive: GeoFS ' + version + ' is not V3.9.');
+    if (!/^(?:v)?4(?:\.\d+)*$/i.test(String(version).trim())) {
+        console.warn('[GeoFS-V4.0_Overpowered-Engines] Inactive: GeoFS ' + version + ' is not V4.0.');
         return;
     }
 
 
 (() => {
     /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this module to execute only when GeoFS reports version 3.9.
+     * Runtime Version Guard: GeoFS-V4.0 Suite Compatibility
+     * Allows this module to execute only when GeoFS reports version 4.0.
      */
     function isUnsupportedGeoFS() {
         const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
+        return !/^(?:v)?4(?:\.\d+)*$/i.test(String(raw ?? '').trim());
     }
 
     if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Overpowered-Engines] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        console.warn("[GeoFS-V4.0_Overpowered-Engines] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
         return;
     }
 
-    console.log("[GeoFS-V3.9_Overpowered-Engines] >> Initializing SAS stability engine...");
+    console.log("[GeoFS-V4.0_Overpowered-Engines] >> Initializing SAS stability engine...");
 
     // Persistence Layer: Load state from localStorage with fallbacks
     window.opMultiplier = parseFloat(localStorage.getItem('geofs-op-mult')) || 1.0;
@@ -4730,7 +4816,7 @@ function main() {
                     
                     <!-- THRUST SECTION -->
                     <div id="opThrustContainer" style="position: relative;">
-                        <div id="opThrustLockOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: not-allowed;" onclick="if(window.V39_NOTIF) V39_NOTIF.warn('OP Engines thrust is currently auto-managed by the Autothrottle OP-SYNC.')"></div>
+                        <div id="opThrustLockOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: not-allowed;" onclick="if(window.V40_NOTIF) V40_NOTIF.warn('OP Engines thrust is currently auto-managed by the Autothrottle OP-SYNC.')"></div>
                         <div id="opThrustSection" style="display: flex; flex-direction: column; gap: 10px; pointer-events: auto;">
                             <div style="display: flex; gap: 8px;">
                             <button id="opThrustBtn" onclick="window.toggleThrustMode()" style="
@@ -4766,7 +4852,7 @@ function main() {
 
                     <!-- CEILING SECTION -->
                     <div id="opCeilingContainer" style="position: relative;">
-                        <div id="opCeilingLockOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: not-allowed;" onclick="if(window.V39_NOTIF) V39_NOTIF.warn('OP Engines atmosphere bypass is currently auto-managed by the Autothrottle.')"></div>
+                        <div id="opCeilingLockOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: not-allowed;" onclick="if(window.V40_NOTIF) V40_NOTIF.warn('OP Engines atmosphere bypass is currently auto-managed by the Autothrottle.')"></div>
                         <div id="opCeilingSection" style="display: flex; flex-direction: column; gap: 10px; pointer-events: auto;">
                             <button id="opCeilingBtn" onclick="window.toggleCeilingMode()" style="
                                 background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; 
@@ -4809,7 +4895,7 @@ function main() {
             this.updatePhysicsUI();
             
             // Cross-Module Synchronization for Autothrottle OP-SYNC.
-            document.addEventListener("V39_opSyncStateChanged", (e) => {
+            document.addEventListener("V40_opSyncStateChanged", (e) => {
                 const isLocked = e.detail.active;
                 const thrustSection = document.getElementById("opThrustSection");
                 const lockOverlay = document.getElementById("opThrustLockOverlay");
@@ -4831,8 +4917,9 @@ function main() {
             });
             
             // Sync live multiplier values from Autothrottle to the local UI
-            document.addEventListener("V39_opMultiplierUpdated", (e) => {
+            document.addEventListener("V40_opMultiplierUpdated", (e) => {
                 const val = e.detail.value;
+                if (globalThis.isThrustActive) applyThrust(true);
                 const inputEl = document.getElementById("opMultInput");
                 const sliderEl = document.getElementById("opMultSlider");
                 if (inputEl) inputEl.value = val.toFixed(1);
@@ -4860,7 +4947,7 @@ function main() {
                 $(document).on("autothrottleOn", () => setTimeout(() => syncCeilingControls(), 0));
                 $(document).on("autothrottleOff", () => setTimeout(() => syncCeilingControls(), 0));
             }
-            document.addEventListener("V39_autothrottleStateChanged", (e) => {
+            document.addEventListener("V40_autothrottleStateChanged", (e) => {
                 syncCeilingControls(e.detail.active);
             });
             setTimeout(syncCeilingControls, 500);
@@ -4873,8 +4960,9 @@ function main() {
          * oscillations during overpowered flight.
          */
         tickSAS: () => {
-            if (!globalThis.isSASActive || !geofs?.aircraft?.instance) return;
-            const rb = geofs.aircraft.instance.rigidBody;
+            const ac = geofs?.aircraft?.instance;
+            if (!globalThis.isSASActive || !ac || ac.groundContact) return;
+            const rb = ac.rigidBody;
             if (!rb) return;
 
             // Input Validation: Threshold check for user stick/yoke interaction
@@ -4889,7 +4977,9 @@ function main() {
             } else {
                 // Maneuver Smoothing: Apply slight dampening to prevent flat spins
                 const av = rb.getAngularVelocity();
-                rb.setAngularVelocity([av[0] * 0.95, av[1] * 0.95, av[2] * 0.95]);
+                if (Array.isArray(av) && av.length >= 3 && av.every(Number.isFinite)) {
+                    rb.setAngularVelocity([av[0] * 0.95, av[1] * 0.95, av[2] * 0.95]);
+                }
             }
         },
 
@@ -5020,7 +5110,7 @@ function main() {
             this.state.isSettingKey = true;
             document.getElementById("opKeybindBtn").textContent = "...";
             document.getElementById("opKeybindBtn").style.color = "#fff";
-            if (window.V39_NOTIF) window.V39_NOTIF.info("🎹 Press any alphanumeric key to bind hotkey...");
+            if (window.V40_NOTIF) window.V40_NOTIF.info("🎹 Press any alphanumeric key to bind hotkey...");
         },
 
         /**
@@ -5037,7 +5127,7 @@ function main() {
                     document.getElementById("opKeybindBtn").textContent = key;
                     document.getElementById("opKeybindBtn").style.color = "#dddddd";
                     document.getElementById("opStatusMsg").textContent = `Press [${key.toUpperCase()}] to toggle Thrust.`;
-                    if (window.V39_NOTIF) window.V39_NOTIF.success(`🎹 Hotkey set to [ ${key.toUpperCase()} ]`);
+                    if (window.V40_NOTIF) window.V40_NOTIF.success(`🎹 Hotkey set to [ ${key.toUpperCase()} ]`);
                 }
                 return;
             }
@@ -5106,7 +5196,7 @@ function main() {
             const isHidden = card.style.display === "none";
             card.style.display = isHidden ? "block" : "none";
         } else {
-            console.warn("[GeoFS-V3.9_Overpowered-Engines] >> Panel card not found, re-initializing UI...");
+            console.warn("[GeoFS-V4.0_Overpowered-Engines] >> Panel card not found, re-initializing UI...");
             if (window.overpoweredEnginesSuite) {
                 window.overpoweredEnginesSuite.createUI();
                 const reCard = document.getElementById("opEngineCard");
@@ -5129,10 +5219,10 @@ function main() {
         localStorage.setItem('geofs-op-sas', globalThis.isSASActive);
         if (globalThis.isSASActive) {
             applyTorqueSuppression();
-            if (window.V39_NOTIF) window.V39_NOTIF.info("🛡️ SAS Stability System Engaged");
+            if (window.V40_NOTIF) window.V40_NOTIF.info("🛡️ SAS Stability System Engaged");
         } else {
             restoreTorque();
-            if (window.V39_NOTIF) window.V39_NOTIF.info("🛡️ SAS Stability System Disengaged");
+            if (window.V40_NOTIF) window.V40_NOTIF.info("🛡️ SAS Stability System Disengaged");
         }
         overpoweredEnginesSuite.updatePhysicsUI();
     };
@@ -5159,7 +5249,7 @@ function main() {
             if (globalThis.isSASActive) applyTorqueSuppression();
         }
         globalThis.isThrustActive = true;
-        if (window.V39_NOTIF) window.V39_NOTIF.success(`Thrust Active: ${window.opMultiplier}x Multiplier`);
+        if (window.V40_NOTIF) window.V40_NOTIF.success(`Thrust Active: ${window.opMultiplier}x Multiplier`);
         overpoweredEnginesSuite.updatePhysicsUI();
     }
 
@@ -5181,7 +5271,7 @@ function main() {
             }
         }
         globalThis.isThrustActive = false;
-        if (window.V39_NOTIF) window.V39_NOTIF.info("Thrust Multiplier Deactivated.");
+        if (window.V40_NOTIF) window.V40_NOTIF.info("Thrust Multiplier Deactivated.");
         overpoweredEnginesSuite.updatePhysicsUI();
     }
 
@@ -5197,7 +5287,7 @@ function main() {
             if (ac.definition) { ac.definition.zeroThrustAltitude = window.opCeiling; ac.definition.zeroRPMAltitude = window.opCeiling; }
         }
         globalThis.isCeilingActive = true;
-        if (window.V39_NOTIF) window.V39_NOTIF.success(`Ceiling Bypassed: ${overpoweredEnginesSuite.formatNumberCompact(window.opCeiling)} ft`);
+        if (window.V40_NOTIF) window.V40_NOTIF.success(`Ceiling Bypassed: ${overpoweredEnginesSuite.formatNumberCompact(window.opCeiling)} ft`);
         overpoweredEnginesSuite.updatePhysicsUI();
     }
 
@@ -5214,7 +5304,7 @@ function main() {
             }
         }
         globalThis.isCeilingActive = false;
-        if (window.V39_NOTIF) window.V39_NOTIF.info("Standard Atmospheric Limits Restored.");
+        if (window.V40_NOTIF) window.V40_NOTIF.info("Standard Atmospheric Limits Restored.");
         overpoweredEnginesSuite.updatePhysicsUI();
     }
 
@@ -5250,8 +5340,8 @@ function main() {
     window.overpoweredEnginesSuite = overpoweredEnginesSuite;
     document.addEventListener("keydown", (e) => overpoweredEnginesSuite.handleKeyPress(e));
 
-    if (window.V39_NOTIF) {
-        window.V39_NOTIF.success("GeoFS-V3.9_Overpowered-Engines V2.0.1 Loaded.");
+    if (window.V40_NOTIF) {
+        window.V40_NOTIF.success("GeoFS-V4.0_Overpowered-Engines v0.2.0 Loaded.");
     }
 
     const checkInterval = setInterval(() => {
@@ -5298,42 +5388,42 @@ function main() {
 })();
 
 })();
+})();
 
-// ============================================================
-// MODULE 11: GeoFS-V3.9_Realism-Pack
-// ============================================================
+// MODULE: GeoFS-V4.0_Realism-Pack
+(() => {
 // Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
+// Unknown, older, and newer versions never activate this V4.0 release.
 (function waitForGeoFSVersion() {
     const version = window.geofs?.version;
     if (version === undefined || version === null || version === '') {
         setTimeout(waitForGeoFSVersion, 250);
         return;
     }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Realism-Pack] Inactive: GeoFS ' + version + ' is not V3.9.');
+    if (!/^(?:v)?4(?:\.\d+)*$/i.test(String(version).trim())) {
+        console.warn('[GeoFS-V4.0_Realism-Pack] Inactive: GeoFS ' + version + ' is not V4.0.');
         return;
     }
 
 
 (() => {
     /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this module to execute only when GeoFS reports version 3.9.
+     * Runtime Version Guard: GeoFS-V4.0 Suite Compatibility
+     * Allows this module to execute only when GeoFS reports version 4.0.
      */
     function isUnsupportedGeoFS() {
         const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
+        return !/^(?:v)?4(?:\.\d+)*$/i.test(String(raw ?? '').trim());
     }
 
     if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Realism-Pack] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+        console.warn("[GeoFS-V4.0_Realism-Pack] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
         return;
     }
 
     window.initRealismPackPro = () => {
         if (isUnsupportedGeoFS()) {
-            console.warn("[GeoFS-V3.9_Realism-Pack] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
+            console.warn("[GeoFS-V4.0_Realism-Pack] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v4.0).");
             return;
         }
         if (window.realismPackInstance) return;
@@ -5343,7 +5433,7 @@ function main() {
             return;
         }
 
-        console.log("[GeoFS-V3.9_Realism-Pack] >> Monolithic realism engine initialized.");
+        console.log("[GeoFS-V4.0_Realism-Pack] >> Monolithic realism engine initialized.");
 
         // Global Flag: Enables advanced aerodynamic constants
         geofs.cons = true; 
@@ -5353,7 +5443,7 @@ function main() {
          * Realism Configuration State
          * Persists module toggles across session reloads.
          */
-        window.realismSettings = window.realismSettings || {
+        const realismDefaults = {
             gBreath: true, 
             cameraShake: true, 
             blackout: true, 
@@ -5370,6 +5460,9 @@ function main() {
             addonAircraft: false, 
             performanceMode: false
         };
+        let savedRealism = {};
+        try { savedRealism = JSON.parse(localStorage.getItem('geofs-v40-realism') || '{}') || {}; } catch (_) {}
+        window.realismSettings = Object.assign({}, realismDefaults, savedRealism, window.realismSettings || {});
         
         /**
          * Toggles a realism setting parameter and updates the UI state.
@@ -5377,7 +5470,9 @@ function main() {
          * @param {string} key - The configuration setting key to toggle.
          */
         window.toggleRealismParam = (key) => {
+            if (key === 'vortexEffects' || key === 'carrierOps') return;
             window.realismSettings[key] = !window.realismSettings[key];
+            try { localStorage.setItem('geofs-v40-realism', JSON.stringify(window.realismSettings)); } catch (_) {}
             const tgl = document.getElementById(`toggle_${key}`);
             if (tgl) {
                 tgl.style.background = window.realismSettings[key] ? '#4caf50' : 'rgba(255,255,255,0.05)';
@@ -5394,6 +5489,9 @@ function main() {
          * @returns {string} The HTML string for the toggle UI component.
          */
         function makeToggle(label, key) {
+            if (key === 'vortexEffects' || key === 'carrierOps') {
+                return `<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;opacity:.5" title="Not yet available on GeoFS V4"><span style="font-size:.7rem">${label.toUpperCase()}</span><span style="font-size:.6rem">UNAVAILABLE</span></div>`;
+            }
             return `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0; transition: all 0.2s ease;">
                     <span style="font-size: 0.7rem; color: rgba(255,255,255,0.6); font-weight: 500; letter-spacing: 0.3px;">${label.toUpperCase()}</span>
@@ -5425,12 +5523,12 @@ function main() {
                 this.initKiasFix();
                 this.initCarrierOps();
                 this.initCloudDensity();
-                console.log("[GeoFS-V3.9_Realism-Pack] >> All sub-systems operational.");
+                console.log("[GeoFS-V4.0_Realism-Pack] >> All sub-systems operational.");
             },
 
             /**
              * Dashboard UI: HUD Tab Registration
-             * Injects the Realism control panel into the unified V3.9 HUD.
+             * Injects the Realism control panel into the unified V4.0 HUD.
              */
             initDashboard: () => {
                 const realismHTML = `
@@ -5504,7 +5602,7 @@ function main() {
                     if (!window.realismSettings.gBreath || geofs.isPaused()) return;
                     if (geofs.animation.values.loadFactor >= 3) {
                         breathAudio.play().catch(() => {});
-                        if (geofs.animation.values.loadFactor > 6 && window.V39_NOTIF) window.V39_NOTIF.warn("⚠️ HIGH G-LOAD - PILOT STRAIN DETECTED");
+                        if (geofs.animation.values.loadFactor > 6 && window.V40_NOTIF) window.V40_NOTIF.warn("⚠️ HIGH G-LOAD - PILOT STRAIN DETECTED");
                     }
                 }, 3500);
 
@@ -5523,14 +5621,14 @@ function main() {
                  */
                 const blackoutShader = `
                     uniform sampler2D colorTexture;
-                    varying vec2 v_textureCoordinates;
+                    in vec2 v_textureCoordinates;
                     uniform float strength;
                     vec4 vignette(float strength, vec2 coordinate, vec2 texCoord) {
                         vec2 uv = coordinate.xy / czm_viewport.zw;  
                         uv *=  1.0 - uv.yx;
                         float vig = (uv.x*uv.y) * 15.0; 
                         vig = pow(vig, strength);
-                        return mix(vec4(vig), texture2D(colorTexture, texCoord), vig); 
+                        return mix(vec4(vig), texture(colorTexture, texCoord), vig);
                     }
                     vec4 grayOut(float strength, vec2 coordinate, vec2 texCoord) {
                       vec4 initialCol = vignette(strength * 20.0, coordinate, texCoord);
@@ -5546,7 +5644,7 @@ function main() {
                       vec4 blurCol4    = grayOut(strength, coordinate + vec2(0.0, -radius), texCoord + vec2(0.0, -radius));
                       return mix(initialCol, (blurCol1 + blurCol2 + blurCol3 + blurCol4) / 4.0, strength * 2.0);
                     }
-                    void main() { gl_FragColor = blur(strength, gl_FragCoord.xy, v_textureCoordinates); }
+                    void main() { out_FragColor = blur(strength, gl_FragCoord.xy, v_textureCoordinates); }
                 `;
 
                 let boTimer = 0;
@@ -5630,24 +5728,33 @@ function main() {
                     if (PWAircraft.has(Number(geofs.aircraft.instance.id))) {
                         // Logic: Scale lift/drag based on wash direction
                         geofs.aircraft.instance.airfoils.forEach(e => { e.propwash = (e.forceDirection === 2) ? 0.005 : 0.01; });
-                        // Physics Hack: Shift CoM based on RPM-induced torque
-                        if (geofs.aircraft.instance.setup?.parts?.[0]) {
-                            geofs.aircraft.instance.setup.parts[0].centerOfMass = [geofs.animation.values.rpm/1000, 0, 0];
-                        }
                     }
                 }, 100);
             },
 
             initSafetySystems: () => {
                 setInterval(() => {
-                    if (!window.realismSettings.spinFix || !geofs.aircraft.instance) return;
+                    const ac = geofs.aircraft.instance;
+                    if (!window.realismSettings.spinFix || !ac || ac.groundContact || (geofs.animation.values.haglFeet || 0) <= 50) return;
                     const spinIds = [2948, 2581, 2808, 3460, 2988];
-                    if (spinIds.includes(Number(geofs.aircraft.instance.id))) {
+                    if (spinIds.includes(Number(ac.id))) {
                         const pitch = geofs.animation.values.atilt;
+                        if (!Number.isFinite(pitch)) return;
                         setTimeout(() => {
-                            if (Math.abs(geofs.animation.values.atilt - pitch) > 50) {
-                                geofs.flyToCamera();
-                                if (window.V39_NOTIF) window.V39_NOTIF.info("SPIN RECOVERY ACTIVE");
+                            const cur = geofs.animation.values.atilt;
+                            if (!geofs.aircraft.instance || geofs.aircraft.instance !== ac || ac.groundContact || !Number.isFinite(cur)) return;
+                            const delta = Math.abs((((cur - pitch) + 540) % 360) - 180);
+                            if (delta > 50) {
+                                const rb = ac.rigidBody;
+                                const av = rb?.getAngularVelocity?.();
+                                if (Array.isArray(av) && av.length >= 3 && av.every(Number.isFinite)) {
+                                    rb.setAngularVelocity([
+                                        Math.max(-2, Math.min(2, av[0] * 0.5)),
+                                        Math.max(-2, Math.min(2, av[1] * 0.5)),
+                                        Math.max(-2, Math.min(2, av[2] * 0.5))
+                                    ]);
+                                }
+                                if (window.V40_NOTIF) window.V40_NOTIF.info("SPIN RECOVERY ACTIVE");
                             }
                         }, 500);
                     }
@@ -5666,7 +5773,7 @@ function main() {
 
             initEngineSystems: () => {
                 setInterval(() => {
-                    if (!window.realismSettings.engineInertia || !geofs.aircraft.instance || geofs.aircraft.instance.definition.maxRPM !== 10000) return;
+                    if (!window.realismSettings.engineInertia || !geofs.aircraft.instance || geofs.aircraft.instance.definition?.maxRPM !== 10000) return;
                     const rpm = geofs.animation.values.rpm;
                     geofs.aircraft.instance.definition.engineInertia = (rpm < 6000) ? 0.2 : (rpm < 7000 ? 0.5 : 1);
                 }, 100);
@@ -5677,7 +5784,7 @@ function main() {
                     if (window.realismSettings.spoilerArming && e.which == 16) {
                         if (!geofs.aircraft.instance.groundContact && controls.airbrakes.position === 0) {
                             geofs.aircraft.instance.animationValue.spoilerArming = 1;
-                            if (window.V39_NOTIF) window.V39_NOTIF.success("SPOILERS ARMED");
+                            if (window.V40_NOTIF) window.V40_NOTIF.success("SPOILERS ARMED");
                         }
                     }
                 });
@@ -5770,7 +5877,7 @@ function main() {
         if (window.registerHUDTab && window.geofs?.aircraft?.instance) {
             clearInterval(bootChecker);
             if (window.SafeInit) {
-                window.SafeInit('GeoFS-V3.9_Realism-Pack', window.initRealismPackPro, true);
+                window.SafeInit('GeoFS-V4.0_Realism-Pack', window.initRealismPackPro, true);
             } else {
                 window.initRealismPackPro();
             }
@@ -5779,132 +5886,5 @@ function main() {
 })();
 
 })();
-
-// ============================================================
-// MODULE 12: GeoFS-V3.9_Satellite-Imagery
-// ============================================================
-// Wait for GeoFS to report its version before executing any module code.
-// Unknown, older, and newer versions never activate this V3.9 release.
-(function waitForGeoFSVersion() {
-    const version = window.geofs?.version;
-    if (version === undefined || version === null || version === '') {
-        setTimeout(waitForGeoFSVersion, 250);
-        return;
-    }
-    if (!/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(version).trim())) {
-        console.warn('[GeoFS-V3.9_Satellite-Imagery] Inactive: GeoFS ' + version + ' is not V3.9.');
-        return;
-    }
-
-
-(function() {
-    "use strict";
-
-    /**
-     * Runtime Version Guard: GeoFS-V3.9 Suite Compatibility
-     * Allows this module to execute only when GeoFS reports version 3.9.
-     */
-    function isUnsupportedGeoFS() {
-        const raw = window.geofs?.version;
-        return !/^(?:v)?3\.9(?:\.\d+)*$/i.test(String(raw ?? '').trim());
-    }
-
-    if (isUnsupportedGeoFS()) {
-        console.warn("[GeoFS-V3.9_Satellite-Imagery] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
-        return;
-    }
-
-    // ⏱ Delay everything by 10 seconds to ensure GeoFS core finishes boot
-    setTimeout(() => {
-        if (isUnsupportedGeoFS()) {
-            console.warn("[GeoFS-V3.9_Satellite-Imagery] Inactive: GeoFS v" + window.geofs?.version + " detected (suite only supports GeoFS v3.9).");
-            return;
-        }
-
-        const multiplayerServer = "default";
-
-        window.geofsNewHDState = true;
-
-        window.geofs.geoIpUpdate = function() {
-            delete window.geofs.api.analytics;
-            document.body.classList.add("geofs-hd");
-
-            let ad = document.querySelector('.geofs-adbanner.geofs-adsense-container');
-            if (ad) ad.remove();
-
-            if (multiplayerServer !== "default") {
-                window.geofs.multiplayerHost = multiplayerServer;
-            }
-
-            // Esri World Imagery, with provider and data attribution.
-            window.geofs.api.imageryProvider = new window.Cesium.UrlTemplateImageryProvider({
-                url: "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=" + "AAPTab6HYECgsaAgn85bI3HrNnQ..XIEytqTrum6w7AW74pX9Vtdxla0yzmnWq6_fb267H6WWCGRh9KSD8nbt1XvxsKAEoZlmuwdZWCFrlRM05tv6ElMeWg6-LGgslWIb8zFv6jCmkx0ps9D_Mp9fzMcoiqHHQ88pKLge8Sxvye7yqoeuhMRNLP4fXgWtm3GWg3UFPYl6PROGFMBamGZpgDgC1GI5WvcRGl_YBOJntfw_mAtzFk7cFGLrqc6Vp2qsn6MdBKB9bdQY3aYOHw..AT1_q2cnb2TW",
-                maximumLevel: 19,
-                credit: new window.Cesium.Credit("Powered by Esri | Esri, Maxar, Earthstar Geographics, and the GIS User Community", true)
-            });
-            let reportedTileError = false;
-            window.geofs.api.imageryProvider.errorEvent.addEventListener(() => {
-                if (reportedTileError) return;
-                reportedTileError = true;
-                if (window.V39_NOTIF) window.V39_NOTIF.warn('Satellite imagery could not load. Check the Esri key, quota and connection.');
-            });
-            window.geofs.api.setImageryProvider(window.geofs.api.imageryProvider, false);
-
-            window.geofs.api.viewer.terrainProvider =
-            window.geofs.api.flatRunwayTerrainProviderInstance =
-                new window.geofs.api.FlatRunwayTerrainProvider({
-                    baseProvider: new window.Cesium.CesiumTerrainProvider({
-                        url: "https://data.geo-fs.com/srtm/",
-                        requestWaterMask: false,
-                        requestVertexNormals: true
-                    }),
-                    bypass: false,
-                    maximumLevel: 12
-                });
-        };
-
-        const notifyLoaded = () => {
-            if (window.V39_NOTIF && typeof window.V39_NOTIF.success === "function") {
-                window.V39_NOTIF.success("GeoFS-V3.9_Satellite-Imagery V1.1.4 Loaded.");
-            } else if (window.ui?.notification?.show) {
-                window.ui.notification.show("GeoFS-V3.9_Satellite-Imagery V1.1.4 Loaded.");
-            } else {
-                console.log("[GeoFS-V3.9_Satellite-Imagery] >> V1.1.4 Loaded.");
-            }
-        };
-
-        window.executeOnEventDone("geofsStarted", function() {
-            if (isUnsupportedGeoFS()) return;
-            {
-                window.jQuery("body").trigger("terrainProviderWillUpdate");
-                window.geofs.geoIpUpdate();
-                window.geofs.api.hdOn = window.geofsNewHDState;
-                window.geofs.api.renderingQuality();
-                window.jQuery("body").trigger("terrainProviderUpdate");
-            }
-            notifyLoaded();
-        });
-
-        window.executeOnEventDone("afterDeferredload", function() {
-            window.geofs.mapXYZ = "https://data.geo-fs.com/osm/{z}/{x}/{y}.png";
-        });
-
-        let ad = document.querySelector('.geofs-adbanner.geofs-adsense-container');
-        if (ad) ad.remove();
-
-        // Recurring ad cleaner
-        setInterval(() => {
-            const adEl = document.querySelector('.geofs-adbanner.geofs-adsense-container, .geofs-ad-container, #geofs-adbanner');
-            if (adEl) adEl.remove();
-        }, 3000);
-
-    }, 10000); // ⏱ 10 seconds
-
 })();
 
-})();
-
-    console.info('[GeoFS-V3.9_Addon-Pack] >> All ecosystem modules loaded and running.');
-})();
-
-})();

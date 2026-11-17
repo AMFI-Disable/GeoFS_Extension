@@ -5,7 +5,7 @@
 
 This collection preserves the GeoFS V4.0 userscripts for source inspection and backup. Script versions are listed independently of the simulator generation.
 
-[Changelog](changelog.md) · [MIT License](../license)
+[All Userscripts](../readme.md) · [Changelog](changelog.md) · [MIT License](../../license)
 
 ## Archived Scripts
 

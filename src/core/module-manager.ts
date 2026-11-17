@@ -8,6 +8,8 @@ export class ModuleManager {
 
   private settingsUpdate = Promise.resolve();
 
+  private reportedUnsupported = new Set<string>();
+
   constructor(
     private readonly simMajor: SimMajorVersion,
     private readonly baseContext: Omit<ModuleContext, 'emitEvent' | 'onEvent'>
@@ -28,7 +30,7 @@ export class ModuleManager {
   public applySettings(settings: ExtensionSettings): Promise<void> {
     const next = this.settingsUpdate.then(() => this.reconcileSettings(settings));
     this.settingsUpdate = next.catch((error) => {
-      console.error('[GeoFS Extension] Could not apply module settings:', error);
+      this.baseContext.emitDiag?.('MODULE_SETTINGS_ERROR', { level: 'error', error: String(error) });
     });
     return next;
   }
@@ -36,7 +38,16 @@ export class ModuleManager {
   private async reconcileSettings(settings: ExtensionSettings): Promise<void> {
     for (const [id, mod] of this.registry) {
       const supported = mod.supportedMajors.includes(this.simMajor);
-      const wantEnabled = supported && (settings.modules[id] ?? mod.defaultEnabled);
+      const userWant = settings.modules[id] ?? mod.defaultEnabled;
+      if (!supported && userWant && !this.reportedUnsupported.has(id)) {
+        this.reportedUnsupported.add(id);
+        this.baseContext.emitDiag?.('MODULE_UNSUPPORTED_ERROR', {
+          level: 'error',
+          moduleId: id,
+          simMajor: this.simMajor
+        });
+      }
+      const wantEnabled = supported && userWant;
 
       if (wantEnabled && !this.active.has(id)) {
         await this.enable(id);
@@ -46,7 +57,11 @@ export class ModuleManager {
         try {
           mod.onSettingsChange?.(settings);
         } catch (err) {
-          console.error(`[GeoFS Extension] onSettingsChange error in ${id}:`, err);
+          this.baseContext.emitDiag?.('MODULE_SETTINGS_ERROR', {
+            level: 'error',
+            moduleId: id,
+            error: String(err)
+          });
         }
       }
     }
@@ -67,7 +82,11 @@ export class ModuleManager {
       await mod.init(ctx);
       this.active.add(id);
     } catch (err) {
-      console.error(`[GeoFS Extension] Failed to initialize module "${id}":`, err);
+      this.baseContext.emitDiag?.('MODULE_INIT_ERROR', {
+        level: 'error',
+        moduleId: id,
+        error: String(err)
+      });
     }
   }
 
@@ -78,7 +97,11 @@ export class ModuleManager {
     try {
       await mod.destroy();
     } catch (err) {
-      console.error(`[GeoFS Extension] Failed to destroy module "${id}":`, err);
+      this.baseContext.emitDiag?.('MODULE_DESTROY_ERROR', {
+        level: 'error',
+        moduleId: id,
+        error: String(err)
+      });
     } finally {
       this.active.delete(id);
     }
@@ -91,7 +114,11 @@ export class ModuleManager {
       try {
         mod.update(telemetry);
       } catch (err) {
-        console.error(`[GeoFS Extension] Telemetry tick error in "${id}":`, err);
+        this.baseContext.emitDiag?.('MODULE_UPDATE_ERROR', {
+          level: 'error',
+          moduleId: id,
+          error: String(err)
+        });
       }
     }
   }

@@ -234,20 +234,24 @@ function main() {
                 let reticleColor = Cesium.Color.LIME; // Default: Bright HUD Lime Green
                 const aoa = geofs.animation.values.aoa;
                 const vs = geofs.animation.values.verticalSpeed; // in ft/min, downward is negative
-                const isWarningState = (aoa !== undefined && aoa > 14) || ac.stalling;
+                const kias = Number(geofs.animation.values.kias);
+                const hagl = Number(geofs.animation.values.haglFeet);
+                const aboveFlare = !Number.isFinite(hagl) || hagl > 20;
+                const airborneValid = !ac.groundContact && aboveFlare && Number.isFinite(kias) && kias >= 35;
+                const safeAoa = Number.isFinite(aoa) ? aoa : 0;
+                const highAoaWarning = safeAoa > 18 && safeAoa < 75 && kias < 180;
+                const isWarningState = airborneValid && (Boolean(ac.stalling) || highAoaWarning);
 
                 if (isWarningState) {
                     reticleColor = Cesium.Color.RED;
-                } else if (vs !== undefined) {
-                    const maxVS = 3000;
-                    const clampedVS = Math.max(-maxVS, Math.min(maxVS, vs));
+                } else if (Number.isFinite(vs)) {
                     let hue = 120; // 120 is Green
-                    if (clampedVS > 0) {
+                    if (vs > 0) {
                         // Gradual transition from green (120) to sky-blue/cyan (200) during climb
-                        hue = 120 + (clampedVS / maxVS) * 80;
+                        hue = 120 + Math.min(1, vs / 3000) * 80;
                     } else {
-                        // Gradual transition from green (120) to warning red (0) during descent
-                        hue = 120 + (clampedVS / maxVS) * 120; // clampedVS is negative, this subtracts from 120
+                        // Gradual transition from green (120) through yellow to amber (30) during descent
+                        hue = 120 - Math.min(1, Math.abs(vs) / 5000) * 90;
                     }
                     reticleColor = Cesium.Color.fromHsl(hue / 360, 1.0, 0.5);
                 }
