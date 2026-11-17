@@ -461,6 +461,7 @@ export class AutothrottleModule implements IModule {
     if (!bar) return;
     const button = bar.querySelector('#autothrottle-button')!;
     button.classList.toggle('green-pad', this.engaged);
+    button.classList.toggle('amber-pad', !this.engaged && this.landingArmed);
     button.setAttribute('aria-pressed', String(this.engaged));
     bar.querySelector('.ext-autothrottle-controls')?.toggleAttribute('hidden', !this.engaged);
     bar.querySelector('.ext-autothrottle-reverse')?.toggleAttribute('hidden', !this.reverse);

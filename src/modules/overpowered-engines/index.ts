@@ -249,6 +249,19 @@ const CARD_STYLES = `
     white-space: nowrap;
     flex: 0 0 auto;
     font-weight: 400;
+    transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
+  }
+  #opEngineBarBtn.geofs-ext-op-bar-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #ffffff;
+  }
+  #opEngineBarBtn.geofs-ext-op-bar-btn:hover .control-pad-label,
+  :where(#opEngineBarBtn.geofs-ext-op-bar-btn.is-open .control-pad-label) {
+    color: #ffffff;
+  }
+  #opEngineBarBtn.geofs-ext-op-bar-btn.is-open {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: #ffffff;
   }
   #opEngineBarBtn.geofs-ext-op-bar-btn .control-pad-label {
     pointer-events: none;
@@ -259,6 +272,7 @@ const CARD_STYLES = `
     letter-spacing: var(--geofs-ext-ap-letter-spacing, normal);
     text-align: center;
     white-space: nowrap;
+    transition: color 150ms ease;
   }
   :where(#opEngineBarBtn.geofs-ext-op-bar-btn .control-pad-label) {
     color: rgba(255, 255, 255, 0.78);
@@ -266,10 +280,16 @@ const CARD_STYLES = `
   :where(#opEngineBarBtn.geofs-ext-op-bar-btn.green-pad .control-pad-label) {
     color: #ffffff;
   }
+  #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad {
+    background-color: rgba(46, 125, 50, 0.38) !important;
+  }
+  #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad:hover {
+    background-color: rgba(56, 142, 60, 0.52) !important;
+  }
   #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad,
   #opEngineCard .op-native-btn.green-pad {
     border-color: #4caf50 !important;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.45) !important;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5) !important;
   }
   #opEngineCard {
     box-sizing: border-box;
@@ -779,8 +799,12 @@ export class OverpoweredEnginesModule implements IModule {
     if (!settings) return;
 
     if (this.barBtn) {
-      this.barBtn.classList.toggle('green-pad', this.thrustEnabled || this.opSyncActive || Boolean(settings.opStability));
+      const isActive = this.thrustEnabled || this.opSyncActive || Boolean(settings.opStability);
+      const isOpen = Boolean(this.card && this.card.style.display !== 'none' && this.card.style.display !== '');
+      this.barBtn.classList.toggle('green-pad', isActive);
+      this.barBtn.classList.toggle('is-open', !isActive && isOpen);
       this.barBtn.setAttribute('aria-pressed', String(this.thrustEnabled || this.opSyncActive));
+      this.barBtn.setAttribute('aria-expanded', String(isOpen));
     }
 
     const card = this.card;
