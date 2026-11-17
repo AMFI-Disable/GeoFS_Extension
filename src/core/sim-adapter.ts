@@ -122,9 +122,10 @@ const NAMED_AIRCRAFT_SPECS: Array<{ match: string; spec: StaticAircraftSpec }> =
 
 export function parseSimMajor(rawVersion: unknown): SimMajorVersion | null {
   if (rawVersion === undefined || rawVersion === null) return null;
-  const match = String(rawVersion).trim().match(/^(?:v)?([34])(?:\.\d+)*$/i);
+  const match = String(rawVersion).trim().match(/^(?:geofs\s*)?(?:v)?(\d+)(?:[.\-_\sa-z].*)?$/i);
   if (!match) return null;
-  return Number(match[1]) as SimMajorVersion;
+  const major = Number(match[1]);
+  return major === 3 || major === 4 ? major : null;
 }
 
 export function classifyAircraft(name: string, mass: number, engineCount: number, maxThrust: number): AircraftCategory {

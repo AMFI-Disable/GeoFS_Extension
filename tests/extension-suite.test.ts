@@ -20,14 +20,17 @@ describe('SimAdapter & Version Detection', () => {
     (globalThis as unknown as { window: Record<string, unknown> }).window = {};
   });
 
-  it('recognizes GeoFS V3 and V4 while ignoring minor versions', () => {
+  it('recognizes GeoFS V3 and V4 while ignoring minor and suffix tokens', () => {
     expect(parseSimMajor('3.9')).toBe(3);
     expect(parseSimMajor('v3.9.4')).toBe(3);
+    expect(parseSimMajor('3.9-beta')).toBe(3);
+    expect(parseSimMajor('GeoFS 3.9')).toBe(3);
     expect(parseSimMajor('4.0')).toBe(4);
     expect(parseSimMajor('4.12.3')).toBe(4);
     expect(parseSimMajor('v4')).toBe(4);
     expect(parseSimMajor('2.9')).toBeNull();
     expect(parseSimMajor('5.0')).toBeNull();
+    expect(parseSimMajor('30')).toBeNull();
   });
 
   it('classifies aircraft into correct categories for checklists and PID presets', () => {

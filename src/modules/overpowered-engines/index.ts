@@ -198,7 +198,7 @@ const THRUST_PRESETS = [1, 2, 5, 10, 50, 100, 500, 1000, 5000, 10000, 100000, 10
 const CEILING_PRESETS = [3000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000];
 
 const CARD_STYLES = `
-  .geofs-ext-op-bar-btn {
+  #opEngineBarBtn.geofs-ext-op-bar-btn {
     width: 65px;
     height: 25px;
     line-height: 23px;
@@ -216,8 +216,12 @@ const CARD_STYLES = `
     white-space: nowrap;
     padding: 0 6px;
     box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
   }
-  .geofs-ext-op-bar-btn.green-pad,
+  #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad,
   #opEngineCard .op-native-btn.green-pad {
     border-color: #4caf50 !important;
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.45) !important;
@@ -397,8 +401,8 @@ export class OverpoweredEnginesModule implements IModule {
       const barBtn = document.createElement('button');
       barBtn.type = 'button';
       barBtn.id = 'opEngineBarBtn';
-      barBtn.className = 'geofs-ext-op-bar-btn';
-      barBtn.textContent = 'OP ENG';
+      barBtn.className = 'control-pad geofs-ext-op-bar-btn';
+      barBtn.innerHTML = '<span class="control-pad-label transp-pad" style="pointer-events:none;line-height:23px;">OP ENG</span>';
       barBtn.title = 'Toggle Overpowered Engines & SAS Card';
       barBtn.addEventListener('click', (e) => {
         e.stopPropagation();

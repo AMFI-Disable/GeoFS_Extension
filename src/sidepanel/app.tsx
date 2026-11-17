@@ -46,7 +46,11 @@ export function App() {
       if (msg?.type === 'GEOFS_EXT_LIVE_TELEMETRY_EVENT' && msg.telemetry) {
         setLive(msg.telemetry);
       } else if (msg?.type === 'GEOFS_EXT_DIAG_EVENT' && msg.entry) {
-        setDiags((prev) => [...prev.slice(-29), msg.entry!]);
+        const incoming = msg.entry;
+        setDiags((prev) => {
+          if (prev.some((d) => d.time === incoming.time && d.code === incoming.code)) return prev;
+          return [...prev.slice(-29), incoming];
+        });
       }
     };
     chrome.runtime?.onMessage?.addListener(onRuntimeMessage);

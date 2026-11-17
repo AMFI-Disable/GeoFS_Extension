@@ -59,7 +59,10 @@ function mergePatch(current: ExtensionSettings, patch: Partial<ExtensionSettings
 
 function refreshSettings(): void {
   chrome.storage.sync.get(null, (items) => {
-    if (chrome.runtime.lastError) return;
+    if (chrome.runtime.lastError || !items) {
+      broadcastSettings(mergeSettings(undefined, undefined, undefined));
+      return;
+    }
     const extRaw = items[EXTENSION_CONFIG_KEY] as Partial<ExtensionConfig> | undefined;
     const scrRaw = items[SCRIPT_CONFIG_KEY] as Partial<ScriptConfig> | undefined;
     const legacyRaw = items[LEGACY_SETTINGS_KEY] as Partial<ExtensionSettings> | undefined;

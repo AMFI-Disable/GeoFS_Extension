@@ -68,8 +68,17 @@ async function run() {
     const extId = await getExtensionId(context);
     console.log('[E2E] Detected Extension ID:', extId);
 
-    // Intercept GeoFS V3.9 & V4.0 URLs with local simulator harness
-    await context.route(/^https:\/\/(www|beta)\.geo-fs\.com\/geofs\.php.*/, async (route) => {
+    // Intercept GeoFS V3.9 & V4.0 URLs with local simulator harness (and blank non-sim page for homepage test)
+    await context.route(/^https:\/\/([a-z0-9-]+\.)?geo-fs\.com\/.*/, async (route) => {
+      const url = route.request().url();
+      if (url.includes('/pages/')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'text/html; charset=utf-8',
+          body: '<!doctype html><html><body>GeoFS Help Page</body></html>'
+        });
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'text/html; charset=utf-8',
@@ -383,8 +392,11 @@ async function run() {
     await optionsPage.waitForSelector('td:has-text("Silky")', { timeout: 8000 });
     await simV3.close();
 
-    // 8. Verify Chrome Side Panel + V4.0 UNAVAILABLE Indicators
-    console.log('[E2E] Testing GeoFS V4.0 Tab + Side Panel Diagnostics & V4 UNAVAILABLE Badges...');
+    // 8. Verify Chrome Side Panel (as regular tab alongside inactive GeoFS tab), Competing CSS Immunity & V4.0 Indicators
+    console.log('[E2E] Testing GeoFS V4.0 Competing CSS Immunity, Expanded A/THR+OP ENG & Regular-Tab Side Panel...');
+    const helpTab = await context.newPage();
+    await helpTab.goto('https://www.geo-fs.com/pages/help', { waitUntil: 'domcontentloaded' });
+
     const simV4 = await context.newPage();
     await simV4.setViewportSize({ width: 1280, height: 800 });
     attachErrorTrap(simV4, 'geofs-v4');
@@ -394,21 +406,56 @@ async function run() {
       { timeout: 10000 }
     );
 
+    // Inject competing legacy #flightDataDisplay CSS (230px grid) and assert .geofs-ext-hud stays 250px flex column with compact header
+    await simV4.evaluate(() => {
+      const conflict = document.createElement('style');
+      conflict.textContent = '#flightDataDisplay { width: 230px; display: grid; grid-template-columns: 1fr 1fr; }';
+      document.head.appendChild(conflict);
+    });
+    await simV4.click('#autothrottle-button');
+    const v4LayoutAudit = await simV4.evaluate(() => {
+      const hud = document.getElementById('flightDataDisplay');
+      const hdr = hud?.querySelector('.geofs-ext-hud-header');
+      const land = document.querySelector('.ext-autothrottle-landing-label');
+      const opBtn = document.getElementById('opEngineBarBtn');
+      return {
+        hudWidth: hud?.getBoundingClientRect().width ?? 0,
+        headerHeight: hdr?.getBoundingClientRect().height ?? 0,
+        headerChildren: Array.from(hdr?.children || []).map((c) => c.id || c.className),
+        landingVisible: land ? getComputedStyle(land).display !== 'none' : false,
+        landingFont: land ? getComputedStyle(land).fontFamily : '',
+        opBtnVisible: opBtn ? getComputedStyle(opBtn).display !== 'none' : false,
+        opBtnHeight: opBtn?.getBoundingClientRect().height ?? 0
+      };
+    });
+    assert(v4LayoutAudit.hudWidth >= 248 && v4LayoutAudit.hudWidth <= 255, `Competing CSS broke HUD width: ${v4LayoutAudit.hudWidth}`);
+    assert(v4LayoutAudit.headerHeight > 18 && v4LayoutAudit.headerHeight <= 40, `Competing CSS stretched HUD header: ${v4LayoutAudit.headerHeight}`);
+    assert.deepEqual(v4LayoutAudit.headerChildren, ['geofs-ext-hud-grip', 'hud-unified-tabs', 'geofs-ext-hud-min']);
+    assert.equal(v4LayoutAudit.landingVisible, true);
+    assert(v4LayoutAudit.landingFont.includes('LCD-Bold'));
+    assert.equal(v4LayoutAudit.opBtnVisible, true);
+    assert(v4LayoutAudit.opBtnHeight >= 24 && v4LayoutAudit.opBtnHeight <= 27);
+
+    // Open sidepanel in a new regular tab -> must still connect to V4 tab (NOT Offline) even though helpTab came first!
     const sidePage = await context.newPage();
     await sidePage.setViewportSize({ width: 420, height: 800 });
     attachErrorTrap(sidePage, 'sidepanel');
     await sidePage.goto(`chrome-extension://${extId}/sidepanel/index.html`, { waitUntil: 'domcontentloaded' });
     await sidePage.waitForSelector('[data-surface="sidepanel"]');
+    await sidePage.waitForSelector('.badge--ok:has-text("V4")', { timeout: 10000 });
+    await sidePage.waitForSelector('text=UI_MOUNT', { timeout: 10000 });
     await sidePage.waitForSelector('text=UNAVAILABLE ON V4', { timeout: 10000 });
     await assertNoHorizontalOverflow(sidePage, 'sidepanel');
     await simV4.close();
+    await helpTab.close();
+    await sidePage.close();
 
-    // 9. Missing Anchors Fallback Case
-    console.log('[E2E] Testing Missing GeoFS DOM Anchors Fallback...');
+    // 9. Missing Anchors Fallback Case + Alternate Subdomain / Suffixed V3.9 Version
+    console.log('[E2E] Testing Missing GeoFS DOM Anchors Fallback & Legacy Subdomain Suffixed V3.9...');
     const fallbackPage = await context.newPage();
     await fallbackPage.setViewportSize({ width: 1280, height: 800 });
     attachErrorTrap(fallbackPage, 'fallback');
-    await fallbackPage.goto('https://www.geo-fs.com/geofs.php?version=3.9&anchors=missing', { waitUntil: 'networkidle' });
+    await fallbackPage.goto('https://legacy.geo-fs.com/geofs.php?version=3.9-beta&anchors=missing', { waitUntil: 'networkidle' });
     await fallbackPage.waitForSelector('#geofs-ext-zone-autopilot .ext-autothrottle-bar', { timeout: 10000 });
 
     assert.equal(errors.length, 0, `Unexpected browser errors:\n${errors.join('\n')}`);

@@ -442,8 +442,18 @@ export class AnchorManager {
 
   private ensureHud(): void {
     if (typeof document === 'undefined' || this.hudRoot || !document.body) return;
+    const stale = document.getElementById('flightDataDisplay');
+    if (stale && !stale.classList.contains('geofs-ext-hud')) {
+      stale.remove();
+    }
+    const staleEdge = document.getElementById('hudMinimizeBtn');
+    if (staleEdge && !staleEdge.classList.contains('unified-hud-edge-tab')) {
+      staleEdge.remove();
+    }
+
     const root = document.createElement('div');
     root.id = 'flightDataDisplay';
+    root.className = 'geofs-ext-hud';
 
     const header = document.createElement('div');
     header.className = 'geofs-ext-hud-header';
@@ -565,12 +575,15 @@ export class AnchorManager {
         --geofs-ext-border: #64748b;
         --geofs-ext-accent: #16a34a;
       }
-      #flightDataDisplay, .geofs-ext-native-card {
+      #flightDataDisplay.geofs-ext-hud, .geofs-ext-native-card {
         box-sizing: border-box;
         position: fixed;
         top: 70px;
         right: 20px;
         width: 250px;
+        min-width: 250px;
+        max-width: 250px;
+        height: auto;
         background: var(--geofs-ext-bg);
         color: var(--geofs-ext-fg);
         border: 1px solid var(--geofs-ext-border);
@@ -581,18 +594,29 @@ export class AnchorManager {
         z-index: 2147483000;
         display: flex;
         flex-direction: column;
+        gap: 0;
         transform: scale(var(--geofs-ext-scale));
         transform-origin: top right;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
       }
-      #flightDataDisplay * {
+      #flightDataDisplay.geofs-ext-hud * {
         box-sizing: border-box;
       }
-      .geofs-ext-hud-header {
+      #flightDataDisplay.geofs-ext-hud .mdl-tooltip:not(.is-active) {
+        position: fixed;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+      }
+      #flightDataDisplay.geofs-ext-hud > .geofs-ext-hud-header {
         display: flex;
         align-items: center;
+        flex: 0 0 auto;
+        width: 100%;
+        height: auto;
+        min-height: 22px;
         gap: 3px;
         margin-bottom: 8px;
         cursor: move;
@@ -612,14 +636,15 @@ export class AnchorManager {
       .geofs-ext-hud-grip:hover {
         color: var(--geofs-ext-fg);
       }
-      #hud-unified-tabs.unified-tabs {
+      #flightDataDisplay.geofs-ext-hud #hud-unified-tabs.unified-tabs {
         display: flex;
         align-items: stretch;
         gap: 3px;
         flex: 1;
         min-width: 0;
+        margin: 0;
       }
-      .unified-tab {
+      #flightDataDisplay.geofs-ext-hud .unified-tab {
         flex: 1 1 auto;
         min-width: 0;
         white-space: nowrap;
@@ -638,12 +663,12 @@ export class AnchorManager {
         text-align: center;
         line-height: 1.2;
       }
-      .unified-tab:hover {
+      #flightDataDisplay.geofs-ext-hud .unified-tab:hover {
         border-color: var(--geofs-ext-fg);
         color: var(--geofs-ext-fg);
       }
-      .unified-tab.active,
-      .unified-tab.is-active {
+      #flightDataDisplay.geofs-ext-hud .unified-tab.active,
+      #flightDataDisplay.geofs-ext-hud .unified-tab.is-active {
         background: var(--geofs-ext-accent);
         border-color: var(--geofs-ext-accent);
         border-radius: 15px;
@@ -665,7 +690,8 @@ export class AnchorManager {
         cursor: pointer;
         text-align: center;
       }
-      .geofs-ext-hud-body {
+      #flightDataDisplay.geofs-ext-hud > .geofs-ext-hud-body {
+        flex: 1 1 auto;
         width: 100%;
         max-height: min(440px, calc(100vh - 140px));
         overflow-y: auto;
@@ -673,8 +699,10 @@ export class AnchorManager {
         scrollbar-width: thin;
         scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
       }
-      #flightDataDisplay.is-minimized {
+      #flightDataDisplay.geofs-ext-hud.is-minimized {
         width: 40px;
+        min-width: 40px;
+        max-width: 40px;
         height: 40px;
         padding: 0;
         border-radius: 50%;
@@ -683,16 +711,16 @@ export class AnchorManager {
         justify-content: center;
         cursor: move;
       }
-      #flightDataDisplay.is-minimized .geofs-ext-hud-header {
+      #flightDataDisplay.geofs-ext-hud.is-minimized > .geofs-ext-hud-header {
         margin-bottom: 0;
         width: 100%;
         height: 100%;
         justify-content: center;
       }
-      #flightDataDisplay.is-minimized .geofs-ext-hud-grip {
+      #flightDataDisplay.geofs-ext-hud.is-minimized .geofs-ext-hud-grip {
         display: none;
       }
-      #flightDataDisplay.is-minimized .geofs-ext-hud-min {
+      #flightDataDisplay.geofs-ext-hud.is-minimized .geofs-ext-hud-min {
         border: none;
         background: transparent;
         padding: 0;

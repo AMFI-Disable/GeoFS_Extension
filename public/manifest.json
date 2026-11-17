@@ -9,7 +9,7 @@
     "128": "icons/icon128.png"
   },
   "permissions": ["storage", "tabs", "sidePanel"],
-  "host_permissions": ["*://*.geo-fs.com/*"],
+  "host_permissions": ["*://*.geo-fs.com/*", "*://geo-fs.com/*"],
   "action": {
     "default_popup": "popup/index.html",
     "default_title": "GeoFS Extension",
@@ -31,13 +31,13 @@
   },
   "web_accessible_resources": [{
     "resources": ["audio/*", "assets/*"],
-    "matches": ["https://www.geo-fs.com/*", "https://beta.geo-fs.com/*"]
+    "matches": ["*://*.geo-fs.com/*", "*://geo-fs.com/*"]
   }],
   "content_scripts": [
     {
       "matches": [
-        "https://www.geo-fs.com/geofs.php*",
-        "https://beta.geo-fs.com/geofs.php*"
+        "*://*.geo-fs.com/*",
+        "*://geo-fs.com/*"
       ],
       "js": ["content/bridge.js"],
       "run_at": "document_start",
@@ -45,8 +45,8 @@
     },
     {
       "matches": [
-        "https://www.geo-fs.com/geofs.php*",
-        "https://beta.geo-fs.com/geofs.php*"
+        "*://*.geo-fs.com/*",
+        "*://geo-fs.com/*"
       ],
       "js": ["content/main.js"],
       "run_at": "document_idle",
