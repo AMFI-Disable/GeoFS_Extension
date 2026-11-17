@@ -49,6 +49,20 @@ Complete the following five flight legs in **GeoFS V3.9** (`www.geo-fs.com`) and
 3. Inspect `.geofs-autopilot-bar`: confirm the `A/THR` speed pad, `'LCD-Bold'` `LANDING` label, and native-styled `OP ENG` toggle fit without wrapping or overlap.
 4. Check Side Panel diagnostics for `UI_MOUNT` and confirm `REALISM_STATE` marks `Vortex Effects` and `Carrier Ops` as `UNAVAILABLE ON V4` when testing GeoFS V4.0.
 
+#### Leg 1 Handoff: Initial Live Results
+
+Leg 1 did not pass on the first run. The v0.2.0 unpacked build was installed, but the Chrome session also showed controls and styling consistent with archived GeoFS userscripts. Treat these observations as leads until an extension-only run reproduces them.
+
+| Check | Live Observation |
+| :--- | :--- |
+| V4 HUD layout | All four titleless tabs fit on one row. With the saved position temporarily bypassed, the HUD sat 70 px from the top and 20 px from the right but measured 230 px wide instead of 250 px. The header measured 432 px tall and had tooltip elements among its children. |
+| V4 HUD interaction | The HUD collapsed to a 40 × 40 px circle. Dragging it to the left edge and minimizing exposed the 24 × 40 px handle, which restored the HUD. The original saved position was restored after the check. |
+| V4 autopilot controls | `A/THR` was in the native bar, and the hidden `LANDING` label had `LCD-Bold` as its configured font. The expanded layout and the extension’s `OP ENG` button were not verified. The visible `OP ENGINES` label matched the archived script, and the extension module is off by default. |
+| V4 diagnostics | The page recorded `UI_MOUNT` and a V4 `REALISM_STATE` event marking both features unavailable. The diagnostics view opened as a regular tab showed Offline and no events. The docked Chrome Side Panel was not verified. |
+| V3.9 | The page reported V3.9 and displayed the older HUD. No extension mount event was observed, so the unpacked controls could not be verified. |
+
+For the next run, pause the legacy GeoFS scripts, reload both simulator tabs, and verify each aircraft is stationary on the runway with the extension’s native Side Panel docked. Enable the extension’s Overpowered Engines module for the bar layout check without activating thrust. If the HUD discrepancy persists, inspect the winning rules on `#flightDataDisplay` and whether inactive MDL tooltips take up space in its header. If the panel remains offline while the page records mount events, verify that `src/content/bridge.ts` receives those events and responds to the panel’s requests for the active tab. Keep Leg 1 open until both simulator versions pass.
+
 ### Leg 2: Pre-Takeoff Checklist And Fuel Weight Verification
 
 1. Open the `CHECKS` tab and step through `PRE-T/O` (`Pre-Takeoff`). Click interactive hardware rows (`⚡` Parking Brake, Flaps, Gear, Lights) to confirm real simulator actuation, and click `GUIDE` to inspect situational reference guides.
