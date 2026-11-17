@@ -379,9 +379,13 @@ describe('Archived Engine and Flight Path Behavior', () => {
     expect(resolveFpvColorState({ vs: 3000, aoa: 8, kias: 220, groundContact: false }, { stalling: false }))
       .toEqual({ isWarning: false, hue: 200 });
 
-    expect(resolveFpvColorState({ vs: -800, aoa: 18, kias: 110, groundContact: false }, { stalling: false }))
+    expect(resolveFpvColorState({ vs: -800, aoa: 19, kias: 110, groundContact: false, aglFeet: 500 }, { stalling: false }))
       .toEqual({ isWarning: true, hue: 0 });
-    expect(resolveFpvColorState({ vs: -1200, aoa: 10, kias: 95, groundContact: false }, { stalling: true }))
+    expect(resolveFpvColorState({ vs: -200, aoa: 19, kias: 135, groundContact: false, aglFeet: 12 }, { stalling: true }))
+      .toEqual({ isWarning: false, hue: 116 });
+    expect(resolveFpvColorState({ vs: 1200, aoa: 19, kias: 260, groundContact: false, aglFeet: 5000 }, { stalling: false }))
+      .toEqual({ isWarning: false, hue: 152 });
+    expect(resolveFpvColorState({ vs: -1200, aoa: 10, kias: 95, groundContact: false, aglFeet: 500 }, { stalling: true }))
       .toEqual({ isWarning: true, hue: 0 });
     expect(resolveFpvColorState({ vs: Number.NaN, aoa: Number.NaN, kias: 200, groundContact: false }, null))
       .toEqual({ isWarning: false, hue: 120 });

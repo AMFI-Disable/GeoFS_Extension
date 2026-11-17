@@ -3238,9 +3238,12 @@ function main() {
                 const aoa = geofs.animation.values.aoa;
                 const vs = geofs.animation.values.verticalSpeed; // in ft/min, downward is negative
                 const kias = Number(geofs.animation.values.kias);
-                const airborneValid = !ac.groundContact && Number.isFinite(kias) && kias >= 35;
+                const hagl = Number(geofs.animation.values.haglFeet);
+                const aboveFlare = !Number.isFinite(hagl) || hagl > 20;
+                const airborneValid = !ac.groundContact && aboveFlare && Number.isFinite(kias) && kias >= 35;
                 const safeAoa = Number.isFinite(aoa) ? aoa : 0;
-                const isWarningState = airborneValid && safeAoa < 75 && (ac.stalling || safeAoa > 16);
+                const highAoaWarning = safeAoa > 18 && safeAoa < 75 && kias < 180;
+                const isWarningState = airborneValid && (Boolean(ac.stalling) || highAoaWarning);
 
                 if (isWarningState) {
                     reticleColor = Cesium.Color.RED;

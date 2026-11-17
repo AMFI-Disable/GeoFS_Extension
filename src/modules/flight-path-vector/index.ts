@@ -142,15 +142,17 @@ export interface FpvColorState {
 }
 
 export function resolveFpvColorState(
-  telemetry: Pick<FlightTelemetry, 'vs' | 'aoa' | 'kias' | 'groundContact'>,
+  telemetry: Pick<FlightTelemetry, 'vs' | 'aoa' | 'kias' | 'groundContact'> & { aglFeet?: number },
   aircraft?: Pick<GeoFSAircraftInstance, 'stalling'> | null
 ): FpvColorState {
   const safeVs = Number.isFinite(telemetry.vs) ? telemetry.vs : 0;
   const safeAoa = Number.isFinite(telemetry.aoa) ? telemetry.aoa : 0;
   const safeKias = Number.isFinite(telemetry.kias) ? telemetry.kias : 0;
-  const airborneValid = !telemetry.groundContact && safeKias >= 35;
+  const aboveFlare = telemetry.aglFeet === undefined || !Number.isFinite(telemetry.aglFeet) || telemetry.aglFeet > 20;
+  const airborneValid = !telemetry.groundContact && aboveFlare && safeKias >= 35;
+  const highAoaWarning = safeAoa > 18 && safeAoa < 75 && safeKias < 180;
   const isWarning = Boolean(
-    airborneValid && safeAoa < 75 && (aircraft?.stalling || safeAoa > 16)
+    airborneValid && (Boolean(aircraft?.stalling) || highAoaWarning)
   );
   if (isWarning) {
     return { isWarning: true, hue: 0 };
