@@ -31,6 +31,7 @@ export class AnchorManager {
   private currentTheme: 'dark' | 'light' = 'dark';
   private currentPreset: CalibratorPreset = '1080p';
   private mountedControls = new Map<string, HTMLElement>();
+  private syncedAutopilotPads = new Map<HTMLElement, { wrapper?: HTMLElement; sig: string; lastCheckMs: number }>();
   private dragCleanups = new Set<() => void>();
   private trackedElements = new Set<HTMLElement>();
   private resizeObserver: ResizeObserver | null = null;
@@ -81,8 +82,63 @@ export class AnchorManager {
   public unmountControl(id: string): void {
     const existing = this.mountedControls.get(id);
     if (existing) {
+      this.syncedAutopilotPads.delete(existing);
+      for (const [pad, meta] of this.syncedAutopilotPads) {
+        if (meta.wrapper === existing || existing.contains(pad)) {
+          this.syncedAutopilotPads.delete(pad);
+        }
+      }
       existing.remove();
       this.mountedControls.delete(id);
+    }
+  }
+
+  public syncAutopilotPad(padEl: HTMLElement, wrapperEl?: HTMLElement, force = false): void {
+    if (typeof document === 'undefined' || typeof window === 'undefined' || !padEl.isConnected) return;
+    const now = Date.now();
+    const prev = this.syncedAutopilotPads.get(padEl);
+    if (!force && prev && now - prev.lastCheckMs < 1000) return;
+
+    const host = padEl.closest('.geofs-autopilot-bar') ?? document.querySelector('.geofs-autopilot-bar');
+    const nativePad =
+      host?.querySelector<HTMLElement>('.geofs-autopilot-pad:not(#autothrottle-button):not(#opEngineBarBtn)') ?? null;
+    if (!nativePad) {
+      this.syncedAutopilotPads.set(padEl, { wrapper: wrapperEl, sig: '', lastCheckMs: now });
+      return;
+    }
+
+    const rect = nativePad.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      this.syncedAutopilotPads.set(padEl, { wrapper: wrapperEl, sig: prev?.sig ?? '', lastCheckMs: now });
+      return;
+    }
+
+    const padStyle = getComputedStyle(nativePad);
+    const nativeLabel = nativePad.querySelector<HTMLElement>('.control-pad-label') ?? nativePad;
+    const labelStyle = getComputedStyle(nativeLabel);
+    const fmtPx = (n: number) => `${Number(n.toFixed(2))}px`;
+
+    const metrics: Array<[string, string]> = [
+      ['--geofs-ext-ap-width', fmtPx(rect.width)],
+      ['--geofs-ext-ap-height', fmtPx(rect.height)],
+      ['--geofs-ext-ap-radius', padStyle.borderRadius || '15px'],
+      ['--geofs-ext-ap-margin', padStyle.margin || '0 10px'],
+      ['--geofs-ext-ap-valign', padStyle.verticalAlign || 'middle'],
+      ['--geofs-ext-ap-font-family', labelStyle.fontFamily || 'inherit'],
+      ['--geofs-ext-ap-font-size', labelStyle.fontSize || '12px'],
+      ['--geofs-ext-ap-font-weight', labelStyle.fontWeight || '400'],
+      ['--geofs-ext-ap-letter-spacing', labelStyle.letterSpacing || 'normal']
+    ];
+
+    const sig = metrics.map(([, v]) => v).join('|');
+    this.syncedAutopilotPads.set(padEl, { wrapper: wrapperEl, sig, lastCheckMs: now });
+    if (prev?.sig === sig) return;
+
+    for (const [prop, val] of metrics) {
+      padEl.style.setProperty(prop, val);
+    }
+    if (wrapperEl) {
+      wrapperEl.style.setProperty('--geofs-ext-ap-valign', padStyle.verticalAlign || 'middle');
     }
   }
 
@@ -291,7 +347,16 @@ export class AnchorManager {
       });
     }
     if (!this.resizeListener) {
-      this.resizeListener = () => this.clampAll();
+      this.resizeListener = () => {
+        this.clampAll();
+        for (const [pad, meta] of Array.from(this.syncedAutopilotPads.entries())) {
+          if (!pad.isConnected) {
+            this.syncedAutopilotPads.delete(pad);
+            continue;
+          }
+          this.syncAutopilotPad(pad, meta.wrapper, true);
+        }
+      };
       window.addEventListener('resize', this.resizeListener);
     }
   }
@@ -1215,6 +1280,7 @@ export class AnchorManager {
     for (const cleanup of Array.from(this.dragCleanups)) cleanup();
     for (const el of this.mountedControls.values()) el.remove();
     this.mountedControls.clear();
+    this.syncedAutopilotPads.clear();
     this.trackedElements.clear();
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;

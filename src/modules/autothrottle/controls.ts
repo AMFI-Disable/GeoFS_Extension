@@ -37,38 +37,52 @@ export const controlStyles = `
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
+    vertical-align: var(--geofs-ext-ap-valign, middle);
     pointer-events: all;
     font-weight: 400;
   }
   .ext-autothrottle-bar [hidden] {
     display: none !important;
   }
-  .ext-autothrottle-bar .ext-autothrottle-pad {
-    width: 60px;
-    height: 25px;
-    line-height: 25px;
-    margin: 0 10px;
-    cursor: pointer;
-    pointer-events: all;
+  :where(.ext-autothrottle-bar .ext-autothrottle-pad) {
     background-color: #000000;
     border: 1px solid #888888;
-    border-radius: 15px;
     box-shadow: 0 0 5px #000000;
+  }
+  #autothrottle-button.ext-autothrottle-pad {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--geofs-ext-ap-width, 84px);
+    height: var(--geofs-ext-ap-height, 27px);
+    min-width: var(--geofs-ext-ap-width, 84px);
+    min-height: var(--geofs-ext-ap-height, 27px);
+    padding: 0 4px;
+    margin: var(--geofs-ext-ap-margin, 0 10px);
+    border-radius: var(--geofs-ext-ap-radius, 15px);
+    vertical-align: var(--geofs-ext-ap-valign, middle);
+    cursor: pointer;
+    pointer-events: all;
     text-align: center;
+    white-space: nowrap;
+    flex: 0 0 auto;
     font-weight: 400;
   }
-  .ext-autothrottle-pad .control-pad-label {
+  #autothrottle-button.ext-autothrottle-pad .control-pad-label {
     pointer-events: none;
-    line-height: 25px;
-    font-weight: 400;
+    line-height: 1.15;
+    font-family: var(--geofs-ext-ap-font-family, "Roboto", "Helvetica", "Arial", sans-serif);
+    font-size: var(--geofs-ext-ap-font-size, 12px);
+    font-weight: var(--geofs-ext-ap-font-weight, 400);
+    letter-spacing: var(--geofs-ext-ap-letter-spacing, normal);
     text-align: center;
+    white-space: nowrap;
   }
-  #geofs-ext-zone-autopilot .ext-autothrottle-pad .control-pad-label {
-    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
-    font-size: 12px;
+  :where(#autothrottle-button.ext-autothrottle-pad .control-pad-label) {
     color: rgba(255, 255, 255, 0.78);
   }
-  #geofs-ext-zone-autopilot .ext-autothrottle-pad.green-pad .control-pad-label {
+  :where(#autothrottle-button.ext-autothrottle-pad.green-pad .control-pad-label) {
     color: #ffffff;
   }
   .ext-autothrottle-controls {

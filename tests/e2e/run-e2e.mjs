@@ -335,18 +335,43 @@ async function run() {
     await simV3.setViewportSize({ width: 1280, height: 800 });
 
     // 4. Autothrottle Native Bar, LANDING LCD Font & OP-SYNC Prompt
-    console.log('[E2E] Verifying Autothrottle, LANDING font, OP ENG Card & OP-SYNC...');
+    console.log('[E2E] Verifying Autothrottle, OP ENG Native AUTOPILOT Parity, LANDING font & OP-SYNC...');
     const apBarInfo = await simV3.evaluate(() => {
       const apBar = document.querySelector('.geofs-autopilot-bar');
+      const nativePad = apBar?.querySelector('.geofs-autopilot-pad');
+      const nativeLbl = nativePad?.querySelector('.control-pad-label');
       const atBar = apBar?.querySelector('.ext-autothrottle-bar');
-      const atPadLbl = apBar?.querySelector('#autothrottle-button .control-pad-label');
-      const opBtn = apBar?.querySelector('.geofs-ext-op-bar-btn');
+      const atPad = apBar?.querySelector('#autothrottle-button');
+      const atPadLbl = atPad?.querySelector('.control-pad-label');
+      const opBtn = apBar?.querySelector('#opEngineBarBtn');
       const opPadLbl = opBtn?.querySelector('.control-pad-label');
       const ktsSwitch = apBar?.querySelector('[data-speed-mode="knots"]');
       const landLbl = apBar?.querySelector('.ext-autothrottle-landing-label');
       const tip = apBar?.querySelector('#autothrottle-tooltip');
+      const box = (el) => el?.getBoundingClientRect().toJSON() ?? null;
+      const midY = (r) => (r ? (r.top + r.bottom) / 2 : null);
+      const nativeBox = box(nativePad);
+      const atBox = box(atPad);
+      const opBox = box(opBtn);
       return {
-        mountedInApBar: Boolean(atBar && opBtn),
+        mountedInApBar: Boolean(nativePad && atBar && atPad && opBtn),
+        opText: opPadLbl?.textContent?.trim(),
+        atText: atPadLbl?.textContent?.trim(),
+        nativeWidth: nativeBox?.width ?? 0,
+        nativeHeight: nativeBox?.height ?? 0,
+        atWidth: atBox?.width ?? 0,
+        atHeight: atBox?.height ?? 0,
+        opWidth: opBox?.width ?? 0,
+        opHeight: opBox?.height ?? 0,
+        nativeMidY: midY(nativeBox),
+        atMidY: midY(atBox),
+        opMidY: midY(opBox),
+        nativeRadius: nativePad ? getComputedStyle(nativePad).borderRadius : '',
+        atRadius: atPad ? getComputedStyle(atPad).borderRadius : '',
+        opRadius: opBtn ? getComputedStyle(opBtn).borderRadius : '',
+        nativeFontSize: nativeLbl ? getComputedStyle(nativeLbl).fontSize : '',
+        atFontSize: atPadLbl ? getComputedStyle(atPadLbl).fontSize : '',
+        opFontSize: opPadLbl ? getComputedStyle(opPadLbl).fontSize : '',
         atPadWeight: atPadLbl ? getComputedStyle(atPadLbl).fontWeight : '',
         opPadWeight: opPadLbl ? getComputedStyle(opPadLbl).fontWeight : '',
         ktsWeight: ktsSwitch ? getComputedStyle(ktsSwitch).fontWeight : '',
@@ -355,7 +380,19 @@ async function run() {
         mdlUpgraded: tip?.getAttribute('data-mdl-upgraded')
       };
     });
-    assert.equal(apBarInfo.mountedInApBar, true, 'A/THR and OP ENG must mount inside .geofs-autopilot-bar');
+    assert.equal(apBarInfo.mountedInApBar, true, 'AUTOPILOT, A/THR and OP ENG must mount inside .geofs-autopilot-bar');
+    assert.equal(apBarInfo.opText, 'OP ENG', `Expected OP ENG button text, got ${apBarInfo.opText}`);
+    assert.equal(apBarInfo.atText, 'A/THR', `Expected A/THR button text, got ${apBarInfo.atText}`);
+    assert(Math.abs(apBarInfo.atWidth - apBarInfo.nativeWidth) <= 0.5, `A/THR width (${apBarInfo.atWidth}) must match AUTOPILOT (${apBarInfo.nativeWidth})`);
+    assert(Math.abs(apBarInfo.atHeight - apBarInfo.nativeHeight) <= 0.5, `A/THR height (${apBarInfo.atHeight}) must match AUTOPILOT (${apBarInfo.nativeHeight})`);
+    assert(Math.abs(apBarInfo.opWidth - apBarInfo.nativeWidth) <= 0.5, `OP ENG width (${apBarInfo.opWidth}) must match AUTOPILOT (${apBarInfo.nativeWidth})`);
+    assert(Math.abs(apBarInfo.opHeight - apBarInfo.nativeHeight) <= 0.5, `OP ENG height (${apBarInfo.opHeight}) must match AUTOPILOT (${apBarInfo.nativeHeight})`);
+    assert(Math.abs(apBarInfo.atMidY - apBarInfo.nativeMidY) <= 1, `A/THR vertical alignment (${apBarInfo.atMidY}) must match AUTOPILOT (${apBarInfo.nativeMidY})`);
+    assert(Math.abs(apBarInfo.opMidY - apBarInfo.nativeMidY) <= 1, `OP ENG vertical alignment (${apBarInfo.opMidY}) must match AUTOPILOT (${apBarInfo.nativeMidY})`);
+    assert.equal(apBarInfo.atRadius, apBarInfo.nativeRadius, 'A/THR borderRadius must match AUTOPILOT');
+    assert.equal(apBarInfo.opRadius, apBarInfo.nativeRadius, 'OP ENG borderRadius must match AUTOPILOT');
+    assert.equal(apBarInfo.atFontSize, apBarInfo.nativeFontSize, 'A/THR fontSize must match AUTOPILOT');
+    assert.equal(apBarInfo.opFontSize, apBarInfo.nativeFontSize, 'OP ENG fontSize must match AUTOPILOT');
     assert.equal(apBarInfo.atPadWeight, '400', `A/THR pad must not be bold, got fontWeight=${apBarInfo.atPadWeight}`);
     assert.equal(apBarInfo.opPadWeight, '400', `OP ENG pad must not be bold, got fontWeight=${apBarInfo.opPadWeight}`);
     assert.equal(apBarInfo.ktsWeight, '400', `Autothrottle switch must not be bold, got fontWeight=${apBarInfo.ktsWeight}`);
@@ -658,6 +695,8 @@ async function run() {
       const hud = document.getElementById('flightDataDisplay');
       const hdr = hud?.querySelector('.geofs-ext-hud-header');
       const land = document.querySelector('.ext-autothrottle-landing-label');
+      const nativePad = document.querySelector('.geofs-autopilot-bar .geofs-autopilot-pad');
+      const atPad = document.getElementById('autothrottle-button');
       const opBtn = document.getElementById('opEngineBarBtn');
       return {
         hudWidth: hud?.getBoundingClientRect().width ?? 0,
@@ -666,6 +705,12 @@ async function run() {
         landingVisible: land ? getComputedStyle(land).display !== 'none' : false,
         landingFont: land ? getComputedStyle(land).fontFamily : '',
         opBtnVisible: opBtn ? getComputedStyle(opBtn).display !== 'none' : false,
+        opBtnText: opBtn?.textContent?.trim() ?? '',
+        nativeWidth: nativePad?.getBoundingClientRect().width ?? 0,
+        nativeHeight: nativePad?.getBoundingClientRect().height ?? 0,
+        atWidth: atPad?.getBoundingClientRect().width ?? 0,
+        atHeight: atPad?.getBoundingClientRect().height ?? 0,
+        opBtnWidth: opBtn?.getBoundingClientRect().width ?? 0,
         opBtnHeight: opBtn?.getBoundingClientRect().height ?? 0
       };
     });
@@ -675,7 +720,12 @@ async function run() {
     assert.equal(v4LayoutAudit.landingVisible, true);
     assert(v4LayoutAudit.landingFont.includes('LCD-Bold'));
     assert.equal(v4LayoutAudit.opBtnVisible, true);
+    assert.equal(v4LayoutAudit.opBtnText, 'OP ENG');
     assert(v4LayoutAudit.opBtnHeight >= 24 && v4LayoutAudit.opBtnHeight <= 27);
+    assert(Math.abs(v4LayoutAudit.atWidth - v4LayoutAudit.nativeWidth) <= 0.5);
+    assert(Math.abs(v4LayoutAudit.opBtnWidth - v4LayoutAudit.nativeWidth) <= 0.5);
+    assert(Math.abs(v4LayoutAudit.atHeight - v4LayoutAudit.nativeHeight) <= 0.5);
+    assert(Math.abs(v4LayoutAudit.opBtnHeight - v4LayoutAudit.nativeHeight) <= 0.5);
 
     // Open sidepanel in a new regular tab -> must still connect to V4 tab (NOT Offline) even though helpTab came first!
     const sidePage = await context.newPage();

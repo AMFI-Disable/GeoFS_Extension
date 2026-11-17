@@ -198,35 +198,45 @@ const THRUST_PRESETS = [1, 2, 5, 10, 50, 100, 500, 1000, 5000, 10000, 100000, 10
 const CEILING_PRESETS = [3000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000];
 
 const CARD_STYLES = `
-  #opEngineBarBtn.geofs-ext-op-bar-btn {
-    width: 65px;
-    height: 25px;
-    line-height: 25px;
-    margin: 0 10px;
-    cursor: pointer;
+  :where(#opEngineBarBtn.geofs-ext-op-bar-btn) {
     background-color: #000000;
     border: 1px solid #888888;
-    border-radius: 15px;
     box-shadow: 0 0 5px #000000;
-    font-weight: 400;
+  }
+  #opEngineBarBtn.geofs-ext-op-bar-btn {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--geofs-ext-ap-width, 84px);
+    height: var(--geofs-ext-ap-height, 27px);
+    min-width: var(--geofs-ext-ap-width, 84px);
+    min-height: var(--geofs-ext-ap-height, 27px);
+    padding: 0 4px;
+    margin: var(--geofs-ext-ap-margin, 0 10px);
+    border-radius: var(--geofs-ext-ap-radius, 15px);
+    vertical-align: var(--geofs-ext-ap-valign, middle);
+    cursor: pointer;
+    pointer-events: all;
     text-align: center;
     white-space: nowrap;
-    box-sizing: border-box;
-    display: inline-block;
-    vertical-align: middle;
+    flex: 0 0 auto;
+    font-weight: 400;
   }
   #opEngineBarBtn.geofs-ext-op-bar-btn .control-pad-label {
     pointer-events: none;
-    line-height: 25px;
-    font-weight: 400;
+    line-height: 1.15;
+    font-family: var(--geofs-ext-ap-font-family, "Roboto", "Helvetica", "Arial", sans-serif);
+    font-size: var(--geofs-ext-ap-font-size, 12px);
+    font-weight: var(--geofs-ext-ap-font-weight, 400);
+    letter-spacing: var(--geofs-ext-ap-letter-spacing, normal);
     text-align: center;
+    white-space: nowrap;
   }
-  #geofs-ext-zone-autopilot #opEngineBarBtn.geofs-ext-op-bar-btn .control-pad-label {
-    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
-    font-size: 12px;
+  :where(#opEngineBarBtn.geofs-ext-op-bar-btn .control-pad-label) {
     color: rgba(255, 255, 255, 0.78);
   }
-  #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad .control-pad-label {
+  :where(#opEngineBarBtn.geofs-ext-op-bar-btn.green-pad .control-pad-label) {
     color: #ffffff;
   }
   #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad,
@@ -419,7 +429,7 @@ export class OverpoweredEnginesModule implements IModule {
       barBtn.className = 'control-pad geofs-ext-op-bar-btn';
       barBtn.setAttribute('role', 'button');
       barBtn.tabIndex = 0;
-      barBtn.innerHTML = '<div class="control-pad-label transp-pad" style="pointer-events:none;line-height:25px;">OP ENG</div>';
+      barBtn.innerHTML = '<div class="control-pad-label transp-pad">OP ENG</div>';
       barBtn.title = 'Toggle Overpowered Engines & SAS Card';
       barBtn.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -635,6 +645,7 @@ export class OverpoweredEnginesModule implements IModule {
     if (host && this.barBtn.parentElement !== host) {
       host.append(this.barBtn);
     }
+    this.ctx?.anchors.syncAutopilotPad(this.barBtn);
   }
 
   private getThrustIndex(val: number): number {
@@ -748,7 +759,7 @@ export class OverpoweredEnginesModule implements IModule {
 
     const headerText = card.querySelector<HTMLElement>('#opEngineHeaderText');
     if (headerText) {
-      headerText.textContent = lockThrust ? 'OP ENGINES [AUTO-MANAGED BY A/THR]' : 'Overpowered Engines';
+      headerText.textContent = lockThrust ? 'OP ENG [AUTO-MANAGED BY A/THR]' : 'Overpowered Engines';
       headerText.style.color = lockThrust ? '#a855f7' : '#ffffff';
     }
 

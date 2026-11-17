@@ -142,6 +142,8 @@ export class AutothrottleModule implements IModule {
       this.upgradeTooltips();
     }
     this.bar.hidden = false;
+    const pad = this.bar.querySelector<HTMLElement>('#autothrottle-button');
+    if (pad) this.ctx?.anchors.syncAutopilotPad(pad, this.bar);
   }
 
   private setTarget(value: number): void {

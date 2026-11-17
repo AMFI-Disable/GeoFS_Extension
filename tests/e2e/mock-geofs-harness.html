@@ -51,6 +51,35 @@
       gap: 8px;
       z-index: 100;
     }
+    .control-pad {
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 27px;
+      padding: 0 10px;
+      margin: 0 4px;
+      background-color: #000000;
+      border: 1px solid #888888;
+      border-radius: 15px;
+      box-shadow: 0 0 5px #000000;
+      cursor: pointer;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .control-pad:hover {
+      border-color: #ffffff;
+    }
+    .control-pad .control-pad-label {
+      font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.78);
+      text-align: center;
+    }
+    .control-pad.green-pad .control-pad-label {
+      color: #ffffff;
+    }
     .geofs-ui-bottom {
       position: fixed;
       bottom: 64px;
@@ -76,7 +105,7 @@
         bottom.className = 'geofs-ui-bottom';
         const ap = document.createElement('div');
         ap.className = 'geofs-autopilot-bar';
-        ap.innerHTML = '<span style="font-size:11px;color:#aaa;margin-right:6px;">AP BAR</span>';
+        ap.innerHTML = '<div class="control-pad geofs-autopilot-pad"><div class="control-pad-label transp-pad">AUTOPILOT</div></div>';
         document.body.append(top, right, bottom, ap);
       }
 

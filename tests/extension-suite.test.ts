@@ -1,5 +1,6 @@
 import { pinValue } from '../src/modules/failure-simulator';
 import { describe, it, expect, beforeEach } from 'vitest';
+import { AnchorManager } from '../src/core/anchor-manager';
 import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-adapter';
 import { ModuleManager } from '../src/core/module-manager';
 import { detectGeoFSKeyCollision, formatComboForOs } from '../src/core/keybind-manager';
@@ -310,5 +311,51 @@ describe('Archived Engine and Flight Path Behavior', () => {
     expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'twilight', color: '#f8fafc' });
     win.weather = { localTime: 22.0 };
     expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'night', color: '#ffffff' });
+  });
+
+  it('synchronizes autopilot pad CSS variables from native .geofs-autopilot-pad', () => {
+    const props = new Map<string, string>();
+    const wrapperProps = new Map<string, string>();
+    const nativeLabel = { kind: 'label' };
+    const nativePad = {
+      getBoundingClientRect: () => ({ width: 88, height: 27 }),
+      querySelector: () => nativeLabel
+    };
+    const host = {
+      querySelector: () => nativePad
+    };
+    const padEl = {
+      isConnected: true,
+      closest: () => host,
+      style: { setProperty: (k: string, v: string) => props.set(k, v) }
+    } as unknown as HTMLElement;
+    const wrapperEl = {
+      style: { setProperty: (k: string, v: string) => wrapperProps.set(k, v) }
+    } as unknown as HTMLElement;
+
+    (globalThis as unknown as { window: Record<string, unknown> }).window = {};
+    (globalThis as unknown as { document: Record<string, unknown> }).document = {
+      querySelector: () => null
+    };
+    (globalThis as unknown as { getComputedStyle: (el: unknown) => CSSStyleDeclaration }).getComputedStyle = (el) =>
+      (el === nativeLabel
+        ? { fontFamily: '"Roboto", sans-serif', fontSize: '12px', fontWeight: '400', letterSpacing: '0.5px' }
+        : { borderRadius: '15px', margin: '0px 8px', verticalAlign: 'middle' }) as unknown as CSSStyleDeclaration;
+
+    const anchors = new AnchorManager();
+    anchors.syncAutopilotPad(padEl, wrapperEl, true);
+
+    expect(props.get('--geofs-ext-ap-width')).toBe('88px');
+    expect(props.get('--geofs-ext-ap-height')).toBe('27px');
+    expect(props.get('--geofs-ext-ap-radius')).toBe('15px');
+    expect(props.get('--geofs-ext-ap-margin')).toBe('0px 8px');
+    expect(props.get('--geofs-ext-ap-valign')).toBe('middle');
+    expect(props.get('--geofs-ext-ap-font-family')).toBe('"Roboto", sans-serif');
+    expect(props.get('--geofs-ext-ap-font-size')).toBe('12px');
+    expect(props.get('--geofs-ext-ap-font-weight')).toBe('400');
+    expect(props.get('--geofs-ext-ap-letter-spacing')).toBe('0.5px');
+    expect(wrapperProps.get('--geofs-ext-ap-valign')).toBe('middle');
+    delete (globalThis as unknown as { document?: unknown }).document;
+    delete (globalThis as unknown as { getComputedStyle?: unknown }).getComputedStyle;
   });
 });
