@@ -4,19 +4,23 @@ export const controlMarkup = `
     <div class="control-pad-label transp-pad">A/THR</div>
   </div>
   <div class="ext-autothrottle-controls" hidden>
-    <div class="ext-autothrottle-control">
-      <div class="ext-autothrottle-reverse" hidden>[REV]</div>
-      <a class="ext-autothrottle-numberDown numberDown" data-step="-1" aria-label="Decrease target speed">-</a><input
-        class="ext-autothrottle-numberValue numberValue ext-autothrottle-speed" type="text"
-        inputmode="decimal" aria-label="Autothrottle target speed" value="0"><a
-        class="ext-autothrottle-numberUp numberUp" data-step="1" aria-label="Increase target speed">+</a>
+    <div class="geofs-autopilot-control ext-autothrottle-control">
+      <div class="ext-autothrottle-value-row">
+        <div class="ext-autothrottle-reverse" hidden>[REV]</div>
+        <a class="ext-autothrottle-numberDown numberDown" data-step="-1" aria-label="Decrease target speed">-</a><input
+          class="ext-autothrottle-numberValue numberValue ext-autothrottle-speed" type="text"
+          inputmode="decimal" aria-label="Autothrottle target speed" value="0"><a
+          class="ext-autothrottle-numberUp numberUp" data-step="1" aria-label="Increase target speed">+</a>
+      </div>
       <span class="ext-autothrottle-switch" role="group" aria-label="Speed mode">
         <a class="ext-autothrottle-switchLeft switchLeft" data-speed-mode="knots">KTS</a><a
           class="ext-autothrottle-switchRight switchRight" data-speed-mode="mach">M.</a>
       </span>
     </div>
-    <div class="geofs-autopilot-control ext-autothrottle-landing">
-      <span class="ext-autothrottle-landing-label">LANDING</span>
+    <div class="geofs-autopilot-control ext-autothrottle-control ext-autothrottle-landing">
+      <div class="ext-autothrottle-value-row">
+        <span class="ext-autothrottle-landing-label">LANDING</span>
+      </div>
       <span class="ext-autothrottle-switch" id="autothrottle-landing-mode-switch" role="group" aria-label="Landing mode"
             title="Landing mode: when armed, throttle retards to idle by 27 ft RA and deploys spoilers on touchdown">
         <a class="ext-autothrottle-switchLeft switchLeft" data-arm="off">OFF</a><a
@@ -88,17 +92,27 @@ export const controlStyles = `
   .ext-autothrottle-controls {
     margin-right: 10px;
     display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
   }
-  .ext-autothrottle-control {
+  .ext-autothrottle-bar .ext-autothrottle-control {
     position: relative;
     margin: 0 5px;
     text-align: center;
     color: #ffffff;
     line-height: 25px;
     display: inline-flex;
+    flex-direction: column;
     align-items: center;
+    vertical-align: top;
+  }
+  .ext-autothrottle-value-row {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 25px;
+    line-height: 25px;
   }
   .ext-autothrottle-bar a {
     user-select: none;
@@ -153,8 +167,9 @@ export const controlStyles = `
   .ext-autothrottle-switch {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     font-size: 10px;
-    margin-left: 6px;
+    margin: 2px 0 0;
   }
   .ext-autothrottle-switch a {
     position: relative;
@@ -174,26 +189,22 @@ export const controlStyles = `
     border-radius: 0 15px 15px 0;
   }
   .ext-autothrottle-landing {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-left: 4px;
     text-align: center;
   }
-  .ext-autothrottle-landing .ext-autothrottle-switch {
-    margin-left: 0;
-  }
   .ext-autothrottle-landing-label {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 25px;
     font-family: 'LCD-Bold', monospace;
-    font-size: 11px;
+    font-size: 20px;
     font-weight: 400;
-    line-height: 11px;
-    letter-spacing: 0.8px;
-    color: #cccccc;
-    margin-bottom: 2px;
+    line-height: 25px;
+    letter-spacing: 1px;
+    color: #ffffff;
+    text-shadow: 0 0 5px #000000;
     white-space: nowrap;
+    user-select: none;
   }
   .ext-autothrottle-bar .green-pad {
     border-color: #4caf50 !important;
@@ -203,10 +214,6 @@ export const controlStyles = `
   .ext-autothrottle-bar .red-pad {
     border-color: #ef4444 !important;
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
-  }
-  .ext-autothrottle-bar .landing-selected {
-    background: #555555;
-    border-color: #888888;
   }
   .ext-autothrottle-reverse {
     position: absolute;

@@ -136,6 +136,31 @@ export function resolveGlideslopeAppearance(): GlideslopeAppearance {
   return { phase, color: '#000000', textShadow: 'none' };
 }
 
+export interface FpvColorState {
+  isWarning: boolean;
+  hue: number;
+}
+
+export function resolveFpvColorState(
+  telemetry: Pick<FlightTelemetry, 'vs' | 'aoa' | 'kias' | 'groundContact'>,
+  aircraft?: Pick<GeoFSAircraftInstance, 'stalling'> | null
+): FpvColorState {
+  const safeVs = Number.isFinite(telemetry.vs) ? telemetry.vs : 0;
+  const safeAoa = Number.isFinite(telemetry.aoa) ? telemetry.aoa : 0;
+  const safeKias = Number.isFinite(telemetry.kias) ? telemetry.kias : 0;
+  const airborneValid = !telemetry.groundContact && safeKias >= 35;
+  const isWarning = Boolean(
+    airborneValid && safeAoa < 75 && (aircraft?.stalling || safeAoa > 16)
+  );
+  if (isWarning) {
+    return { isWarning: true, hue: 0 };
+  }
+  const hue = safeVs >= 0
+    ? 120 + Math.min(1, safeVs / 3000) * 80
+    : 120 - Math.min(1, Math.abs(safeVs) / 5000) * 90;
+  return { isWarning: false, hue: Math.round(hue) };
+}
+
 export class FlightPathVectorModule implements IModule {
   public readonly id = 'flight-path-vector';
   public readonly name = 'Flight Path Vector';
@@ -250,9 +275,7 @@ export class FlightPathVectorModule implements IModule {
       return;
     }
 
-    const vs = Math.max(-1, Math.min(1, telemetry.vs / 3000));
-    const isWarning = Boolean(aircraft.stalling || telemetry.aoa > 14);
-    const hue = isWarning ? 0 : 120 + vs * (vs > 0 ? 80 : 120);
+    const { isWarning, hue } = resolveFpvColorState(telemetry, aircraft);
 
     const entities = sim?.api?.viewer?.entities;
     const resolutionScale = Math.max(0.25, Number(sim?.api?.renderingSettings?.resolutionScale) || 1);

@@ -400,11 +400,19 @@ async function run() {
     assert(apBarInfo.landingFont.includes('LCD-Bold'), `Expected LANDING font LCD-Bold, got ${apBarInfo.landingFont}`);
     assert.equal(apBarInfo.mdlUpgraded, 'true', 'MDL tooltips should upgrade when componentHandler exists');
 
-    // Engage A/THR and dial target speed 450 vs 145 -> should trigger OP-SYNC Ask prompt
+    // Engage A/THR and verify expanded Autopilot-style layout (switches beneath main controls, big LCD LANDING, matching OFF/ARM & KTS/M. buttons)
     await simV3.click('#autothrottle-button');
 
     const collisionCheck = await simV3.evaluate(() => {
       const box = (sel) => document.querySelector(sel)?.getBoundingClientRect().toJSON() ?? null;
+      const speedBox = box('.ext-autothrottle-speed');
+      const speedSwitchBox = box('.ext-autothrottle-control:not(.ext-autothrottle-landing) .ext-autothrottle-switch');
+      const landLbl = document.querySelector('.ext-autothrottle-landing-label');
+      const landLblBox = landLbl?.getBoundingClientRect().toJSON() ?? null;
+      const landSwitchBox = box('#autothrottle-landing-mode-switch');
+      const ktsBtn = document.querySelector('[data-speed-mode="knots"]');
+      const offBtn = document.querySelector('[data-arm="off"]');
+      const speedInput = document.querySelector('.ext-autothrottle-speed');
       const boxes = {
         apBar: box('.geofs-autopilot-bar'),
         opBtn: box('#opEngineBarBtn'),
@@ -422,9 +430,40 @@ async function run() {
         vh: window.innerHeight,
         opVsFail: overlaps(boxes.opBtn, boxes.failPill),
         apVsFail: overlaps(boxes.apBar, boxes.failPill),
-        gsVsFail: overlaps(boxes.gsWidget, boxes.failPill)
+        gsVsFail: overlaps(boxes.gsWidget, boxes.failPill),
+        expandedLayout: {
+          speedBox,
+          speedSwitchBox,
+          landLblBox,
+          landSwitchBox,
+          speedFontSize: speedInput ? getComputedStyle(speedInput).fontSize : '',
+          landFontSize: landLbl ? getComputedStyle(landLbl).fontSize : '',
+          ktsRect: ktsBtn?.getBoundingClientRect().toJSON() ?? null,
+          offRect: offBtn?.getBoundingClientRect().toJSON() ?? null,
+          ktsBorder: ktsBtn ? getComputedStyle(ktsBtn).borderColor : '',
+          offBorder: offBtn ? getComputedStyle(offBtn).borderColor : '',
+          ktsBg: ktsBtn ? getComputedStyle(ktsBtn).backgroundColor : '',
+          offBg: offBtn ? getComputedStyle(offBtn).backgroundColor : '',
+          offWeight: offBtn ? getComputedStyle(offBtn).fontWeight : '',
+          offFontSize: offBtn ? getComputedStyle(offBtn).fontSize : '',
+          ktsFontSize: ktsBtn ? getComputedStyle(ktsBtn).fontSize : ''
+        }
       };
     });
+    const exp = collisionCheck.expandedLayout;
+    assert(exp.speedBox && exp.speedSwitchBox && exp.speedSwitchBox.top >= exp.speedBox.bottom - 0.5,
+      `KTS/M. switch must sit beneath speed number box (speed bottom=${exp.speedBox?.bottom}, switch top=${exp.speedSwitchBox?.top})`);
+    assert(exp.landLblBox && exp.landSwitchBox && exp.landSwitchBox.top >= exp.landLblBox.bottom - 0.5,
+      `OFF/ARM switch must sit beneath LANDING label (label bottom=${exp.landLblBox?.bottom}, switch top=${exp.landSwitchBox?.top})`);
+    assert.equal(exp.landFontSize, exp.speedFontSize, `LANDING font size (${exp.landFontSize}) must match Autopilot number (${exp.speedFontSize})`);
+    assert(exp.landLblBox.height >= 24 && Math.abs(exp.landLblBox.height - exp.speedBox.height) <= 1,
+      `LANDING height (${exp.landLblBox?.height}) must match speed number box (${exp.speedBox?.height})`);
+    assert(Math.abs(exp.offRect.width - exp.ktsRect.width) <= 0.5 && Math.abs(exp.offRect.height - exp.ktsRect.height) <= 0.5,
+      `OFF/ARM button size (${exp.offRect?.width}x${exp.offRect?.height}) must match KTS/M. (${exp.ktsRect?.width}x${exp.ktsRect?.height})`);
+    assert.equal(exp.offFontSize, exp.ktsFontSize, 'OFF/ARM and KTS/M. button font sizes must match');
+    assert.equal(exp.offWeight, '400', 'OFF/ARM switch must not be bold');
+    assert.equal(exp.offBorder, exp.ktsBorder, `Selected OFF border (${exp.offBorder}) must match selected KTS border (${exp.ktsBorder})`);
+    assert.equal(exp.offBg, exp.ktsBg, `Selected OFF background (${exp.offBg}) must match selected KTS background (${exp.ktsBg})`);
     assert(collisionCheck.boxes.apBar.width < 700, `Autopilot bar expanded abnormally wide (${collisionCheck.boxes.apBar.width}px)`);
     assert.equal(collisionCheck.boxes.topHudBtn, null, 'Excessive unmovable top-bar HUD button must not be mounted');
     assert.equal(collisionCheck.boxes.rightChecksBtn, null, 'Unmovable right-bar CHECKS button must not be mounted');
@@ -644,6 +683,50 @@ async function run() {
       const span = document.querySelector('#flightDataDisplay0 span');
       return span?.getAttribute('data-time-phase') === 'day' && getComputedStyle(span).color === 'rgb(0, 0, 0)';
     }, { timeout: 3000 });
+
+    // Verify FPV color coding does not lock red during normal -3000 fpm descent or ground AoA spikes, and turns red only on valid airborne stall
+    await simV3.evaluate(() => {
+      window.geofs.animation.values.verticalSpeed = -3000;
+      window.geofs.animation.values.aoa = 3;
+      window.geofs.animation.values.kias = 260;
+      window.geofs.aircraft.instance.groundContact = false;
+      window.geofs.aircraft.instance.stalling = false;
+    });
+    await simV3.waitForFunction(() => {
+      const c = window.geofs?.api?.viewer?.entities?._items?.[0]?.billboard?.color;
+      return typeof c === 'string' && c.startsWith('hsl(') && !c.startsWith('hsl(0,');
+    }, { timeout: 3000 });
+
+    await simV3.evaluate(() => {
+      window.geofs.animation.values.verticalSpeed = 0;
+      window.geofs.animation.values.aoa = 45;
+      window.geofs.animation.values.kias = 15;
+      window.geofs.aircraft.instance.groundContact = true;
+      window.geofs.aircraft.instance.stalling = true;
+    });
+    await simV3.waitForFunction(() => {
+      const c = window.geofs?.api?.viewer?.entities?._items?.[0]?.billboard?.color;
+      return c === 'hsl(120, 100%, 50%)';
+    }, { timeout: 3000 });
+
+    await simV3.evaluate(() => {
+      window.geofs.animation.values.aoa = 18;
+      window.geofs.animation.values.kias = 110;
+      window.geofs.aircraft.instance.groundContact = false;
+      window.geofs.aircraft.instance.stalling = true;
+    });
+    await simV3.waitForFunction(() => {
+      const c = window.geofs?.api?.viewer?.entities?._items?.[0]?.billboard?.color;
+      return c === '#ff0000';
+    }, { timeout: 3000 });
+
+    await simV3.evaluate(() => {
+      window.geofs.animation.values.aoa = 4.5;
+      window.geofs.animation.values.kias = 145;
+      window.geofs.aircraft.instance.groundContact = false;
+      window.geofs.aircraft.instance.stalling = false;
+    });
+    await simV3.waitForTimeout(80);
 
     // Trigger clean touchdown transition: sample short-final airborne approach frames first, then contact ground
     await simV3.evaluate(() => {

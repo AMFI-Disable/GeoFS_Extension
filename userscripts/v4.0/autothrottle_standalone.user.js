@@ -173,10 +173,10 @@
                                     <a class="ext-autothrottle-switchRight switchRight" data-method="setAutothrottleSpeedMode" value="mach" id="machMode">M.</a>
                                 </span>
                             </div>
-                            <div class="geofs-autopilot-control" style="display: inline-block; vertical-align: bottom; margin-left: 5px; text-align: center;">
-                                <span style="display: block; font-size: 10px; font-weight: bold; color: #aaa; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;">LANDING</span>
+                            <div class="ext-autothrottle-control ext-autothrottle-landing" style="position: relative;">
+                                <span class="ext-autothrottle-landing-label">LANDING</span>
                                 <span class="ext-autothrottle-switch ext-autothrottle-mode" id="autothrottle-landing-mode-switch" role="group" aria-label="Landing mode">
-                                    <a class="ext-autothrottle-switchLeft switchLeft landing-selected" data-method="setArm" value="false" id="armOff" role="button" tabindex="0" aria-pressed="true">OFF</a>
+                                    <a class="ext-autothrottle-switchLeft switchLeft green-pad active" data-method="setArm" value="false" id="armOff" role="button" tabindex="0" aria-pressed="true">OFF</a>
                                     <a class="ext-autothrottle-switchRight switchRight" data-method="setArm" value="true" id="armOn" role="button" tabindex="0" aria-pressed="false">ARM</a>
                                 </span>
                             </div>
@@ -389,12 +389,13 @@
                        display: inline-block;
                        width: 35px;
                        height: 17px;
-                       line-height: 19px;
+                       line-height: 15px;
+                       font-size: 10px;
+                       font-weight: 400;
                        cursor: pointer;
                        color: white;
                        background: #000;
                        margin: 2px 0px;
-                       display: inline-block;
                        border: 1px solid white;
                        box-shadow: 0px 0px 5px #000;
                    }
@@ -405,6 +406,20 @@
                        color: white;
                        line-height: 25px;
                        display: inline-block;
+                       vertical-align: top;
+                   }
+                   .ext-autothrottle-control .ext-autothrottle-landing-label {
+                       display: block;
+                       height: 25px;
+                       line-height: 25px;
+                       font-family: 'LCD-Bold', monospace;
+                       font-size: 20px;
+                       font-weight: 400;
+                       letter-spacing: 1px;
+                       color: #ffffff;
+                       text-shadow: 0px 0px 5px #000;
+                       white-space: nowrap;
+                       user-select: none;
                    }
                    .ext-autothrottle-bar .ext-autothrottle-speed {
                        width: 50px !important;
@@ -461,10 +476,6 @@
                     .red-pad {
                        border-color: #ef4444 !important;
                        box-shadow: 0 0 10px rgba(239, 68, 68, 0.4) !important;
-                    }
-                    #autothrottle-landing-mode-switch .landing-selected {
-                       background: #555;
-                       border-color: #888;
                     }
                 `;
                 document.head.appendChild(style);
@@ -727,7 +738,7 @@
             const b = JSON.parse(a);
             geofs.autothrottle.armed = b;
             $("#armOn").toggleClass("green-pad active", b).attr("aria-pressed", String(b));
-            $("#armOff").toggleClass("landing-selected active", !b).attr("aria-pressed", String(!b));
+            $("#armOff").toggleClass("green-pad active", !b).attr("aria-pressed", String(!b));
         };
 
         /**

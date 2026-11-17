@@ -11,7 +11,7 @@ import { buildGForceShader } from '../src/modules/realism-pack';
 import { rateLanding, scoreLanding } from '../src/modules/landing-statistics';
 import { EngineCeiling, EngineThrust } from '../src/modules/overpowered-engines';
 import { drainFuelTanks, fuelBurnKgHr } from '../src/modules/fuel-simulator';
-import { projectFlightPath, resolveGlideslopeAppearance } from '../src/modules/flight-path-vector';
+import { projectFlightPath, resolveFpvColorState, resolveGlideslopeAppearance } from '../src/modules/flight-path-vector';
 import { DEFAULT_SETTINGS } from '../src/types/settings';
 import type { GeoFSAnimationValues, GeoFSSound } from '../src/types/geofs.d';
 import type { IModule } from '../src/types/module';
@@ -357,5 +357,33 @@ describe('Archived Engine and Flight Path Behavior', () => {
     expect(wrapperProps.get('--geofs-ext-ap-valign')).toBe('middle');
     delete (globalThis as unknown as { document?: unknown }).document;
     delete (globalThis as unknown as { getComputedStyle?: unknown }).getComputedStyle;
+  });
+
+  it('keeps FPV green/amber on ground, low speed, and normal descents while warning red only on valid airborne stall/AoA', () => {
+    expect(resolveFpvColorState({ vs: 0, aoa: 90, kias: 0, groundContact: true }, { stalling: true }))
+      .toEqual({ isWarning: false, hue: 120 });
+
+    expect(resolveFpvColorState({ vs: 0, aoa: 45, kias: 18, groundContact: false }, { stalling: true }))
+      .toEqual({ isWarning: false, hue: 120 });
+
+    expect(resolveFpvColorState({ vs: 200, aoa: 180, kias: 120, groundContact: false }, { stalling: false }).isWarning)
+      .toBe(false);
+
+    const descent = resolveFpvColorState({ vs: -3000, aoa: 2, kias: 280, groundContact: false }, { stalling: false });
+    expect(descent.isWarning).toBe(false);
+    expect(descent.hue).toBeGreaterThanOrEqual(60);
+
+    const steepDive = resolveFpvColorState({ vs: -6000, aoa: 1, kias: 340, groundContact: false }, { stalling: false });
+    expect(steepDive).toEqual({ isWarning: false, hue: 30 });
+
+    expect(resolveFpvColorState({ vs: 3000, aoa: 8, kias: 220, groundContact: false }, { stalling: false }))
+      .toEqual({ isWarning: false, hue: 200 });
+
+    expect(resolveFpvColorState({ vs: -800, aoa: 18, kias: 110, groundContact: false }, { stalling: false }))
+      .toEqual({ isWarning: true, hue: 0 });
+    expect(resolveFpvColorState({ vs: -1200, aoa: 10, kias: 95, groundContact: false }, { stalling: true }))
+      .toEqual({ isWarning: true, hue: 0 });
+    expect(resolveFpvColorState({ vs: Number.NaN, aoa: Number.NaN, kias: 200, groundContact: false }, null))
+      .toEqual({ isWarning: false, hue: 120 });
   });
 });

@@ -477,8 +477,7 @@ export class AutothrottleModule implements IModule {
       const selected = control.dataset.arm
         ? this.landingArmed !== off : this.machMode === (control.dataset.speedMode === 'mach');
       control.classList.toggle('active', selected);
-      control.classList.toggle('green-pad', selected && !off);
-      control.classList.toggle('landing-selected', selected && off);
+      control.classList.toggle('green-pad', selected);
       control.setAttribute('aria-pressed', String(selected));
     }
   }
