@@ -292,8 +292,63 @@ function getCachedLiveState(tabId?: number): Promise<{ telemetry: LiveTelemetryS
   });
 }
 
-export async function requestActiveTabTelemetry(): Promise<LiveTelemetrySummary | null> {
+export interface GeoFSTabInfo {
+  id: number;
+  title: string;
+  url: string;
+  active: boolean;
+  windowId?: number;
+}
+
+export function getOpenGeoFSTabs(): Promise<GeoFSTabInfo[]> {
+  return new Promise((resolve) => {
+    if (!chrome.tabs) {
+      resolve([]);
+      return;
+    }
+    chrome.tabs.query({ url: GEOFS_TAB_URL_PATTERNS }, (geofsTabs) => {
+      if (chrome.runtime.lastError || !Array.isArray(geofsTabs)) {
+        resolve([]);
+        return;
+      }
+      const tabs = geofsTabs
+        .filter((t): t is chrome.tabs.Tab & { id: number } => t.id !== undefined)
+        .sort((a, b) => {
+          const score = (t: chrome.tabs.Tab) =>
+            (t.active ? 40 : 0) + (t.url && /geofs\.php/i.test(t.url) ? 20 : 0);
+          return score(b) - score(a);
+        })
+        .map((t) => ({
+          id: t.id,
+          title: t.title || 'GeoFS',
+          url: t.url || '',
+          active: Boolean(t.active),
+          windowId: t.windowId
+        }));
+      resolve(tabs);
+    });
+  });
+}
+
+export async function focusGeoFSTab(tabId: number): Promise<void> {
+  if (!chrome.tabs) return;
+  try {
+    const tab = await chrome.tabs.update(tabId, { active: true });
+    if (tab?.windowId !== undefined && chrome.windows?.update) {
+      await chrome.windows.update(tab.windowId, { focused: true });
+    }
+  } catch {
+    // Ignore if tab was closed before focusing.
+  }
+}
+
+export async function requestActiveTabTelemetry(preferredTabId?: number): Promise<LiveTelemetrySummary | null> {
   const tabIds = await getCandidateGeoFSTabIds();
+  if (preferredTabId !== undefined) {
+    const idx = tabIds.indexOf(preferredTabId);
+    if (idx > 0) tabIds.splice(idx, 1);
+    if (idx !== 0) tabIds.unshift(preferredTabId);
+  }
   if (!tabIds.length || !chrome.tabs) return null;
   for (const tabId of tabIds) {
     const resp = await sendTabMessageSafe<{ telemetry?: LiveTelemetrySummary | null }>(tabId, {
@@ -305,8 +360,13 @@ export async function requestActiveTabTelemetry(): Promise<LiveTelemetrySummary 
   return cached.telemetry;
 }
 
-export async function requestActiveTabDiagnostics(): Promise<DiagEntry[]> {
+export async function requestActiveTabDiagnostics(preferredTabId?: number): Promise<DiagEntry[]> {
   const tabIds = await getCandidateGeoFSTabIds();
+  if (preferredTabId !== undefined) {
+    const idx = tabIds.indexOf(preferredTabId);
+    if (idx > 0) tabIds.splice(idx, 1);
+    if (idx !== 0) tabIds.unshift(preferredTabId);
+  }
   if (!tabIds.length || !chrome.tabs) return [];
   for (const tabId of tabIds) {
     const resp = await sendTabMessageSafe<{ diagnostics?: DiagEntry[] }>(tabId, {

@@ -1,17 +1,27 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { parseAircraftOverride } from '../core/aircraft-profile';
-import { detectGeoFSKeyCollision, detectOsPlatform, formatComboForOs } from '../core/keybind-manager';
+import {
+  detectGeoFSKeyCollision,
+  detectOsPlatform,
+  formatComboForOs,
+  normalizeComboString
+} from '../core/keybind-manager';
 import { landingReplayCsv } from '../core/landing-replay';
 import { formatLogbookCsv, triggerDownload } from '../core/logbook-export';
 import { getAllCatalogAircraft, type StaticAircraftSpec } from '../core/sim-adapter';
 import { MANDATORY_PHASE_LABELS, SITUATIONAL_GUIDES, getMandatoryProcedures } from '../modules/checklist-system/procedures';
 import { REALISM_OPTION_META } from '../modules/realism-pack';
 import { AircraftEditor } from '../shared/aircraft-editor';
+import { detectDisplayProfile } from '../shared/display-calibrator';
+import { HelpLabel, SETTING_TIPS } from '../shared/help-tip';
 import {
   MODULE_META,
   clearLogbook,
+  focusGeoFSTab,
+  getOpenGeoFSTabs,
   loadLogbook,
   loadSplitSettings,
+  mergeExtensionPatch,
   requestActiveTabDiagnostics,
   requestActiveTabTelemetry,
   saveExtensionPatch,
@@ -19,6 +29,7 @@ import {
   subscribeLogbook,
   subscribeSettings,
   type DiagEntry,
+  type GeoFSTabInfo,
   type LiveTelemetrySummary
 } from '../shared/settings-store';
 import type { AircraftCategory, AircraftProfile } from '../types/module';
@@ -29,9 +40,9 @@ import {
   type ExtensionSettings,
   type FpvResolutionMode,
   type ImageryProviderMode,
+  type KeybindConfig,
   type LandingRecord,
   type OpSyncPolicy,
-  type RealismOptions,
   type ThemeMode
 } from '../types/settings';
 
@@ -43,6 +54,14 @@ const FAILURE_QUICK_SYSTEMS = [
   { id: 'pitotStatic', label: 'Pitot-Static Failure' },
   { id: 'engine0', label: 'Engine 1 Failure' }
 ] as const;
+
+const KEYBIND_LABELS: Record<keyof KeybindConfig, string> = {
+  toggleAutothrottle: 'Toggle Autothrottle',
+  toggleOpEngines: 'Toggle OP Engines',
+  toggleHud: 'Toggle Shared HUD',
+  toggleFpv: 'Toggle Flight Path Vector',
+  toggleChecklist: 'Open / Advance Checklists'
+};
 
 function catalogSpecToProfile(spec: StaticAircraftSpec & { id: string }): AircraftProfile {
   const parsed = parseAircraftOverride({ vSpeeds: spec.vSpeeds });
@@ -68,6 +87,9 @@ export function App() {
   const [logbook, setLogbook] = useState<LandingRecord[]>([]);
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);
   const [diags, setDiags] = useState<DiagEntry[]>([]);
+  const [geofsTabs, setGeofsTabs] = useState<GeoFSTabInfo[]>([]);
+  const [selectedTabId, setSelectedTabId] = useState<number | undefined>(undefined);
+  const [displayInfo, setDisplayInfo] = useState(() => detectDisplayProfile());
 
   const catalog = useMemo(() => getAllCatalogAircraft(), []);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,50 +99,64 @@ export function App() {
   const os = detectOsPlatform();
 
   useEffect(() => {
+    const onResize = () => setDisplayInfo(detectDisplayProfile());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
     void loadSplitSettings().then(setSettings);
     void loadLogbook().then(setLogbook);
     const unsubSettings = subscribeSettings(setSettings);
     const unsubLogbook = subscribeLogbook(setLogbook);
 
     const poll = () => {
-      void requestActiveTabTelemetry().then(setLive);
-      void requestActiveTabDiagnostics().then(setDiags);
+      void getOpenGeoFSTabs().then((tabs) => {
+        setGeofsTabs(tabs);
+        const targetId =
+          selectedTabId !== undefined && tabs.some((t) => t.id === selectedTabId) ? selectedTabId : tabs[0]?.id;
+        void requestActiveTabTelemetry(targetId).then(setLive);
+        void requestActiveTabDiagnostics(targetId).then((entries) => {
+          if (entries.length) setDiags(entries);
+        });
+      });
     };
     poll();
-    const timer = setInterval(poll, 2000);
+
+    const onRuntimeMessage = (msg: { type?: string; telemetry?: LiveTelemetrySummary; entry?: DiagEntry }) => {
+      if (msg?.type === 'GEOFS_EXT_LIVE_TELEMETRY_EVENT' && msg.telemetry) {
+        setLive(msg.telemetry);
+      } else if (msg?.type === 'GEOFS_EXT_DIAG_EVENT' && msg.entry) {
+        const incoming = msg.entry;
+        setDiags((prev) => {
+          if (prev.some((d) => d.time === incoming.time && d.code === incoming.code)) return prev;
+          return [...prev.slice(-49), incoming];
+        });
+      }
+    };
+    chrome.runtime?.onMessage?.addListener(onRuntimeMessage);
+
+    const timer = setInterval(poll, 1500);
     return () => {
       clearInterval(timer);
       unsubSettings();
       unsubLogbook();
+      chrome.runtime?.onMessage?.removeListener(onRuntimeMessage);
     };
-  }, []);
+  }, [selectedTabId]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = settings.themeMode;
   }, [settings.themeMode]);
 
   const patchExt = (patch: Partial<ExtensionSettings>) => {
-    setSettings((prev) => ({
-      ...prev,
-      ...patch,
-      modules: patch.modules ? { ...prev.modules, ...patch.modules } : prev.modules,
-      keybindings: patch.keybindings ? { ...prev.keybindings, ...patch.keybindings } : prev.keybindings
-    }));
-    void saveExtensionPatch(patch).then(setSettings);
+    setSettings((prev) => mergeExtensionPatch(prev, patch));
+    void saveExtensionPatch(patch);
   };
 
   const patchScr = (patch: Partial<ExtensionSettings>) => {
-    setSettings((prev) => ({
-      ...prev,
-      ...patch,
-      failureSystemChances: patch.failureSystemChances
-        ? { ...prev.failureSystemChances, ...patch.failureSystemChances }
-        : prev.failureSystemChances,
-      realismOptions: patch.realismOptions
-        ? { ...prev.realismOptions, ...patch.realismOptions }
-        : prev.realismOptions
-    }));
-    void saveScriptPatch(patch).then(setSettings);
+    setSettings((prev) => mergeExtensionPatch(prev, patch));
+    void saveScriptPatch(patch);
   };
 
   const applyPreset = (mode: 'all' | 'minimal' | 'none') => {
@@ -175,23 +211,71 @@ export function App() {
   };
 
   const isV4 = live?.simMajor === 4;
+  const activeTab = geofsTabs.find((t) => t.id === selectedTabId) ?? geofsTabs[0];
 
   return (
     <div class="surface-shell">
       <div class="header">
         <div>
-          <div class="title">GeoFS Extension · Unified Settings Portal</div>
-          <div style="font-size:11px;color:var(--muted)">
-            Separated Storage: <code>geofs_ext_config</code> (Extension) &amp; <code>geofs_script_config</code> (In-Sim Behavior)
+          <div class="title">GeoFS Extension Settings</div>
+          <div class="muted-hint">
+            All changes save automatically and sync live with any open GeoFS flight tab.
           </div>
         </div>
         <div class="chip-group">
           <span class={`badge ${live?.simMajor ? 'badge--ok' : ''}`}>
-            {live?.simMajor ? `Live GeoFS V${live.simMajor}` : 'GeoFS Standby'}
+            {live?.simMajor ? `Live · GeoFS V${live.simMajor}` : 'GeoFS Standby'}
           </span>
-          <span class="badge">OS: {os.toUpperCase()}</span>
+          <span class="badge">{os.toUpperCase()}</span>
         </div>
       </div>
+
+      <div class={`sync-banner ${activeTab ? 'sync-banner--live' : ''}`}>
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+          <span class={`sync-dot ${activeTab ? 'sync-dot--live' : ''}`} />
+          {activeTab ? (
+            <div style="min-width:0">
+              <strong>Synced with GeoFS</strong>
+              {live?.aircraftProfile ? (
+                <span style="color:var(--muted)">
+                  {' '}
+                  · {live.aircraftProfile.name} · {live.kias ?? '--'} kt · {live.altitude ?? '--'} ft
+                </span>
+              ) : (
+                <span style="color:var(--muted)"> · Connected to open simulator tab</span>
+              )}
+            </div>
+          ) : (
+            <span style="color:var(--muted)">
+              No GeoFS tab detected. Adjustments are saved and will apply as soon as you open GeoFS.
+            </span>
+          )}
+        </div>
+        {activeTab && (
+          <div style="display:flex;align-items:center;gap:6px">
+            {geofsTabs.length > 1 && (
+              <select
+                aria-label="Select GeoFS Tab"
+                value={activeTab.id}
+                onChange={(e) => setSelectedTabId(Number((e.target as HTMLSelectElement).value))}
+              >
+                {geofsTabs.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.url.includes('beta.') ? 'GeoFS V4' : 'GeoFS V3'} · {t.title.slice(0, 24)}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button type="button" class="chip-btn active" onClick={() => void focusGeoFSTab(activeTab.id)}>
+              Jump to GeoFS
+            </button>
+          </div>
+        )}
+      </div>
+
+      {live?.aircraftProfile && (
+        <AircraftEditor key={`live-${live.aircraftProfile.id}`} profile={live.aircraftProfile} />
+      )}
 
       <div class="tabs">
         <button type="button" class={`tab-btn ${tab === 'extension' ? 'active' : ''}`} onClick={() => setTab('extension')}>
@@ -211,7 +295,7 @@ export function App() {
       {tab === 'extension' && (
         <div class="surface-grid-2">
           <div class="panel-card">
-            <div class="section-heading">Module Registry</div>
+            <div class="section-heading">Modules</div>
             <div class="preset-row">
               <button type="button" class="btn-sm" onClick={() => applyPreset('all')}>
                 All On
@@ -228,7 +312,7 @@ export function App() {
                 <label class="switch-row" key={m.id}>
                   <div>
                     <div style="font-weight:700">{m.name}</div>
-                    <div style="font-size:10px;color:var(--muted)">{m.desc}</div>
+                    <div class="muted-hint">{m.desc}</div>
                   </div>
                   <input
                     type="checkbox"
@@ -244,35 +328,42 @@ export function App() {
 
           <div class="field-col">
             <div class="panel-card">
-              <div class="section-heading">UI, Calibrator &amp; Diagnostics Flags</div>
+              <div class="section-heading">Display &amp; Interface</div>
               <div class="field-row">
-                <span>Theme Appearance</span>
+                <HelpLabel label="Theme Appearance" tip={SETTING_TIPS.themeMode} />
                 <select
                   value={settings.themeMode}
                   onChange={(e) => patchExt({ themeMode: (e.target as HTMLSelectElement).value as ThemeMode })}
                 >
-                  <option value="auto">Auto (Native Dark HUD)</option>
+                  <option value="auto">Auto (Match GeoFS)</option>
                   <option value="dark">Dark</option>
                   <option value="light">Light</option>
                 </select>
               </div>
               <div class="field-row">
-                <span>Screen Calibrator</span>
+                <HelpLabel label="HUD Display Scaling" tip={SETTING_TIPS.calibratorPreset} />
                 <select
+                  aria-label="Screen Calibrator"
                   value={settings.calibratorPreset}
                   onChange={(e) =>
                     patchExt({ calibratorPreset: (e.target as HTMLSelectElement).value as CalibratorPreset })
                   }
                 >
-                  <option value="1080p">1080p FHD (1.0x)</option>
-                  <option value="1440p">1440p QHD (1.1x)</option>
-                  <option value="4k">4K UHD (1.35x)</option>
-                  <option value="ultrawide">Ultrawide (1.08x)</option>
-                  <option value="laptop">Laptop (0.9x)</option>
+                  <option value="auto">
+                    Auto · {displayInfo.label} ({displayInfo.resolution})
+                  </option>
+                  <option value="1080p">Manual: 1080p FHD (1.0x)</option>
+                  <option value="1440p">Manual: 1440p QHD (1.1x)</option>
+                  <option value="4k">Manual: 4K UHD (1.35x)</option>
+                  <option value="ultrawide">Manual: Ultrawide (1.08x)</option>
+                  <option value="laptop">Manual: Laptop (0.9x)</option>
                 </select>
               </div>
+              <div class="muted-hint">
+                Detected screen: {displayInfo.resolution} → {displayInfo.scale}x scale
+              </div>
               <label class="switch-row">
-                <span>Show Startup Toast Banner</span>
+                <HelpLabel label="Show Startup Notification" tip={SETTING_TIPS.showStartupDiagnostics} />
                 <input
                   type="checkbox"
                   checked={settings.showStartupDiagnostics}
@@ -280,7 +371,7 @@ export function App() {
                 />
               </label>
               <label class="switch-row">
-                <span>Auto-Stream Side Panel Telemetry</span>
+                <HelpLabel label="Live Side Panel Updates" tip={SETTING_TIPS.sidePanelAutoTelemetry} />
                 <input
                   type="checkbox"
                   checked={settings.sidePanelAutoTelemetry}
@@ -288,7 +379,7 @@ export function App() {
                 />
               </label>
               <label class="switch-row">
-                <span>Use Native Fallback Autopilot Bar if Unanchored</span>
+                <HelpLabel label="Backup Autopilot Bar Placement" tip={SETTING_TIPS.hudPositionFallback} />
                 <input
                   type="checkbox"
                   checked={settings.hudPositionFallback}
@@ -298,22 +389,22 @@ export function App() {
             </div>
 
             <div class="panel-card">
-              <div class="section-heading">OS-Aware Keybindings ({os.toUpperCase()})</div>
-              {(Object.keys(settings.keybindings) as Array<keyof ExtensionSettings['keybindings']>).map((k) => {
+              <div class="section-heading">Keyboard Shortcuts ({os.toUpperCase()})</div>
+              {(Object.keys(settings.keybindings) as Array<keyof KeybindConfig>).map((k) => {
                 const collision = detectGeoFSKeyCollision(settings.keybindings[k]);
                 return (
                   <div class="field-col" key={k} style="gap:2px">
                     <div class="field-row">
-                      <span>{k}</span>
+                      <span>{KEYBIND_LABELS[k] ?? k}</span>
                       <input
                         type="text"
-                        style={`width:140px;text-align:right;${collision ? 'border-color:#ef4444' : ''}`}
+                        style={`width:130px;text-align:right;${collision ? 'border-color:#ef4444' : ''}`}
                         value={formatComboForOs(settings.keybindings[k], os)}
                         onChange={(e) =>
                           patchExt({
                             keybindings: {
                               ...settings.keybindings,
-                              [k]: (e.target as HTMLInputElement).value
+                              [k]: normalizeComboString((e.target as HTMLInputElement).value)
                             }
                           })
                         }
@@ -326,7 +417,7 @@ export function App() {
             </div>
 
             <div class="panel-card">
-              <div class="section-heading">Satellite Imagery Provider</div>
+              <div class="section-heading">Satellite Map Imagery</div>
               <div class="field-row">
                 <span>Tile Source</span>
                 <select
@@ -366,9 +457,12 @@ export function App() {
       {tab === 'script' && (
         <div class="surface-grid-2">
           <div class="panel-card">
-            <div class="section-heading">Autothrottle &amp; OP-SYNC</div>
+            <div class="section-heading">Autothrottle &amp; Auto-Boost</div>
             <div class="field-row">
-              <span>Responsiveness ({settings.autothrottleResponsiveness.toFixed(1)}x)</span>
+              <HelpLabel
+                label={`Throttle Response (${settings.autothrottleResponsiveness.toFixed(1)}x)`}
+                tip={SETTING_TIPS.autothrottleResponsiveness}
+              />
               <input
                 type="range"
                 min="0.5"
@@ -381,18 +475,18 @@ export function App() {
               />
             </div>
             <div class="field-row">
-              <span>OP-SYNC Engagement Policy</span>
+              <HelpLabel label="OP-SYNC Engagement Policy" tip={SETTING_TIPS.opSyncPolicy} />
               <select
                 value={settings.opSyncPolicy}
                 onChange={(e) => patchScr({ opSyncPolicy: (e.target as HTMLSelectElement).value as OpSyncPolicy })}
               >
-                <option value="ask">Ask When Large Delta Detected</option>
-                <option value="allow">Always Allow Auto-OP</option>
-                <option value="never">Never Allow (Keep Standard Envelope)</option>
+                <option value="ask">Ask When Large Speed Jump Detected</option>
+                <option value="allow">Always Allow Auto-Boost</option>
+                <option value="never">Never Allow (Standard Engine Only)</option>
               </select>
             </div>
             <div class="field-row">
-              <span>High-Delta Threshold (KIAS)</span>
+              <HelpLabel label="Speed Jump Threshold (KIAS)" tip={SETTING_TIPS.opDeltaThresholdKts} />
               <input
                 type="number"
                 min="25"
@@ -410,9 +504,9 @@ export function App() {
           </div>
 
           <div class="panel-card">
-            <div class="section-heading">Overpowered Engines &amp; Closed-Loop SAS</div>
+            <div class="section-heading">Overpowered Engines &amp; Stability Assist</div>
             <div class="field-row">
-              <span>Thrust Multiplier (1–1,000,000,000x)</span>
+              <HelpLabel label="Thrust Multiplier" tip={SETTING_TIPS.opThrustMultiplier} />
               <input
                 type="number"
                 min="1"
@@ -427,7 +521,7 @@ export function App() {
               />
             </div>
             <div class="field-row">
-              <span>Atmosphere Ceiling (ft)</span>
+              <HelpLabel label="Altitude Ceiling (ft)" tip={SETTING_TIPS.opCeilingFeet} />
               <select
                 value={settings.opCeilingFeet}
                 onChange={(e) => patchScr({ opCeilingFeet: Number((e.target as HTMLSelectElement).value) })}
@@ -440,7 +534,7 @@ export function App() {
               </select>
             </div>
             <label class="switch-row">
-              <span>Closed-Loop SAS Attitude Hold &amp; Rate Damper</span>
+              <HelpLabel label="Stability Assist (SAS)" tip={SETTING_TIPS.opStability} />
               <input
                 type="checkbox"
                 checked={settings.opStability}
@@ -448,7 +542,7 @@ export function App() {
               />
             </label>
             <div class="field-row">
-              <span>SAS Damping Strength ({settings.sasStrength.toFixed(1)}x)</span>
+              <HelpLabel label={`Stability Strength (${settings.sasStrength.toFixed(1)}x)`} tip={SETTING_TIPS.sasStrength} />
               <input
                 type="range"
                 min="0.5"
@@ -461,9 +555,9 @@ export function App() {
           </div>
 
           <div class="panel-card">
-            <div class="section-heading">Checklists &amp; Fuel Physics</div>
+            <div class="section-heading">Checklists &amp; Fuel Behavior</div>
             <label class="switch-row">
-              <span>Auto-Advance Phase on Gate Completion</span>
+              <HelpLabel label="Auto-Advance Completed Stages" tip={SETTING_TIPS.checklistAutoAdvance} />
               <input
                 type="checkbox"
                 checked={settings.checklistAutoAdvance}
@@ -471,7 +565,7 @@ export function App() {
               />
             </label>
             <label class="switch-row">
-              <span>Enforce 4 Mandatory Flight Gates</span>
+              <HelpLabel label="Enforce 4 Mandatory Flight Gates" tip={SETTING_TIPS.checklistEnforceMandatoryGates} />
               <input
                 type="checkbox"
                 checked={settings.checklistEnforceMandatoryGates}
@@ -481,7 +575,7 @@ export function App() {
               />
             </label>
             <label class="switch-row">
-              <span>Altitude Burn (Scales Density &amp; All Engine Throttles)</span>
+              <HelpLabel label="Altitude Burn (Realistic Fuel Flow)" tip={SETTING_TIPS.fuelDynamicSfc} />
               <input
                 type="checkbox"
                 checked={settings.fuelDynamicSfc}
@@ -489,7 +583,7 @@ export function App() {
               />
             </label>
             <label class="switch-row">
-              <span>Real Tanks (Center → Wings Drain &amp; Roll Torque)</span>
+              <HelpLabel label="Real Wing Tanks (Fuel Imbalance)" tip={SETTING_TIPS.fuelRealisticTanks} />
               <input
                 type="checkbox"
                 checked={settings.fuelRealisticTanks}
@@ -497,7 +591,7 @@ export function App() {
               />
             </label>
             <label class="switch-row">
-              <span>Auto-Refuel on Empty Tank</span>
+              <HelpLabel label="Auto-Refuel on Empty" tip={SETTING_TIPS.fuelAutoRefuel} />
               <input
                 type="checkbox"
                 checked={settings.fuelAutoRefuel}
@@ -507,9 +601,9 @@ export function App() {
           </div>
 
           <div class="panel-card">
-            <div class="section-heading">Failures, Landing Card &amp; FPV</div>
+            <div class="section-heading">Failures, Landing Card &amp; Flight Path</div>
             <label class="switch-row">
-              <span>Enable Random Probability Failures</span>
+              <HelpLabel label="Enable Random Failures" tip={SETTING_TIPS.failureProbabilitiesEnabled} />
               <input
                 type="checkbox"
                 checked={settings.failureProbabilitiesEnabled}
@@ -519,7 +613,7 @@ export function App() {
               />
             </label>
             <div class="field-row">
-              <span>Probability Check Interval (sec)</span>
+              <HelpLabel label="Failure Check Interval (sec)" tip={SETTING_TIPS.failureProbabilityIntervalSec} />
               <input
                 type="number"
                 min="10"
@@ -537,7 +631,10 @@ export function App() {
               />
             </div>
             <div class="field-row">
-              <span>Base Recovery Success Chance ({settings.failureRecoveryChancePct}%)</span>
+              <HelpLabel
+                label={`Base Recovery Success Chance (${settings.failureRecoveryChancePct}%)`}
+                tip={SETTING_TIPS.failureRecoveryChancePct}
+              />
               <input
                 type="range"
                 min="0"
@@ -553,7 +650,7 @@ export function App() {
               const chancePct = Math.round((settings.failureSystemChances[sys.id] ?? 0) * 100);
               return (
                 <div class="field-row" key={sys.id} style="font-size:11px">
-                  <span>{sys.label} Prob ({chancePct}%)</span>
+                  <span>{sys.label} ({chancePct}%)</span>
                   <input
                     type="range"
                     min="0"
@@ -573,7 +670,7 @@ export function App() {
               );
             })}
             <label class="switch-row">
-              <span>Auto-Close Slide-In Landing Card</span>
+              <HelpLabel label="Auto-Close Landing Scorecard" tip={SETTING_TIPS.landingReportAutoClose} />
               <input
                 type="checkbox"
                 checked={settings.landingReportAutoClose}
@@ -581,7 +678,7 @@ export function App() {
               />
             </label>
             <div class="field-row">
-              <span>Landing Card Duration (sec)</span>
+              <HelpLabel label="Scorecard Display Time (sec)" tip={SETTING_TIPS.landingReportSeconds} />
               <input
                 type="number"
                 min="1"
@@ -596,7 +693,10 @@ export function App() {
               />
             </div>
             <div class="field-row">
-              <span>FPV Vector Projection Factor ({settings.fpvProjectionFactor})</span>
+              <HelpLabel
+                label={`FPV Marker Distance (${settings.fpvProjectionFactor})`}
+                tip={SETTING_TIPS.fpvProjectionFactor}
+              />
               <input
                 type="range"
                 min="5"
@@ -607,29 +707,30 @@ export function App() {
               />
             </div>
             <div class="field-row">
-              <span>FPV Reticle Resolution</span>
+              <HelpLabel label="FPV Marker Quality" tip={SETTING_TIPS.fpvResolutionMode} />
               <select
                 value={settings.fpvResolutionMode}
                 onChange={(e) =>
                   patchScr({ fpvResolutionMode: (e.target as HTMLSelectElement).value as FpvResolutionMode })
                 }
               >
-                <option value="auto">Auto (512px Hi-Res / Low-Res Scale)</option>
-                <option value="hires">Force 512px Hi-Res Asset</option>
-                <option value="lowres">Force Low-Res Compatibility Asset</option>
+                <option value="auto">Auto (Best for Screen)</option>
+                <option value="hires">Force High-Res</option>
+                <option value="lowres">Force Low-Res (Faster)</option>
               </select>
             </div>
           </div>
 
           <div class="panel-card" style="grid-column: 1 / -1">
-            <div class="section-heading">Realism Pack Controls (Background Engine)</div>
+            <div class="section-heading">Realism &amp; Audio Effects</div>
             <div class="surface-grid-2">
               {REALISM_OPTION_META.filter((item) => !(isV4 && item.v4Unavailable)).map((item) => (
                 <label class="switch-row" key={item.key}>
-                  <span style="display:flex;align-items:center;gap:6px">
-                    <span>{item.label}</span>
-                    {item.v4Unavailable && <span class="badge">V3 Only</span>}
-                  </span>
+                  <HelpLabel
+                    label={item.label}
+                    tip={SETTING_TIPS[`realism.${item.key}`]}
+                    badge={item.v4Unavailable ? 'V3 Only' : undefined}
+                  />
                   <input
                     type="checkbox"
                     checked={Boolean(settings.realismOptions[item.key])}
@@ -690,21 +791,29 @@ export function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredCatalog.map((ac) => (
-                    <tr
-                      key={ac.id}
-                      class={ac.id === selectedSpec.id ? 'selected' : ''}
-                      style="cursor:pointer"
-                      onClick={() => setSelectedId(ac.id)}
-                    >
-                      <td>{ac.id}</td>
-                      <td>{ac.name}</td>
-                      <td>{ac.category}</td>
-                      <td>{ac.maxFuel.toLocaleString()} kg</td>
-                      <td>{ac.maxFlaps}</td>
-                      <td>{ac.vSpeeds.vref ?? '--'} kt</td>
+                  {filteredCatalog.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style="text-align:center;color:var(--muted);padding:16px">
+                        No aircraft matched your search.
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredCatalog.map((ac) => (
+                      <tr
+                        key={ac.id}
+                        class={ac.id === selectedSpec.id ? 'selected' : ''}
+                        style="cursor:pointer"
+                        onClick={() => setSelectedId(ac.id)}
+                      >
+                        <td>{ac.id}</td>
+                        <td>{ac.name}</td>
+                        <td>{ac.category}</td>
+                        <td>{ac.maxFuel.toLocaleString()} kg</td>
+                        <td>{ac.maxFlaps}</td>
+                        <td>{ac.vSpeeds.vref ?? '--'} kt</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -871,7 +980,7 @@ export function App() {
           </div>
 
           <div class="panel-card">
-            <div class="section-heading">Session Diagnostic Log ([GeoFS-EXT][DIAG])</div>
+            <div class="section-heading">Session Diagnostic Log</div>
             <div class="diag-feed">
               {diags.length === 0 ? (
                 <div style="color:var(--muted)">Waiting for GeoFS telemetry stream...</div>

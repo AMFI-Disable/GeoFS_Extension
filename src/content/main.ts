@@ -163,7 +163,6 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
 
       let lastBridgeSyncMs = 0;
       bus.subscribe((telemetry) => {
-        applyGlobalVisuals(settings);
         manager.dispatchTelemetry(telemetry);
 
         if (telemetry.timestamp - lastBridgeSyncMs >= 500) {

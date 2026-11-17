@@ -3,7 +3,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { AnchorManager } from '../src/core/anchor-manager';
 import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-adapter';
 import { ModuleManager } from '../src/core/module-manager';
-import { detectGeoFSKeyCollision, formatComboForOs } from '../src/core/keybind-manager';
+import { detectGeoFSKeyCollision, formatComboForOs, normalizeComboString } from '../src/core/keybind-manager';
+import { detectDisplayProfile } from '../src/shared/display-calibrator';
 import { formatLogbookCsv } from '../src/core/logbook-export';
 import { SerializedLogbookStore } from '../src/background/logbook-store';
 import { hasAircraftCallouts, installAircraftSounds } from '../src/modules/realism-pack/aircraft-sounds';
@@ -389,5 +390,19 @@ describe('Archived Engine and Flight Path Behavior', () => {
       .toEqual({ isWarning: true, hue: 0 });
     expect(resolveFpvColorState({ vs: Number.NaN, aoa: Number.NaN, kias: 200, groundContact: false }, null))
       .toEqual({ isWarning: false, hue: 120 });
+  });
+
+  it('auto-detects laptop, external 1080p/1440p/4K, and ultrawide displays', () => {
+    expect(detectDisplayProfile({ screen: { width: 1440, height: 900 }, devicePixelRatio: 2 }).preset).toBe('laptop');
+    expect(detectDisplayProfile({ screen: { width: 1920, height: 1080 }, devicePixelRatio: 1 }).preset).toBe('1080p');
+    expect(detectDisplayProfile({ screen: { width: 2560, height: 1440 }, devicePixelRatio: 1 }).preset).toBe('1440p');
+    expect(detectDisplayProfile({ screen: { width: 3840, height: 2160 }, devicePixelRatio: 1 }).preset).toBe('4k');
+    expect(detectDisplayProfile({ screen: { width: 3440, height: 1440 }, devicePixelRatio: 1 }).preset).toBe('ultrawide');
+  });
+
+  it('normalizes macOS modifier symbols without corrupting keybindings', () => {
+    expect(normalizeComboString('⇧A')).toBe('Shift+A');
+    expect(normalizeComboString('⌘ + ⌥ + H')).toBe('Cmd+Alt+H');
+    expect(detectGeoFSKeyCollision('⇧A')).toBeNull();
   });
 });

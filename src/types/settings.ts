@@ -7,7 +7,7 @@ export const LEGACY_SETTINGS_KEY = 'geofs_ext_settings';
 export const LOGBOOK_KEY = 'geofs_ext_logbook';
 
 export type ThemeMode = 'auto' | 'dark' | 'light';
-export type CalibratorPreset = '1080p' | '1440p' | '4k' | 'ultrawide' | 'laptop';
+export type CalibratorPreset = 'auto' | '1080p' | '1440p' | '4k' | 'ultrawide' | 'laptop';
 export type ImageryProviderMode = 'native' | 'esri' | 'bing' | 'osm' | 'custom';
 export type OpSyncPolicy = 'ask' | 'allow' | 'never';
 export type FpvResolutionMode = 'auto' | 'hires' | 'lowres';
@@ -130,7 +130,7 @@ export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
     'satellite-imagery': false
   },
   themeMode: 'auto',
-  calibratorPreset: '1080p',
+  calibratorPreset: 'auto',
   keybindings: {
     toggleAutothrottle: 'Shift+A',
     toggleOpEngines: 'Shift+O',
@@ -155,7 +155,7 @@ export const DEFAULT_SCRIPT_CONFIG: ScriptConfig = {
   opCeilingFeet: 3_000_000,
   opStability: false,
   sasStrength: 1.0,
-  checklistAutoAdvance: false,
+  checklistAutoAdvance: true,
   checklistEnforceMandatoryGates: true,
   fuelDynamicSfc: false,
   fuelRealisticTanks: false,

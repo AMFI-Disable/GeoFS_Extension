@@ -8,9 +8,33 @@ export function detectOsPlatform(): OsPlatform {
   return 'windows';
 }
 
-export function formatComboForOs(combo: string, os: OsPlatform): string {
-  if (os !== 'mac') return combo;
+export function normalizeComboString(combo: string): string {
+  if (!combo) return '';
   return combo
+    .replace(/⌘/g, 'Cmd+')
+    .replace(/⌃/g, 'Ctrl+')
+    .replace(/⌥/g, 'Alt+')
+    .replace(/⇧/g, 'Shift+')
+    .split('+')
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p, idx, arr) => {
+      if (idx < arr.length - 1) {
+        const lower = p.toLowerCase();
+        if (lower === 'shift') return 'Shift';
+        if (lower === 'ctrl' || lower === 'control') return 'Ctrl';
+        if (lower === 'alt' || lower === 'option') return 'Alt';
+        if (lower === 'cmd' || lower === 'meta') return 'Cmd';
+      }
+      return p.length === 1 ? p.toUpperCase() : p;
+    })
+    .join('+');
+}
+
+export function formatComboForOs(combo: string, os: OsPlatform): string {
+  const normalized = normalizeComboString(combo);
+  if (os !== 'mac') return normalized;
+  return normalized
     .replace(/Cmd\+/gi, '⌘')
     .replace(/Ctrl\+/gi, '⌃')
     .replace(/Alt\+/gi, '⌥')
@@ -18,8 +42,9 @@ export function formatComboForOs(combo: string, os: OsPlatform): string {
 }
 
 export function matchesKeyEvent(event: KeyboardEvent, combo: string): boolean {
-  if (!combo) return false;
-  const parts = combo.split('+').map((p) => p.trim().toLowerCase());
+  const normalized = normalizeComboString(combo);
+  if (!normalized) return false;
+  const parts = normalized.split('+').map((p) => p.trim().toLowerCase());
   const key = parts[parts.length - 1];
   const needShift = parts.includes('shift');
   const needCtrl = parts.includes('ctrl');
@@ -50,8 +75,9 @@ const GEOFS_DEFAULT_KEYS: Record<string, string> = {
 };
 
 export function detectGeoFSKeyCollision(combo: string): string | null {
-  if (!combo) return null;
-  const parts = combo.split('+').map((p) => p.trim().toLowerCase()).filter(Boolean);
+  const normalized = normalizeComboString(combo);
+  if (!normalized) return null;
+  const parts = normalized.split('+').map((p) => p.trim().toLowerCase()).filter(Boolean);
   if (parts.length === 0) return null;
   const hasModifier = parts.some((p) => p === 'shift' || p === 'ctrl' || p === 'alt' || p === 'cmd' || p === 'meta');
   const key = parts[parts.length - 1];
