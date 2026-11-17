@@ -38,7 +38,7 @@ export const controlStyles = `
     display: inline-flex;
     align-items: center;
     pointer-events: all;
-    font-family: Helvetica, Arial, sans-serif;
+    font-weight: 400;
   }
   .ext-autothrottle-bar [hidden] {
     display: none !important;
@@ -46,32 +46,40 @@ export const controlStyles = `
   .ext-autothrottle-bar .ext-autothrottle-pad {
     width: 60px;
     height: 25px;
-    line-height: 23px;
-    margin: 0 8px;
+    line-height: 25px;
+    margin: 0 10px;
     cursor: pointer;
     pointer-events: all;
-    background: #000000;
-    color: #ffffff;
+    background-color: #000000;
     border: 1px solid #888888;
     border-radius: 15px;
     box-shadow: 0 0 5px #000000;
     text-align: center;
-    font-size: 11px;
-    font-weight: 700;
+    font-weight: 400;
   }
   .ext-autothrottle-pad .control-pad-label {
     pointer-events: none;
-    line-height: 23px;
+    line-height: 25px;
+    font-weight: 400;
+    text-align: center;
+  }
+  #geofs-ext-zone-autopilot .ext-autothrottle-pad .control-pad-label {
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.78);
+  }
+  #geofs-ext-zone-autopilot .ext-autothrottle-pad.green-pad .control-pad-label {
+    color: #ffffff;
   }
   .ext-autothrottle-controls {
-    margin-right: 8px;
+    margin-right: 10px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
   }
   .ext-autothrottle-control {
     position: relative;
-    margin: 0 4px;
+    margin: 0 5px;
     text-align: center;
     color: #ffffff;
     line-height: 25px;
@@ -87,6 +95,7 @@ export const controlStyles = `
     border: 1px solid #ffffff;
     box-shadow: 0 0 5px #000000;
     text-decoration: none;
+    font-weight: 400;
   }
   .ext-autothrottle-control .numberDown,
   .ext-autothrottle-control .numberUp {
@@ -96,7 +105,7 @@ export const controlStyles = `
     line-height: 23px;
     margin: 0;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 400;
     text-align: center;
     vertical-align: top;
   }
@@ -139,7 +148,7 @@ export const controlStyles = `
     height: 17px;
     line-height: 15px;
     text-align: center;
-    font-weight: 700;
+    font-weight: 400;
     font-size: 10px;
   }
   .ext-autothrottle-switchLeft {
@@ -165,6 +174,7 @@ export const controlStyles = `
     display: block;
     font-family: 'LCD-Bold', monospace;
     font-size: 11px;
+    font-weight: 400;
     line-height: 11px;
     letter-spacing: 0.8px;
     color: #cccccc;

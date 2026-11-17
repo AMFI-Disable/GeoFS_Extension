@@ -42,6 +42,100 @@ export function resolveFpvImageUrl(
   };
 }
 
+export interface GlideslopeAppearance {
+  phase: 'day' | 'twilight' | 'night';
+  color: string;
+  textShadow: string;
+}
+
+function phaseFromSolarElevation(sinElevation: number): 'day' | 'twilight' | 'night' {
+  if (sinElevation < -0.06) return 'night';
+  if (sinElevation < 0.08) return 'twilight';
+  return 'day';
+}
+
+function phaseFromLocalHour(rawHour: number): 'day' | 'twilight' | 'night' {
+  const hour = ((rawHour % 24) + 24) % 24;
+  if (hour < 5.5 || hour >= 19.5) return 'night';
+  if (hour < 7 || hour >= 18) return 'twilight';
+  return 'day';
+}
+
+export function resolveGlideslopeAppearance(): GlideslopeAppearance {
+  const win = typeof window !== 'undefined' ? window : undefined;
+  const sim = win?.geofs;
+  let phase: 'day' | 'twilight' | 'night' = 'day';
+
+  const sunElev = sim?.environment?.sunElevation;
+  if (typeof sunElev === 'number' && Number.isFinite(sunElev)) {
+    phase = phaseFromSolarElevation(sunElev);
+  } else {
+    const lla = sim?.camera?.lla || sim?.aircraft?.instance?.llaLocation;
+    const currentTime = sim?.api?.viewer?.clock?.currentTime;
+    const Cesium = win?.Cesium as Record<string, any> | undefined;
+    let resolvedFromCesium = false;
+
+    if (currentTime && Cesium) {
+      try {
+        const sunInertial = Cesium.Simon1994PlanetaryPositions?.computeSunPositionInEarthInertialFrame?.(currentTime);
+        const transform =
+          Cesium.Transforms?.computeIcrfToFixedMatrix?.(currentTime) ||
+          Cesium.Transforms?.computeTemeToPseudoFixedMatrix?.(currentTime);
+        if (
+          sunInertial &&
+          transform &&
+          Cesium.Matrix3?.multiplyByVector &&
+          Cesium.Cartesian3?.fromDegrees &&
+          lla?.every(Number.isFinite)
+        ) {
+          const sunFixed = Cesium.Matrix3.multiplyByVector(transform, sunInertial, new Cesium.Cartesian3());
+          const camEcef = Cesium.Cartesian3.fromDegrees(lla[1], lla[0], lla[2] ?? 0);
+          const sunLen = Math.hypot(sunFixed.x, sunFixed.y, sunFixed.z);
+          const camLen = Math.hypot(camEcef.x, camEcef.y, camEcef.z);
+          if (sunLen > 0 && camLen > 0) {
+            const dot = (sunFixed.x * camEcef.x + sunFixed.y * camEcef.y + sunFixed.z * camEcef.z) / (sunLen * camLen);
+            if (Number.isFinite(dot)) {
+              phase = phaseFromSolarElevation(dot);
+              resolvedFromCesium = true;
+            }
+          }
+        }
+        if (!resolvedFromCesium && Cesium.JulianDate?.toDate) {
+          const d = Cesium.JulianDate.toDate(currentTime);
+          if (d instanceof Date && Number.isFinite(d.getTime())) {
+            const utcHours = d.getUTCHours() + d.getUTCMinutes() / 60 + d.getUTCSeconds() / 3600;
+            const lon = lla && Number.isFinite(lla[1]) ? lla[1] : 0;
+            phase = phaseFromLocalHour(utcHours + lon / 15);
+            resolvedFromCesium = true;
+          }
+        }
+      } catch {
+        // Fallback to weather/environment clock cleanly
+      }
+    }
+
+    if (!resolvedFromCesium) {
+      const localHour = win?.weather?.localTime;
+      const envTime = sim?.environment?.time;
+      if (typeof localHour === 'number' && Number.isFinite(localHour)) {
+        phase = phaseFromLocalHour(localHour);
+      } else if (typeof envTime === 'number' && Number.isFinite(envTime)) {
+        phase = phaseFromLocalHour(envTime);
+      } else if (sim?.night === true || (typeof document !== 'undefined' && document.body?.classList?.contains('geofs-night'))) {
+        phase = 'night';
+      }
+    }
+  }
+
+  if (phase === 'night') {
+    return { phase, color: '#ffffff', textShadow: '0 1px 2px rgba(0, 0, 0, 0.9)' };
+  }
+  if (phase === 'twilight') {
+    return { phase, color: '#f8fafc', textShadow: '0 1px 2px rgba(0, 0, 0, 0.85)' };
+  }
+  return { phase, color: '#000000', textShadow: 'none' };
+}
+
 export class FlightPathVectorModule implements IModule {
   public readonly id = 'flight-path-vector';
   public readonly name = 'Flight Path Vector';
@@ -104,11 +198,17 @@ export class FlightPathVectorModule implements IModule {
       'overflow:hidden;will-change:box-shadow;' +
       'transition:box-shadow .2s cubic-bezier(.4,0,1,1),background-color .2s cubic-bezier(.4,0,.2,1),color .2s cubic-bezier(.4,0,.2,1);' +
       'text-align:center;line-height:36px;vertical-align:middle;z-index:9999;pointer-events:none;';
+    const appearance = resolveGlideslopeAppearance();
     let span = el.querySelector('span');
     if (!span) {
       el.innerHTML =
-        '<span style="background: 0 0; border: none; border-radius: 2px; color: #000; display: inline-block; padding: 0 8px;">Glideslope N/A</span>';
+        `<span style="background: 0 0; border: none; border-radius: 2px; color: ${appearance.color}; text-shadow: ${appearance.textShadow}; display: inline-block; padding: 0 8px; transition: color .3s ease, text-shadow .3s ease;">Glideslope N/A</span>`;
       span = el.querySelector('span');
+    }
+    if (span) {
+      span.style.color = appearance.color;
+      span.style.textShadow = appearance.textShadow;
+      span.dataset.timePhase = appearance.phase;
     }
     this.glideslopeEl = el;
     this.glideslopeSpan = span;
@@ -263,7 +363,7 @@ export class FlightPathVectorModule implements IModule {
     const navDist = Number(sim?.animation?.getValue?.('NAV1Distance'));
     let gsText = 'N/A';
 
-    if (navDir && Number.isFinite(navDist) && navDist !== 600 && Number.isFinite(telemetry.aglFeet)) {
+    if (navDir && Number.isFinite(navDist) && (navDir === 'to' || navDist !== 600) && Number.isFinite(telemetry.aglFeet)) {
       const denom = navDir === 'to' ? navDist + 600 : Math.abs(navDist - 600);
       if (denom > 0) {
         const deg = Math.atan((telemetry.aglFeet * 0.3048) / denom) * (180 / Math.PI);
@@ -273,12 +373,20 @@ export class FlightPathVectorModule implements IModule {
       gsText = telemetry.glideslopeDeviation.toFixed(1);
     }
 
-    const span = this.glideslopeSpan ?? el.querySelector('span');
-    if (span) {
-      span.textContent = `Glideslope ${gsText}`;
+    const appearance = resolveGlideslopeAppearance();
+    let span = this.glideslopeSpan ?? el.querySelector('span');
+    if (!span) {
+      el.innerHTML =
+        `<span style="background: 0 0; border: none; border-radius: 2px; color: ${appearance.color}; text-shadow: ${appearance.textShadow}; display: inline-block; padding: 0 8px; transition: color .3s ease, text-shadow .3s ease;">Glideslope ${gsText}</span>`;
+      span = el.querySelector('span');
+      this.glideslopeSpan = span;
     } else {
-      el.innerHTML = `<span style="background: 0 0; border: none; border-radius: 2px; color: #000; display: inline-block; padding: 0 8px;">Glideslope ${gsText}</span>`;
-      this.glideslopeSpan = el.querySelector('span');
+      span.textContent = `Glideslope ${gsText}`;
+    }
+    if (span) {
+      span.style.color = appearance.color;
+      span.style.textShadow = appearance.textShadow;
+      span.dataset.timePhase = appearance.phase;
     }
   }
 

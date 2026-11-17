@@ -233,17 +233,26 @@ async function run() {
     const apBarInfo = await simV3.evaluate(() => {
       const apBar = document.querySelector('.geofs-autopilot-bar');
       const atBar = apBar?.querySelector('.ext-autothrottle-bar');
+      const atPadLbl = apBar?.querySelector('#autothrottle-button .control-pad-label');
       const opBtn = apBar?.querySelector('.geofs-ext-op-bar-btn');
+      const opPadLbl = opBtn?.querySelector('.control-pad-label');
+      const ktsSwitch = apBar?.querySelector('[data-speed-mode="knots"]');
       const landLbl = apBar?.querySelector('.ext-autothrottle-landing-label');
       const tip = apBar?.querySelector('#autothrottle-tooltip');
       return {
         mountedInApBar: Boolean(atBar && opBtn),
+        atPadWeight: atPadLbl ? getComputedStyle(atPadLbl).fontWeight : '',
+        opPadWeight: opPadLbl ? getComputedStyle(opPadLbl).fontWeight : '',
+        ktsWeight: ktsSwitch ? getComputedStyle(ktsSwitch).fontWeight : '',
         landingText: landLbl?.textContent?.trim(),
         landingFont: landLbl ? getComputedStyle(landLbl).fontFamily : '',
         mdlUpgraded: tip?.getAttribute('data-mdl-upgraded')
       };
     });
     assert.equal(apBarInfo.mountedInApBar, true, 'A/THR and OP ENG must mount inside .geofs-autopilot-bar');
+    assert.equal(apBarInfo.atPadWeight, '400', `A/THR pad must not be bold, got fontWeight=${apBarInfo.atPadWeight}`);
+    assert.equal(apBarInfo.opPadWeight, '400', `OP ENG pad must not be bold, got fontWeight=${apBarInfo.opPadWeight}`);
+    assert.equal(apBarInfo.ktsWeight, '400', `Autothrottle switch must not be bold, got fontWeight=${apBarInfo.ktsWeight}`);
     assert.equal(apBarInfo.landingText, 'LANDING');
     assert(apBarInfo.landingFont.includes('LCD-Bold'), `Expected LANDING font LCD-Bold, got ${apBarInfo.landingFont}`);
     assert.equal(apBarInfo.mdlUpgraded, 'true', 'MDL tooltips should upgrade when componentHandler exists');
@@ -381,6 +390,31 @@ async function run() {
     assert.equal(fpvAudit.spanColor, 'rgb(0, 0, 0)', `Expected native black Glideslope text, got ${fpvAudit.spanColor}`);
     assert(fpvAudit.gsFont && fpvAudit.gsFont.includes('Roboto'), `Expected native Roboto font for Glideslope, got ${fpvAudit.gsFont}`);
     assert(fpvAudit.gsText && /^Glideslope\s+-?\d+\.\d+$/i.test(fpvAudit.gsText), `Expected legacy Glideslope readout, got ${fpvAudit.gsText}`);
+
+    // Verify Glideslope text adapts automatically to in-game night/twilight lighting for readability
+    await simV3.evaluate(() => {
+      window.weather = { ...(window.weather || {}), localTime: 22.5 };
+    });
+    await simV3.waitForFunction(() => {
+      const span = document.querySelector('#flightDataDisplay0 span');
+      return span?.getAttribute('data-time-phase') === 'night' && getComputedStyle(span).color === 'rgb(255, 255, 255)';
+    }, { timeout: 3000 });
+
+    await simV3.evaluate(() => {
+      window.weather = { ...(window.weather || {}), localTime: 18.4 };
+    });
+    await simV3.waitForFunction(() => {
+      const span = document.querySelector('#flightDataDisplay0 span');
+      return span?.getAttribute('data-time-phase') === 'twilight' && getComputedStyle(span).color === 'rgb(248, 250, 252)';
+    }, { timeout: 3000 });
+
+    await simV3.evaluate(() => {
+      window.weather = { ...(window.weather || {}), localTime: 12.0 };
+    });
+    await simV3.waitForFunction(() => {
+      const span = document.querySelector('#flightDataDisplay0 span');
+      return span?.getAttribute('data-time-phase') === 'day' && getComputedStyle(span).color === 'rgb(0, 0, 0)';
+    }, { timeout: 3000 });
 
     // Trigger clean touchdown transition: sample short-final airborne approach frames first, then contact ground
     await simV3.evaluate(() => {

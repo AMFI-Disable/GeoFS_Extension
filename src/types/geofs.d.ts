@@ -259,6 +259,9 @@ export interface GeoFSGlobal {
         add?: (spec: Record<string, unknown>) => GeoFSCesiumEntity;
         remove?: (entity: GeoFSCesiumEntity) => boolean | void;
       };
+      clock?: {
+        currentTime?: unknown;
+      };
       terrainProvider?: unknown;
     };
     addFrameCallback?: (cb: (dt?: number) => void) => number;

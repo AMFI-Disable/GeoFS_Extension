@@ -201,31 +201,38 @@ const CARD_STYLES = `
   #opEngineBarBtn.geofs-ext-op-bar-btn {
     width: 65px;
     height: 25px;
-    line-height: 23px;
-    margin: 0 6px;
+    line-height: 25px;
+    margin: 0 10px;
     cursor: pointer;
-    background: #000000;
-    color: #ffffff;
+    background-color: #000000;
     border: 1px solid #888888;
     border-radius: 15px;
     box-shadow: 0 0 5px #000000;
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 11px;
-    font-weight: 700;
+    font-weight: 400;
     text-align: center;
     white-space: nowrap;
-    padding: 0 6px;
     box-sizing: border-box;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-block;
     vertical-align: middle;
+  }
+  #opEngineBarBtn.geofs-ext-op-bar-btn .control-pad-label {
+    pointer-events: none;
+    line-height: 25px;
+    font-weight: 400;
+    text-align: center;
+  }
+  #geofs-ext-zone-autopilot #opEngineBarBtn.geofs-ext-op-bar-btn .control-pad-label {
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.78);
+  }
+  #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad .control-pad-label {
+    color: #ffffff;
   }
   #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad,
   #opEngineCard .op-native-btn.green-pad {
     border-color: #4caf50 !important;
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.45) !important;
-    color: #ffffff;
   }
   #opEngineCard {
     box-sizing: border-box;
@@ -383,7 +390,7 @@ export class OverpoweredEnginesModule implements IModule {
   private sas = new EffectiveSasController();
   private torque = new Map<GeoFSEnginePart, number>();
 
-  private barBtn: HTMLButtonElement | null = null;
+  private barBtn: HTMLElement | null = null;
   private card: HTMLDivElement | null = null;
   private isListeningKey = false;
   private unmounts: Array<() => void> = [];
@@ -398,12 +405,18 @@ export class OverpoweredEnginesModule implements IModule {
       document.head?.appendChild(style);
       this.unmounts.push(() => style.remove());
 
-      const barBtn = document.createElement('button');
-      barBtn.type = 'button';
+      const barBtn = document.createElement('div');
       barBtn.id = 'opEngineBarBtn';
       barBtn.className = 'control-pad geofs-ext-op-bar-btn';
-      barBtn.innerHTML = '<span class="control-pad-label transp-pad" style="pointer-events:none;line-height:23px;">OP ENG</span>';
+      barBtn.setAttribute('role', 'button');
+      barBtn.tabIndex = 0;
+      barBtn.innerHTML = '<div class="control-pad-label transp-pad" style="pointer-events:none;line-height:25px;">OP ENG</div>';
       barBtn.title = 'Toggle Overpowered Engines & SAS Card';
+      barBtn.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        if (!e.repeat) barBtn.click();
+      });
       barBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!this.card) return;

@@ -10,7 +10,7 @@ import { buildGForceShader } from '../src/modules/realism-pack';
 import { rateLanding, scoreLanding } from '../src/modules/landing-statistics';
 import { EngineCeiling, EngineThrust } from '../src/modules/overpowered-engines';
 import { drainFuelTanks, fuelBurnKgHr } from '../src/modules/fuel-simulator';
-import { projectFlightPath } from '../src/modules/flight-path-vector';
+import { projectFlightPath, resolveGlideslopeAppearance } from '../src/modules/flight-path-vector';
 import { DEFAULT_SETTINGS } from '../src/types/settings';
 import type { GeoFSAnimationValues, GeoFSSound } from '../src/types/geofs.d';
 import type { IModule } from '../src/types/module';
@@ -284,5 +284,31 @@ describe('Archived Engine and Flight Path Behavior', () => {
     ]);
 
     expect(mem.map((r) => r.id)).toEqual(['stable-tab-1', 'beta-tab-2']);
+  });
+
+  it('adapts glideslope text color for daytime, twilight, and night in-game time', () => {
+    const win = (globalThis as unknown as { window: Record<string, unknown> }).window;
+    win.geofs = { version: '4.0', environment: { sunElevation: 0.45 } };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'day', color: '#000000' });
+
+    win.geofs = { version: '4.0', environment: { sunElevation: 0.01 } };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'twilight', color: '#f8fafc' });
+
+    win.geofs = { version: '4.0', environment: { sunElevation: -0.25 } };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'night', color: '#ffffff' });
+
+    win.geofs = { version: '3.9', camera: { lla: [37.6, -122.4, 500] }, api: { viewer: { clock: { currentTime: 't' } } } };
+    win.Cesium = { JulianDate: { toDate: () => new Date('2026-11-16T20:00:00Z') } };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'day', color: '#000000' });
+
+    win.Cesium = { JulianDate: { toDate: () => new Date('2026-11-16T06:00:00Z') } };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'night', color: '#ffffff' });
+
+    delete win.Cesium;
+    win.geofs = { version: '4.0' };
+    win.weather = { localTime: 18.5 };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'twilight', color: '#f8fafc' });
+    win.weather = { localTime: 22.0 };
+    expect(resolveGlideslopeAppearance()).toMatchObject({ phase: 'night', color: '#ffffff' });
   });
 });
