@@ -31,10 +31,10 @@
 
 ## How To Install
 
-1. Download the latest release from [GitHub Releases](https://github.com/AMFI-Disable/GeoFS_Extension/releases) and unzip the folder somewhere easy to find on your computer *(or build the `GeoFS Extension` folder from source — see [Building From Source](#building-from-source))*.
+1. Download the latest release from [GitHub Releases](https://github.com/AMFI-Disable/GeoFS_Extension/releases) and unzip the folder somewhere easy to find on your computer *(or build `dist/` from source — see [Building From Source](#building-from-source))*.
 2. Open Chrome, Edge, or Brave and go to `chrome://extensions`.
 3. Turn on **Developer mode** using the toggle in the top-right corner.
-4. Click **Load unpacked** and select the extracted extension folder (`GeoFS Extension`).
+4. Click **Load unpacked** and select the extracted extension folder (containing `manifest.json`).
 5. Pin **GeoFS Extension** to your browser toolbar, then open or refresh [GeoFS V3.9](https://www.geo-fs.com/geofs.php) or [GeoFS V4.0](https://beta.geo-fs.com/geofs.php).
 
 > [!TIP]
@@ -88,8 +88,8 @@ All shortcuts can be rebound in **Full Settings**, which automatically warns you
 
 If you prefer installing single standalone `.user.js` scripts with Tampermonkey instead of the unified Chrome extension, archived copies for both simulator generations are kept in [`userscripts/`](userscripts/readme.md):
 
-- **GeoFS V3.9 Scripts**: [`userscripts/v3.9/`](userscripts/v3.9/readme.md) · [Changelog](userscripts/v3.9/changelog.md)
-- **GeoFS V4.0 Scripts**: [`userscripts/v4.0/`](userscripts/v4.0/readme.md) · [Changelog](userscripts/v4.0/changelog.md)
+- **GeoFS V3.9 Scripts**: [`userscripts/v3.9/`](userscripts/v3.9/readme.md) · [Changelog](changelog.md)
+- **GeoFS V4.0 Scripts**: [`userscripts/v4.0/`](userscripts/v4.0/readme.md) · [Changelog](changelog.md)
 
 ---
 
@@ -97,12 +97,12 @@ If you prefer installing single standalone `.user.js` scripts with Tampermonkey 
 
 | Folder | Contents |
 | :--- | :--- |
-| [`docs/`](docs/live-verification-guide.md) | [Roadmap & Awaiting Planes](docs/roadmap.md), [Parity & Post-Verification To-Do](docs/todo.md), and [Live Verification Guide](docs/live-verification-guide.md). |
-| [`userscripts/`](userscripts/readme.md) | Archived standalone `.user.js` scripts organized into [`v3.9`](userscripts/v3.9/readme.md) and [`v4.0`](userscripts/v4.0/readme.md). |
+| [`docs/`](docs/live-verification-guide.md) | [Roadmap & Awaiting Planes](docs/roadmap.md), [Parity & Post-Verification To-Do](docs/todo.md), [Live Verification Guide](docs/live-verification-guide.md), and [Agent Guide](docs/agents.md). |
+| [`userscripts/`](userscripts/readme.md) | Archived standalone `.user.js` scripts organized into [`v3.9`](userscripts/v3.9/readme.md) and [`v4.0`](userscripts/v4.0/readme.md) (with individual scripts under `modules/`). |
 | `src/` | Unified TypeScript & Preact source code for the Chrome Extension (`core/`, `modules/`, `popup/`, `sidepanel/`, `options/`, `background/`, `content/`). |
 | `public/` | Extension manifest, icons, cockpit audio files, and `FPV` visual assets. |
 | `tests/` | Automated unit, contract, and Playwright Chromium verification suites. |
-| `scripts/` | Build, packaging, and local unpacked-folder sync scripts. |
+| `scripts/` | Build and release packaging script (`build.mjs`). |
 
 ---
 
@@ -123,8 +123,8 @@ Developers and testers can build and verify the extension locally with Node.js:
 npm ci
 npm run typecheck
 npm test
-npm run build:unpacked
+npm run build
 npm run test:e2e
 ```
 
-Load the generated `GeoFS Extension` folder via `chrome://extensions` (**Load unpacked**) and follow the [Live Verification Guide](docs/live-verification-guide.md) when testing live flights. To pull upstream updates and refresh the unpacked folder automatically, run `bash scripts/sync-unpacked.sh`.
+Load the generated `dist/` folder via `chrome://extensions` (**Load unpacked**) and follow the [Live Verification Guide](docs/live-verification-guide.md) when testing live flights. To generate a release ZIP in `release/`, run `npm run package`.

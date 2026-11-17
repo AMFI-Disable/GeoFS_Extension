@@ -80,19 +80,4 @@ if (shouldZip) {
   console.log(`[build] Packaged release/${zipName}`);
 }
 
-if (process.argv.includes('--unpacked')) {
-  const unpacked = resolve(root, 'GeoFS Extension');
-  mkdirSync(unpacked, { recursive: true });
-
-  // Replace only the entries produced by this build.
-  for (const entry of ['manifest.json', 'background', 'content', 'icons', 'audio', 'assets', 'popup', 'sidepanel', 'options']) {
-    const srcEntry = resolve(dist, entry);
-    const destination = resolve(unpacked, entry);
-    rmSync(destination, { recursive: true, force: true });
-    if (existsSync(srcEntry)) cpSync(srcEntry, destination, { recursive: true });
-  }
-
-  console.log('[build] Refreshed the GeoFS Extension folder in the checkout.');
-}
-
 console.log('[build] GeoFS Extension dist/ built successfully.');

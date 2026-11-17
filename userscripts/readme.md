@@ -11,8 +11,8 @@ Most pilots should install the unified **GeoFS Extension** instead — it bundle
 
 | Simulator Version | Folder | Description | Docs |
 | :--- | :--- | :--- | :--- |
-| **GeoFS V3.9** (`www.geo-fs.com`) | [`v3.9`](v3.9/readme.md) | 13 standalone scripts designed for GeoFS V3.9 | [README](v3.9/readme.md) · [Changelog](v3.9/changelog.md) |
-| **GeoFS V4.0** (`beta.geo-fs.com`) | [`v4.0`](v4.0/readme.md) | 12 standalone scripts ported for GeoFS V4.0 | [README](v4.0/readme.md) · [Changelog](v4.0/changelog.md) |
+| **GeoFS V3.9** (`www.geo-fs.com`) | [`v3.9`](v3.9/readme.md) | 13 standalone scripts designed for GeoFS V3.9 | [README](v3.9/readme.md) · [Changelog](../changelog.md) |
+| **GeoFS V4.0** (`beta.geo-fs.com`) | [`v4.0`](v4.0/readme.md) | 12 standalone scripts ported for GeoFS V4.0 | [README](v4.0/readme.md) · [Changelog](../changelog.md) |
 
 ## How To Use A Standalone Userscript
 

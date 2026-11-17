@@ -9,7 +9,6 @@
     "test": "vitest run",
     "test:e2e": "node tests/e2e/run-e2e.mjs",
     "build": "node scripts/build.mjs",
-    "build:unpacked": "node scripts/build.mjs --unpacked",
     "package": "node scripts/build.mjs --zip"
   },
   "dependencies": {
