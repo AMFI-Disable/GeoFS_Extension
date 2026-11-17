@@ -6,6 +6,7 @@ import type {
 } from '../../types/geofs.d';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 import type { ExtensionSettings, OpSyncPolicy } from '../../types/settings';
+import { buildTopbarPadStyles } from '../../shared/topbar-styles';
 
 const THRUST_FIELDS = ['thrust', 'afterBurnerThrust', 'reverseThrust'] as const;
 type ThrustValues = Pick<GeoFSEnginePart, (typeof THRUST_FIELDS)[number]>;
@@ -225,68 +226,7 @@ const THRUST_PRESETS = [1, 2, 5, 10, 50, 100, 500, 1000, 5000, 10000, 100000, 10
 const CEILING_PRESETS = [3000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000];
 
 const CARD_STYLES = `
-  :where(#opEngineBarBtn.geofs-ext-op-bar-btn) {
-    background-color: #000000;
-    border: 1px solid #888888;
-    box-shadow: 0 0 5px #000000;
-  }
-  #opEngineBarBtn.geofs-ext-op-bar-btn {
-    box-sizing: border-box;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: auto;
-    height: var(--geofs-ext-ap-height, 27px);
-    min-width: 0;
-    min-height: var(--geofs-ext-ap-height, 27px);
-    padding: 0 12px;
-    margin: var(--geofs-ext-ap-margin, 0 10px);
-    border-radius: var(--geofs-ext-ap-radius, 15px);
-    vertical-align: var(--geofs-ext-ap-valign, middle);
-    cursor: pointer;
-    pointer-events: all;
-    text-align: center;
-    white-space: nowrap;
-    flex: 0 0 auto;
-    font-weight: 400;
-    transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
-  }
-  #opEngineBarBtn.geofs-ext-op-bar-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: #ffffff;
-  }
-  #opEngineBarBtn.geofs-ext-op-bar-btn:hover .control-pad-label,
-  :where(#opEngineBarBtn.geofs-ext-op-bar-btn.is-open .control-pad-label) {
-    color: #ffffff;
-  }
-  #opEngineBarBtn.geofs-ext-op-bar-btn.is-open {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: #ffffff;
-  }
-  #opEngineBarBtn.geofs-ext-op-bar-btn .control-pad-label {
-    pointer-events: none;
-    line-height: 1.15;
-    font-family: var(--geofs-ext-ap-font-family, "Roboto", "Helvetica", "Arial", sans-serif);
-    font-size: var(--geofs-ext-ap-font-size, 12px);
-    font-weight: var(--geofs-ext-ap-font-weight, 400);
-    letter-spacing: var(--geofs-ext-ap-letter-spacing, normal);
-    text-align: center;
-    white-space: nowrap;
-    transition: color 150ms ease;
-  }
-  :where(#opEngineBarBtn.geofs-ext-op-bar-btn .control-pad-label) {
-    color: rgba(255, 255, 255, 0.78);
-  }
-  :where(#opEngineBarBtn.geofs-ext-op-bar-btn.green-pad .control-pad-label) {
-    color: #ffffff;
-  }
-  #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad {
-    background-color: rgba(46, 125, 50, 0.38) !important;
-  }
-  #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad:hover {
-    background-color: rgba(56, 142, 60, 0.52) !important;
-  }
-  #opEngineBarBtn.geofs-ext-op-bar-btn.green-pad,
+  ${buildTopbarPadStyles('#opEngineBarBtn.geofs-ext-op-bar-btn')}
   #opEngineCard .op-native-btn.green-pad {
     border-color: #4caf50 !important;
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.5) !important;

@@ -1,3 +1,5 @@
+import { buildTopbarPadStyles } from '../../shared/topbar-styles';
+
 export const controlMarkup = `
   <div class="control-pad ext-autothrottle-control-pad ext-autothrottle-pad" id="autothrottle-button"
        role="button" tabindex="0" aria-pressed="false" title="Toggle autothrottle on/off">
@@ -48,74 +50,7 @@ export const controlStyles = `
   .ext-autothrottle-bar [hidden] {
     display: none !important;
   }
-  :where(.ext-autothrottle-bar .ext-autothrottle-pad) {
-    background-color: #000000;
-    border: 1px solid #888888;
-    box-shadow: 0 0 5px #000000;
-  }
-  #autothrottle-button.ext-autothrottle-pad {
-    box-sizing: border-box;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: auto;
-    height: var(--geofs-ext-ap-height, 27px);
-    min-width: 0;
-    min-height: var(--geofs-ext-ap-height, 27px);
-    padding: 0 12px;
-    margin: var(--geofs-ext-ap-margin, 0 10px);
-    border-radius: var(--geofs-ext-ap-radius, 15px);
-    vertical-align: var(--geofs-ext-ap-valign, middle);
-    cursor: pointer;
-    pointer-events: all;
-    text-align: center;
-    white-space: nowrap;
-    flex: 0 0 auto;
-    font-weight: 400;
-    transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
-  }
-  #autothrottle-button.ext-autothrottle-pad:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: #ffffff;
-  }
-  #autothrottle-button.ext-autothrottle-pad:hover .control-pad-label {
-    color: #ffffff;
-  }
-  #autothrottle-button.ext-autothrottle-pad .control-pad-label {
-    pointer-events: none;
-    line-height: 1.15;
-    font-family: var(--geofs-ext-ap-font-family, "Roboto", "Helvetica", "Arial", sans-serif);
-    font-size: var(--geofs-ext-ap-font-size, 12px);
-    font-weight: var(--geofs-ext-ap-font-weight, 400);
-    letter-spacing: var(--geofs-ext-ap-letter-spacing, normal);
-    text-align: center;
-    white-space: nowrap;
-    transition: color 150ms ease;
-  }
-  :where(#autothrottle-button.ext-autothrottle-pad .control-pad-label) {
-    color: rgba(255, 255, 255, 0.78);
-  }
-  :where(#autothrottle-button.ext-autothrottle-pad.green-pad .control-pad-label),
-  :where(#autothrottle-button.ext-autothrottle-pad.amber-pad .control-pad-label),
-  :where(#autothrottle-button.ext-autothrottle-pad.red-pad .control-pad-label) {
-    color: #ffffff;
-  }
-  #autothrottle-button.ext-autothrottle-pad.green-pad {
-    background-color: rgba(46, 125, 50, 0.38) !important;
-    border-color: #4caf50 !important;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5) !important;
-  }
-  #autothrottle-button.ext-autothrottle-pad.green-pad:hover {
-    background-color: rgba(56, 142, 60, 0.52) !important;
-  }
-  #autothrottle-button.ext-autothrottle-pad.amber-pad {
-    background-color: rgba(245, 158, 11, 0.22) !important;
-    border-color: #fbbf24 !important;
-    box-shadow: 0 0 8px rgba(251, 191, 36, 0.38) !important;
-  }
-  #autothrottle-button.ext-autothrottle-pad.red-pad {
-    background-color: rgba(220, 38, 38, 0.28) !important;
-  }
+  ${buildTopbarPadStyles('#autothrottle-button.ext-autothrottle-pad')}
   .ext-autothrottle-controls {
     margin-right: 10px;
     display: inline-flex;

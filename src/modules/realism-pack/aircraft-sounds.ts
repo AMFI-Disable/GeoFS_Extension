@@ -51,7 +51,9 @@ export function installAircraftSounds(aircraft: GeoFSAircraftInstance): Aircraft
   const installed = new Map<string, { original: GeoFSSound | undefined; replacement: GeoFSSound }>();
   const install = (replacement: GeoFSSound) => {
     const original = sounds[replacement.id];
-    if (original) player.stopSound?.(original);
+    if (original) {
+      try { player.stopSound?.(original); } catch { /* ignore uninitialized sound */ }
+    }
     installed.set(replacement.id, { original, replacement });
     sounds[replacement.id] = replacement;
   };
@@ -156,6 +158,7 @@ export function installAircraftSounds(aircraft: GeoFSAircraftInstance): Aircraft
     const origTurnOff = ap.turnOff;
     apAudio = new Audio(AP_DISCONNECT_737_URL);
     apAudio.preload = 'none';
+    apAudio.addEventListener('error', () => { apAudio = undefined; }, { once: true });
     ap.turnOff = () => {
       origTurnOff?.call(ap);
       if (audio.on !== false && !window.geofs?.isPaused?.()) {
