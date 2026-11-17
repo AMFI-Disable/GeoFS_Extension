@@ -204,6 +204,24 @@ async function run() {
       assert.equal(cur, 'grab', `HUD ${part} must consistently show grab cursor, got ${cur}`);
     }
 
+    // Verify compact "Minimize HUD" tooltip replaces native title and anchors snugly near button
+    await simV3.hover('.geofs-ext-hud-min');
+    const minTipAudit = await simV3.evaluate(() => {
+      const btn = document.querySelector('.geofs-ext-hud-min');
+      const tipStyle = btn ? getComputedStyle(btn, '::after') : null;
+      return {
+        hasTitle: btn?.hasAttribute('title') ?? false,
+        hudTip: btn?.getAttribute('data-hud-tip'),
+        tipContent: tipStyle?.content,
+        tipTop: tipStyle?.top
+      };
+    });
+    assert.equal(minTipAudit.hasTitle, false, 'Minimize button must not use native title that triggers displaced GeoFS tooltips');
+    assert.equal(minTipAudit.hudTip, 'Minimize HUD');
+    assert.equal(minTipAudit.tipContent, '"Minimize HUD"');
+    const tipTopPx = Number.parseFloat(minTipAudit.tipTop || '0');
+    assert(tipTopPx >= 24 && tipTopPx <= 32, `Minimize HUD tooltip should anchor snugly (~26px below top edge of 22px button), got ${minTipAudit.tipTop}`);
+
     // Assert minimize 40x40 circle (with edge button hidden -> single HUD button only) + restore
     await simV3.click('.geofs-ext-hud-min');
     const minRect = await simV3.locator('#flightDataDisplay').boundingBox();
@@ -247,22 +265,39 @@ async function run() {
     assert.equal(edgeVisible, true, 'Left-edge handle should appear when HUD minimized near left edge');
     assert.equal(hudVisibleWhenDocked, false, 'Only one HUD button must be visible when docked at left edge');
 
-    // Left-edge #hudMinimizeBtn must show grab cursor and drag purely vertically along left: 0 without reopening HUD
+    // Vertical drag along left border keeps #hudMinimizeBtn at x=0 without expanding HUD
     const edgeBoxBefore = await simV3.locator('#hudMinimizeBtn').boundingBox();
     const edgeCursor = await simV3.evaluate(() => getComputedStyle(document.getElementById('hudMinimizeBtn')).cursor);
     assert.equal(edgeCursor, 'grab', 'Edge HUD button must show grab cursor');
     assert(edgeBoxBefore);
     await simV3.mouse.move(edgeBoxBefore.x + edgeBoxBefore.width / 2, edgeBoxBefore.y + edgeBoxBefore.height / 2);
     await simV3.mouse.down();
-    await simV3.mouse.move(edgeBoxBefore.x + 80, edgeBoxBefore.y + 90, { steps: 6 });
+    await simV3.mouse.move(edgeBoxBefore.x + 8, edgeBoxBefore.y + 90, { steps: 6 });
     const edgeDraggingCursor = await simV3.evaluate(() => getComputedStyle(document.getElementById('hudMinimizeBtn')).cursor);
     assert.equal(edgeDraggingCursor, 'grabbing');
     await simV3.mouse.up();
     const edgeBoxAfter = await simV3.locator('#hudMinimizeBtn').boundingBox();
-    assert(edgeBoxAfter, 'Edge HUD button should still exist after vertical drag');
-    assert.equal(Math.round(edgeBoxAfter.x), 0, `Edge HUD button must drag strictly along x=0, got x=${edgeBoxAfter.x}`);
+    assert(edgeBoxAfter, 'Edge HUD button should still exist after vertical border drag');
+    assert.equal(Math.round(edgeBoxAfter.x), 0, `Edge HUD button must stay on x=0 during vertical drag, got x=${edgeBoxAfter.x}`);
     assert(edgeBoxAfter.y >= edgeBoxBefore.y + 70, `Edge HUD button did not move vertically (before=${edgeBoxBefore.y}, after=${edgeBoxAfter.y})`);
-    assert.equal(await simV3.locator('#flightDataDisplay').isVisible(), false, 'Dragging #hudMinimizeBtn must not accidentally reopen HUD');
+    assert.equal(await simV3.locator('#flightDataDisplay').isVisible(), false, 'Vertical drag of #hudMinimizeBtn must not reopen HUD');
+
+    // Dragging #hudMinimizeBtn outside of the left border transforms it into the small 40x40 HUD circle
+    await simV3.mouse.move(edgeBoxAfter.x + edgeBoxAfter.width / 2, edgeBoxAfter.y + edgeBoxAfter.height / 2);
+    await simV3.mouse.down();
+    await simV3.mouse.move(110, edgeBoxAfter.y + 20, { steps: 6 });
+    await simV3.mouse.up();
+    const pulledOutBox = await simV3.locator('#flightDataDisplay').boundingBox();
+    assert.equal(await simV3.locator('#hudMinimizeBtn').isVisible(), false, 'Dragging side-button outside border must hide side-button');
+    assert.equal(await simV3.locator('#flightDataDisplay.is-minimized').isVisible(), true, 'Dragging side-button outside border must show small HUD circle');
+    assert(pulledOutBox && Math.round(pulledOutBox.width) === 40 && Math.round(pulledOutBox.height) === 40 && pulledOutBox.x >= 70, 'Dragged-out HUD circle should be 40x40 away from left border');
+
+    // Dragging the 40x40 HUD circle back onto the left border returns to #hudMinimizeBtn
+    await simV3.mouse.move(pulledOutBox.x + 20, pulledOutBox.y + 20);
+    await simV3.mouse.down();
+    await simV3.mouse.move(6, pulledOutBox.y, { steps: 6 });
+    await simV3.mouse.up();
+    assert.equal(await simV3.locator('#hudMinimizeBtn').isVisible(), true, 'Dragging HUD circle back to left border must dock to #hudMinimizeBtn');
 
     await simV3.click('#hudMinimizeBtn');
     assert.equal(await simV3.locator('#hudMinimizeBtn').isVisible(), false, 'Clicking edge handle must hide edge button and show full HUD');

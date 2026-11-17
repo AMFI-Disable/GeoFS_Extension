@@ -473,14 +473,21 @@ export class AnchorManager {
     return cleanup;
   }
 
-  private setHudMinimized(minimized: boolean): void {
+  private applyHudMinimizedState(minimized: boolean): void {
     if (!this.hudRoot || !this.hudTabsEl || !this.hudBodyEl || !this.minBtnEl) return;
     this.hudMinimized = minimized;
     this.hudRoot.classList.toggle('is-minimized', minimized);
     this.minBtnEl.textContent = minimized ? 'HUD' : '−';
-    this.minBtnEl.title = minimized ? 'Restore HUD' : 'Minimize HUD';
+    const label = minimized ? 'Restore HUD' : 'Minimize HUD';
+    this.minBtnEl.setAttribute('aria-label', label);
+    this.minBtnEl.dataset.hudTip = label;
     this.hudTabsEl.style.display = minimized ? 'none' : 'flex';
     this.hudBodyEl.style.display = minimized ? 'none' : 'block';
+  }
+
+  private setHudMinimized(minimized: boolean): void {
+    if (!this.hudRoot) return;
+    this.applyHudMinimizedState(minimized);
     this.syncEdgeHandle();
     this.clampElementToViewport(this.hudRoot);
   }
@@ -493,10 +500,213 @@ export class AnchorManager {
     this.edgeHandleEl.style.display = showEdge ? 'flex' : 'none';
     this.hudRoot.style.display = showEdge ? 'none' : 'flex';
     if (showEdge) {
+      if (dockedLeftMinimized && this.hudRoot.style.top) {
+        this.edgeHandleEl.style.top = this.hudRoot.style.top;
+        this.edgeHandleEl.style.bottom = 'auto';
+        try {
+          localStorage.setItem('geofs_ext_edge_tab_top', JSON.stringify({ top: this.edgeHandleEl.style.top }));
+        } catch {
+          // ignore storage quota errors
+        }
+      }
       this.edgeHandleEl.style.left = '0px';
       this.edgeHandleEl.style.right = 'auto';
       this.clampElementToViewport(this.edgeHandleEl);
     }
+  }
+
+  private bindHudTip(el: HTMLElement): () => void {
+    const updatePlacement = () => {
+      if (typeof window === 'undefined') return;
+      const rect = el.getBoundingClientRect();
+      el.dataset.tipV = rect.bottom + 32 > window.innerHeight ? 'above' : 'below';
+      if (rect.right > window.innerWidth - 110) {
+        el.dataset.tipH = 'right';
+      } else if (rect.left < 110) {
+        el.dataset.tipH = 'left';
+      } else {
+        el.dataset.tipH = 'center';
+      }
+    };
+    el.addEventListener('mouseenter', updatePlacement);
+    el.addEventListener('focus', updatePlacement);
+    return () => {
+      el.removeEventListener('mouseenter', updatePlacement);
+      el.removeEventListener('focus', updatePlacement);
+    };
+  }
+
+  private setupEdgeTabInteraction(edgeTab: HTMLButtonElement): () => void {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return () => {};
+    const BORDER_DOCK_PX = 16;
+    let isPointerDown = false;
+    let dragMoved = false;
+    let dockedOut = false;
+    let startX = 0;
+    let startY = 0;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let edgeHeight = 40;
+
+    this.trackedElements.add(edgeTab);
+    this.resizeObserver?.observe(edgeTab);
+
+    try {
+      const saved = localStorage.getItem('geofs_ext_edge_tab_top');
+      if (saved) {
+        const { top } = JSON.parse(saved) as { top?: string };
+        const parsedTop = top ? Number.parseFloat(top) : NaN;
+        if (Number.isFinite(parsedTop)) {
+          edgeTab.style.left = '0px';
+          edgeTab.style.top = `${Math.max(0, parsedTop)}px`;
+          edgeTab.style.bottom = 'auto';
+          edgeTab.style.right = 'auto';
+          this.clampElementToViewport(edgeTab);
+        }
+      }
+    } catch {
+      // ignore invalid saved coordinates
+    }
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      delete edgeTab.dataset.justDragged;
+      isPointerDown = true;
+      dragMoved = false;
+      dockedOut = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = edgeTab.getBoundingClientRect();
+      dragOffsetX = e.clientX - rect.left;
+      dragOffsetY = e.clientY - rect.top;
+      edgeHeight = rect.height || edgeTab.offsetHeight || 40;
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isPointerDown) return;
+      if (!dragMoved) {
+        const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+        if (dist < 4) return;
+        dragMoved = true;
+        window.getSelection()?.removeAllRanges();
+        edgeTab.classList.add('is-dragging');
+        document.documentElement.classList.add('geofs-ext-dragging');
+      }
+
+      const rawLeft = e.clientX - dragOffsetX;
+      const rawTop = e.clientY - dragOffsetY;
+
+      if (rawLeft > BORDER_DOCK_PX && this.hudRoot) {
+        if (!dockedOut) {
+          dockedOut = true;
+          this.hudHidden = false;
+          this.applyHudMinimizedState(true);
+          edgeTab.style.display = 'none';
+          this.hudRoot.style.display = 'flex';
+          this.hudRoot.style.right = 'auto';
+          this.hudRoot.style.bottom = 'auto';
+          this.hudRoot.style.transformOrigin = 'top left';
+          this.hudRoot.classList.add('is-dragging');
+          this.bringToFront(this.hudRoot);
+        }
+        const circleRect = this.hudRoot.getBoundingClientRect();
+        const circleW = circleRect.width || 40;
+        const circleH = circleRect.height || 40;
+        const maxX = Math.max(0, window.innerWidth - circleW);
+        const maxY = Math.max(0, window.innerHeight - circleH);
+        const clampedLeft = Math.max(0, Math.min(rawLeft, maxX));
+        const clampedTop = Math.max(0, Math.min(rawTop, maxY));
+        this.hudRoot.style.left = `${Math.round(clampedLeft)}px`;
+        this.hudRoot.style.top = `${Math.round(clampedTop)}px`;
+      } else {
+        if (dockedOut && this.hudRoot) {
+          dockedOut = false;
+          this.hudRoot.classList.remove('is-dragging');
+          this.hudRoot.style.display = 'none';
+          edgeTab.style.display = 'flex';
+        }
+        const maxY = Math.max(0, window.innerHeight - edgeHeight);
+        const clampedTop = Math.max(0, Math.min(rawTop, maxY));
+        edgeTab.style.left = '0px';
+        edgeTab.style.right = 'auto';
+        edgeTab.style.bottom = 'auto';
+        edgeTab.style.top = `${Math.round(clampedTop)}px`;
+      }
+    };
+
+    const endDrag = () => {
+      if (!isPointerDown) return;
+      isPointerDown = false;
+      edgeTab.classList.remove('is-dragging');
+      this.hudRoot?.classList.remove('is-dragging');
+      document.documentElement.classList.remove('geofs-ext-dragging');
+      if (dragMoved) {
+        dragMoved = false;
+        edgeTab.dataset.justDragged = '1';
+        setTimeout(() => {
+          delete edgeTab.dataset.justDragged;
+        }, 0);
+        if (dockedOut && this.hudRoot) {
+          this.hudRoot.dataset.justDragged = '1';
+          setTimeout(() => {
+            if (this.hudRoot) delete this.hudRoot.dataset.justDragged;
+          }, 0);
+          try {
+            localStorage.setItem(
+              'geofs_ext_hud_pos',
+              JSON.stringify({ left: this.hudRoot.style.left, top: this.hudRoot.style.top })
+            );
+          } catch {
+            // ignore storage quota errors
+          }
+        } else {
+          try {
+            localStorage.setItem('geofs_ext_edge_tab_top', JSON.stringify({ top: edgeTab.style.top }));
+          } catch {
+            // ignore storage quota errors
+          }
+          if (this.hudRoot) {
+            this.hudRoot.style.top = edgeTab.style.top;
+          }
+        }
+      }
+    };
+
+    const onClickCapture = (e: MouseEvent) => {
+      if (edgeTab.dataset.justDragged === '1') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        delete edgeTab.dataset.justDragged;
+      }
+    };
+
+    edgeTab.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', endDrag);
+    window.addEventListener('blur', endDrag);
+    edgeTab.addEventListener('click', onClickCapture, true);
+
+    const cleanup = () => {
+      if (isPointerDown) {
+        isPointerDown = false;
+        dragMoved = false;
+        dockedOut = false;
+        edgeTab.classList.remove('is-dragging');
+        this.hudRoot?.classList.remove('is-dragging');
+        document.documentElement.classList.remove('geofs-ext-dragging');
+      }
+      edgeTab.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', endDrag);
+      window.removeEventListener('blur', endDrag);
+      edgeTab.removeEventListener('click', onClickCapture, true);
+      this.resizeObserver?.unobserve(edgeTab);
+      this.trackedElements.delete(edgeTab);
+      this.dragCleanups.delete(cleanup);
+    };
+    this.dragCleanups.add(cleanup);
+    return cleanup;
   }
 
   private ensureHud(): void {
@@ -519,7 +729,7 @@ export class AnchorManager {
 
     const grip = document.createElement('span');
     grip.className = 'geofs-ext-hud-grip';
-    grip.title = 'Drag HUD';
+    grip.dataset.hudTip = 'Drag HUD';
     grip.setAttribute('aria-label', 'Drag HUD');
     grip.innerHTML =
       '<svg width="6" height="12" viewBox="0 0 6 12" aria-hidden="true" focusable="false"><circle cx="1.5" cy="2" r="1"/><circle cx="4.5" cy="2" r="1"/><circle cx="1.5" cy="6" r="1"/><circle cx="4.5" cy="6" r="1"/><circle cx="1.5" cy="10" r="1"/><circle cx="4.5" cy="10" r="1"/></svg>';
@@ -531,7 +741,8 @@ export class AnchorManager {
     const minBtn = document.createElement('button');
     minBtn.type = 'button';
     minBtn.className = 'geofs-ext-hud-min';
-    minBtn.title = 'Minimize HUD';
+    minBtn.dataset.hudTip = 'Minimize HUD';
+    minBtn.setAttribute('aria-label', 'Minimize HUD');
     minBtn.textContent = '−';
     minBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -551,11 +762,15 @@ export class AnchorManager {
     edgeTab.id = 'hudMinimizeBtn';
     edgeTab.type = 'button';
     edgeTab.className = 'unified-hud-edge-tab';
-    edgeTab.title = 'Click to show Flight HUD (Drag vertically to reposition)';
+    edgeTab.dataset.hudTip = 'Click to expand · Drag out for HUD circle';
+    edgeTab.setAttribute('aria-label', 'Expand or drag Flight HUD');
     edgeTab.textContent = '▸';
     edgeTab.style.display = 'none';
     edgeTab.addEventListener('click', () => {
       if (edgeTab.dataset.justDragged === '1') return;
+      if (edgeTab.style.top) {
+        root.style.top = edgeTab.style.top;
+      }
       this.hudHidden = false;
       this.setHudMinimized(false);
     });
@@ -568,7 +783,9 @@ export class AnchorManager {
     this.edgeHandleEl = edgeTab;
 
     this.makeDraggable(root, 'geofs_ext_hud_pos');
-    this.makeDraggable(edgeTab, 'geofs_ext_edge_tab_top', edgeTab, { axis: 'vertical' });
+    this.setupEdgeTabInteraction(edgeTab);
+    this.dragCleanups.add(this.bindHudTip(grip));
+    this.dragCleanups.add(this.bindHudTip(minBtn));
     this.clampElementToViewport(root);
     this.syncEdgeHandle();
   }
@@ -596,7 +813,7 @@ export class AnchorManager {
       btn.id = `tab-btn-${id}`;
       btn.className = `unified-tab ${this.activeTabId === id ? 'active is-active' : ''}`;
       btn.textContent = label;
-      btn.title = label;
+      btn.setAttribute('aria-label', label);
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.selectTab(id);
@@ -680,13 +897,15 @@ export class AnchorManager {
       #flightDataDisplay.geofs-ext-hud * {
         box-sizing: border-box;
       }
-      #flightDataDisplay.geofs-ext-hud .mdl-tooltip:not(.is-active) {
-        position: fixed;
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
+      #flightDataDisplay.geofs-ext-hud {
+        overflow: visible;
+      }
+      #flightDataDisplay.geofs-ext-hud .mdl-tooltip {
+        display: none !important;
       }
       #flightDataDisplay.geofs-ext-hud > .geofs-ext-hud-header {
+        position: relative;
+        z-index: 2;
         display: flex;
         align-items: center;
         flex: 0 0 auto;
@@ -699,6 +918,7 @@ export class AnchorManager {
         user-select: none;
       }
       .geofs-ext-hud-grip {
+        position: relative;
         width: 10px;
         height: 22px;
         display: inline-flex;
@@ -751,7 +971,11 @@ export class AnchorManager {
         color: #ffffff;
       }
       .geofs-ext-hud-min {
+        position: relative;
         flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         background: #000000;
         color: #ffffff;
         border: 1px solid var(--geofs-ext-border);
@@ -762,7 +986,7 @@ export class AnchorManager {
         font-family: Helvetica, Arial, sans-serif;
         font-size: 11px;
         font-weight: 700;
-        line-height: 20px;
+        line-height: 1;
         cursor: grab;
         text-align: center;
       }
@@ -802,7 +1026,48 @@ export class AnchorManager {
         height: 40px;
         border-radius: 50%;
         font-size: 10px;
-        line-height: 40px;
+        line-height: 1;
+      }
+      [data-hud-tip]:hover::after,
+      [data-hud-tip]:focus-visible::after {
+        content: attr(data-hud-tip);
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        background: rgba(0, 0, 0, 0.92);
+        color: #ffffff;
+        border: 1px solid var(--geofs-ext-border);
+        border-radius: 6px;
+        padding: 3px 7px;
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+        z-index: 2147483050;
+      }
+      [data-hud-tip][data-tip-v="above"]:hover::after,
+      [data-hud-tip][data-tip-v="above"]:focus-visible::after {
+        top: auto;
+        bottom: calc(100% + 4px);
+      }
+      [data-hud-tip][data-tip-h="left"]:hover::after,
+      [data-hud-tip][data-tip-h="left"]:focus-visible::after {
+        left: 0;
+        right: auto;
+      }
+      [data-hud-tip][data-tip-h="center"]:hover::after,
+      [data-hud-tip][data-tip-h="center"]:focus-visible::after {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+      }
+      html.geofs-ext-dragging [data-hud-tip]::after,
+      .is-dragging [data-hud-tip]::after,
+      .is-dragging[data-hud-tip]::after {
+        display: none !important;
       }
       #hudMinimizeBtn.unified-hud-edge-tab {
         position: fixed;
@@ -825,6 +1090,14 @@ export class AnchorManager {
         font-size: 12px;
         font-weight: 700;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+      }
+      #hudMinimizeBtn.unified-hud-edge-tab[data-hud-tip]:hover::after,
+      #hudMinimizeBtn.unified-hud-edge-tab[data-hud-tip]:focus-visible::after {
+        top: 50%;
+        bottom: auto;
+        left: calc(100% + 6px);
+        right: auto;
+        transform: translateY(-50%);
       }
       .geofs-ext-zone {
         position: fixed;
