@@ -1744,18 +1744,17 @@ window.AIRCRAFT_DATA = {
                         const rawError = Math.abs(e - f); // Absolute error
                         const baseMult = activeSpeed / 500;
                         
-                        // Scale errorBoost aggressively for massive hypersonic target differences
-                        let errorBoost = rawError / 100;
-                        if (rawError > 1000) {
-                            errorBoost = (rawError / 10) * (1 + (rawError / 10000));
+                        const clampedError = Math.min(rawError, 5000);
+                        let errorBoost = clampedError / 100;
+                        if (clampedError > 1000) {
+                            errorBoost = (clampedError / 25) * (1 + (clampedError / 10000));
                         }
                         
-                        const targetMult = clamp(baseMult + errorBoost, 1, 1000000000);
+                        const targetMult = clamp(Math.min(activeSpeed, 5000) / 500 + errorBoost, 1, 250);
                         
                         // Smoothly slide the multiplier towards the optimal target
-                        window.opMultiplier += (targetMult - window.opMultiplier) * 0.15;
-                        
-                        window.opMultiplier = clamp(window.opMultiplier, 1, 1000000000);
+                        const currentMult = Number.isFinite(window.opMultiplier) && window.opMultiplier >= 1 ? window.opMultiplier : 1;
+                        window.opMultiplier = clamp(currentMult + (targetMult - currentMult) * 0.15, 1, 250);
                         
                         // Broadcast live updates to sync the Overpowered Engines UI
                         document.dispatchEvent(new CustomEvent('V40_opMultiplierUpdated', { detail: { value: window.opMultiplier } }));
@@ -2609,7 +2608,7 @@ window.AIRCRAFT_DATA = {
                                 const n = s.name ? s.name.toLowerCase() : "";
                                 if(n.includes("front") || n.includes("nose") || n.includes("tail") || n.includes("steer")) fG = i; 
                             });
-                            this.activeFailures.set("gearFront", setInterval(() => { if(ac.suspensions[fG]) ac.suspensions[fG].collisionPoints[0][2] = 30; }, 1000));
+                            this.activeFailures.set("gearFront", setInterval(() => { if(ac.suspensions[fG]) ac.suspensions[fG].collisionPoints[0][2] = 0.5; }, 1000));
                         }
                         break;
                     case "gearLeft":
@@ -2621,7 +2620,7 @@ window.AIRCRAFT_DATA = {
                                 const n = s.name ? s.name.toLowerCase() : "";
                                 if(n.includes("left") || n.includes("l_g") || n.includes("main l") || n.includes("l-gear")) lG = i; 
                             });
-                            this.activeFailures.set("gearLeft", setInterval(() => { if(ac.suspensions[lG]) ac.suspensions[lG].collisionPoints[0][2] = 30; }, 1000));
+                            this.activeFailures.set("gearLeft", setInterval(() => { if(ac.suspensions[lG]) ac.suspensions[lG].collisionPoints[0][2] = 0.5; }, 1000));
                         }
                         break;
                     case "gearRight":
@@ -2633,7 +2632,7 @@ window.AIRCRAFT_DATA = {
                                 const n = s.name ? s.name.toLowerCase() : "";
                                 if(n.includes("right") || n.includes("r_g") || n.includes("main r") || n.includes("r-gear")) rG = i; 
                             });
-                            this.activeFailures.set("gearRight", setInterval(() => { if(ac.suspensions[rG]) ac.suspensions[rG].collisionPoints[0][2] = 30; }, 1000));
+                            this.activeFailures.set("gearRight", setInterval(() => { if(ac.suspensions[rG]) ac.suspensions[rG].collisionPoints[0][2] = 0.5; }, 1000));
                         }
                         break;
                     case "ailerons":
@@ -3505,11 +3504,10 @@ function main() {
         updateAircraftMass: function() {
             if (!geofs.aircraft.instance || !this.state.initialized) return;
             const mass = (this.state.emptyMass || 0) + (this.state.payload || 0) + (this.state.fuel || 0);
-            if (!isNaN(mass) && mass > 0) {
+            if (Number.isFinite(mass) && mass > 0) {
                 const ac = geofs.aircraft.instance;
-                if (ac === this.state.aircraft && ac.definition && typeof ac.rigidBody?.setMassProps === 'function') {
-                    ac.definition.mass = mass;
-                    ac.rigidBody.setMassProps(mass, ac.definition.inertiaTensor || ac.definition.tensorFactor);
+                if (ac === this.state.aircraft && ac.definition) {
+                    ac.definition.mass = Math.max(1, Math.min(10000000, mass));
                 }
             }
         },
@@ -3715,9 +3713,14 @@ function main() {
 
                 // Physics Simulation: Roll moment due to fuel imbalance
                 const imbalance = this.state.tanks.left - this.state.tanks.right;
-                if (Math.abs(imbalance) > 10) {
-                    const rollMoment = imbalance * 0.000001; 
-                    ac.rigidBody.applyTorque(window.V3.scale(ac.object3d.worldRotation[0], rollMoment));
+                const axis = ac.object3d?.worldRotation?.[0];
+                if (!ac.groundContact && Number.isFinite(imbalance) && Math.abs(imbalance) > 10 && Array.isArray(axis) && axis.length >= 3 && axis.every(Number.isFinite)) {
+                    const axisLen = Math.hypot(axis[0], axis[1], axis[2]);
+                    const rollMoment = Math.max(-5, Math.min(5, imbalance * 0.000001));
+                    if (axisLen > 0.001 && Number.isFinite(rollMoment) && typeof ac.rigidBody?.applyTorque === 'function') {
+                        const inv = 1 / axisLen;
+                        ac.rigidBody.applyTorque([axis[0] * inv * rollMoment, axis[1] * inv * rollMoment, axis[2] * inv * rollMoment]);
+                    }
                 }
             } else {
                 // Parallel Architecture: Uniform distribution
@@ -4942,8 +4945,9 @@ function main() {
          * oscillations during overpowered flight.
          */
         tickSAS: () => {
-            if (!globalThis.isSASActive || !geofs?.aircraft?.instance) return;
-            const rb = geofs.aircraft.instance.rigidBody;
+            const ac = geofs?.aircraft?.instance;
+            if (!globalThis.isSASActive || !ac || ac.groundContact) return;
+            const rb = ac.rigidBody;
             if (!rb) return;
 
             // Input Validation: Threshold check for user stick/yoke interaction
@@ -4958,7 +4962,9 @@ function main() {
             } else {
                 // Maneuver Smoothing: Apply slight dampening to prevent flat spins
                 const av = rb.getAngularVelocity();
-                rb.setAngularVelocity([av[0] * 0.95, av[1] * 0.95, av[2] * 0.95]);
+                if (Array.isArray(av) && av.length >= 3 && av.every(Number.isFinite)) {
+                    rb.setAngularVelocity([av[0] * 0.95, av[1] * 0.95, av[2] * 0.95]);
+                }
             }
         },
 
@@ -5707,23 +5713,32 @@ function main() {
                     if (PWAircraft.has(Number(geofs.aircraft.instance.id))) {
                         // Logic: Scale lift/drag based on wash direction
                         geofs.aircraft.instance.airfoils.forEach(e => { e.propwash = (e.forceDirection === 2) ? 0.005 : 0.01; });
-                        // Physics Hack: Shift CoM based on RPM-induced torque
-                        if (geofs.aircraft.instance.setup?.parts?.[0]) {
-                            geofs.aircraft.instance.setup.parts[0].centerOfMass = [geofs.animation.values.rpm/1000, 0, 0];
-                        }
                     }
                 }, 100);
             },
 
             initSafetySystems: () => {
                 setInterval(() => {
-                    if (!window.realismSettings.spinFix || !geofs.aircraft.instance) return;
+                    const ac = geofs.aircraft.instance;
+                    if (!window.realismSettings.spinFix || !ac || ac.groundContact || (geofs.animation.values.haglFeet || 0) <= 50) return;
                     const spinIds = [2948, 2581, 2808, 3460, 2988];
-                    if (spinIds.includes(Number(geofs.aircraft.instance.id))) {
+                    if (spinIds.includes(Number(ac.id))) {
                         const pitch = geofs.animation.values.atilt;
+                        if (!Number.isFinite(pitch)) return;
                         setTimeout(() => {
-                            if (Math.abs(geofs.animation.values.atilt - pitch) > 50) {
-                                geofs.flyToCamera();
+                            const cur = geofs.animation.values.atilt;
+                            if (!geofs.aircraft.instance || geofs.aircraft.instance !== ac || ac.groundContact || !Number.isFinite(cur)) return;
+                            const delta = Math.abs((((cur - pitch) + 540) % 360) - 180);
+                            if (delta > 50) {
+                                const rb = ac.rigidBody;
+                                const av = rb?.getAngularVelocity?.();
+                                if (Array.isArray(av) && av.length >= 3 && av.every(Number.isFinite)) {
+                                    rb.setAngularVelocity([
+                                        Math.max(-2, Math.min(2, av[0] * 0.5)),
+                                        Math.max(-2, Math.min(2, av[1] * 0.5)),
+                                        Math.max(-2, Math.min(2, av[2] * 0.5))
+                                    ]);
+                                }
                                 if (window.V40_NOTIF) window.V40_NOTIF.info("SPIN RECOVERY ACTIVE");
                             }
                         }, 500);

@@ -322,11 +322,10 @@
         updateAircraftMass: function() {
             if (!geofs.aircraft.instance || !this.state.initialized) return;
             const mass = (this.state.emptyMass || 0) + (this.state.payload || 0) + (this.state.fuel || 0);
-            if (!isNaN(mass) && mass > 0) {
+            if (Number.isFinite(mass) && mass > 0) {
                 const ac = geofs.aircraft.instance;
-                if (ac === this.state.aircraft && ac.definition && typeof ac.rigidBody?.setMassProps === 'function') {
-                    ac.definition.mass = mass;
-                    ac.rigidBody.setMassProps(mass, ac.definition.inertiaTensor || ac.definition.tensorFactor);
+                if (ac === this.state.aircraft && ac.definition) {
+                    ac.definition.mass = Math.max(1, Math.min(10000000, mass));
                 }
             }
         },
@@ -532,9 +531,14 @@
 
                 // Physics Simulation: Roll moment due to fuel imbalance
                 const imbalance = this.state.tanks.left - this.state.tanks.right;
-                if (Math.abs(imbalance) > 10) {
-                    const rollMoment = imbalance * 0.000001; 
-                    ac.rigidBody.applyTorque(window.V3.scale(ac.object3d.worldRotation[0], rollMoment));
+                const axis = ac.object3d?.worldRotation?.[0];
+                if (!ac.groundContact && Number.isFinite(imbalance) && Math.abs(imbalance) > 10 && Array.isArray(axis) && axis.length >= 3 && axis.every(Number.isFinite)) {
+                    const axisLen = Math.hypot(axis[0], axis[1], axis[2]);
+                    const rollMoment = Math.max(-5, Math.min(5, imbalance * 0.000001));
+                    if (axisLen > 0.001 && Number.isFinite(rollMoment) && typeof ac.rigidBody?.applyTorque === 'function') {
+                        const inv = 1 / axisLen;
+                        ac.rigidBody.applyTorque([axis[0] * inv * rollMoment, axis[1] * inv * rollMoment, axis[2] * inv * rollMoment]);
+                    }
                 }
             } else {
                 // Parallel Architecture: Uniform distribution

@@ -70,6 +70,10 @@ export class EffectiveSasController {
       sasStrength,
       groundContact
     } = params;
+    if (groundContact) {
+      this.reset();
+      return { mode: 'hold', controlling: false, nextAngularVelocity: null };
+    }
     const sample = readPilotControls(controls);
     const safePitch = Number.isFinite(pitchDeg) ? pitchDeg : 0;
     const safeRoll = Number.isFinite(rollDeg) ? rollDeg : 0;
@@ -121,7 +125,7 @@ export class EffectiveSasController {
 
     const residualDamp = clamp(0.06 / strength, 0.005, 0.15);
     const current: [number, number, number] = hasValidAv ? [av[0], av[1], av[2]] : [0, 0, 0];
-    if (groundContact || (Math.abs(pitchErr) < 0.15 && Math.abs(rollErr) < 0.15)) {
+    if (Math.abs(pitchErr) < 0.15 && Math.abs(rollErr) < 0.15) {
       const zeroed: [number, number, number] = [0, 0, 0];
       rigidBody.setAngularVelocity(zeroed);
       return { mode: 'hold', controlling: false, nextAngularVelocity: zeroed };
@@ -654,9 +658,11 @@ export class OverpoweredEnginesModule implements IModule {
         if (desired === null || !Number.isFinite(desired) || desired <= 0) {
           this.automaticMultiplier = null;
         } else {
-          const rawCurrent = this.automaticMultiplier ?? settings.opThrustMultiplier ?? 1;
+          const baseMultiplier = this.thrustEnabled ? (settings.opThrustMultiplier ?? 1) : 1;
+          const rawCurrent = this.automaticMultiplier ?? baseMultiplier;
           const current = Number.isFinite(rawCurrent) && rawCurrent >= 1 ? rawCurrent : 1;
-          const next = current + (desired - current) * 0.15;
+          const clampedDesired = clamp(desired, 1, 250);
+          const next = clamp(current + (clampedDesired - current) * 0.15, 1, 250);
           this.automaticMultiplier = Number.isFinite(next) && next >= 1 ? next : 1;
         }
         report(this.automaticMultiplier ?? (this.thrustEnabled ? settings.opThrustMultiplier ?? 1 : 1));

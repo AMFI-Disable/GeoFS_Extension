@@ -340,7 +340,8 @@
                             const point = ac.suspensions?.[fG]?.collisionPoints?.[0];
                             if (point) {
                                 this.gearOriginals.set("gearFront", { point, height: point[2] });
-                                this.activeFailures.set("gearFront", setInterval(() => { point[2] = 30; }, 1000));
+                                const collapsedZ = Math.max((Number.isFinite(point[2]) ? point[2] : -2.5) + 2, 0.5);
+                                this.activeFailures.set("gearFront", setInterval(() => { point[2] = collapsedZ; }, 1000));
                             }
                         }
                         break;
@@ -356,7 +357,8 @@
                             const point = ac.suspensions?.[lG]?.collisionPoints?.[0];
                             if (point) {
                                 this.gearOriginals.set("gearLeft", { point, height: point[2] });
-                                this.activeFailures.set("gearLeft", setInterval(() => { point[2] = 30; }, 1000));
+                                const collapsedZ = Math.max((Number.isFinite(point[2]) ? point[2] : -2.5) + 2, 0.5);
+                                this.activeFailures.set("gearLeft", setInterval(() => { point[2] = collapsedZ; }, 1000));
                             }
                         }
                         break;
@@ -372,7 +374,8 @@
                             const point = ac.suspensions?.[rG]?.collisionPoints?.[0];
                             if (point) {
                                 this.gearOriginals.set("gearRight", { point, height: point[2] });
-                                this.activeFailures.set("gearRight", setInterval(() => { point[2] = 30; }, 1000));
+                                const collapsedZ = Math.max((Number.isFinite(point[2]) ? point[2] : -2.5) + 2, 0.5);
+                                this.activeFailures.set("gearRight", setInterval(() => { point[2] = collapsedZ; }, 1000));
                             }
                         }
                         break;

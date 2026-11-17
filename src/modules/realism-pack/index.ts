@@ -117,6 +117,8 @@ export class RealismPackModule implements IModule {
   private nextRotor = 0;
   private spinSample?: { time: number; pitch: number };
   private nextSpin = 0;
+  private nextSpinToast = 0;
+  private next777Impulse = 0;
   private cameraOffset?: { undo: () => void; timer: ReturnType<typeof setTimeout> };
   private aircraft?: GeoFSAircraftInstance;
   private restores: Array<() => void> = [];
@@ -356,13 +358,26 @@ export class RealismPackModule implements IModule {
       if (isEnabled(options, 'bladeCollisions') && ROTOR_IDS.has(id) && Math.abs(Number(values.aroll) || telemetry.roll) > 70 &&
           telemetry.aglFeet <= 5 && sim?.preferences?.crashDetection) aircraft.crash?.();
     }
-    if (SPIN_IDS.has(id) && isEnabled(options, 'spinFix')) {
+    if (SPIN_IDS.has(id) && isEnabled(options, 'spinFix') && !telemetry.groundContact && telemetry.aglFeet > 50) {
       const pitch = Number(values.atilt) || telemetry.pitch;
       if (Number.isFinite(pitch)) {
         if (this.spinSample && now >= this.spinSample.time + 500) {
-          if (Math.abs(pitch - this.spinSample.pitch) > 50) {
-            sim?.flyToCamera?.();
-            this.ctx?.anchors.showToast('Spin Recovery Active');
+          const delta = Math.abs((((pitch - this.spinSample.pitch) + 540) % 360) - 180);
+          if (delta > 50) {
+            const rigid = aircraft.rigidBody;
+            const av = rigid?.getAngularVelocity?.();
+            if (Array.isArray(av) && av.length >= 3 && av.every((v) => typeof v === 'number' && Number.isFinite(v))) {
+              const damped: [number, number, number] = [
+                Math.max(-2, Math.min(2, av[0] * 0.5)),
+                Math.max(-2, Math.min(2, av[1] * 0.5)),
+                Math.max(-2, Math.min(2, av[2] * 0.5))
+              ];
+              rigid?.setAngularVelocity?.(damped);
+            }
+            if (now >= this.nextSpinToast) {
+              this.nextSpinToast = now + 3000;
+              this.ctx?.anchors.showToast('Spin Recovery Active');
+            }
           }
           this.spinSample = undefined;
         }
@@ -371,6 +386,8 @@ export class RealismPackModule implements IModule {
           this.spinSample = { time: now, pitch };
         }
       }
+    } else if (SPIN_IDS.has(id)) {
+      this.spinSample = undefined;
     }
 
     if (BOEING_777_IDS.has(id) && isEnabled(options, 'engineInertia')) {
@@ -383,25 +400,49 @@ export class RealismPackModule implements IModule {
     values: NonNullable<NonNullable<typeof window.geofs>['animation']>['values'] & object,
     telemetry: FlightTelemetry
   ): void {
+    const now = telemetry.timestamp;
     const hagl = telemetry.aglFeet;
     const kias = telemetry.kias;
     const rigid = aircraft.rigidBody;
-    const dt = Number.isFinite(telemetry.dt) && telemetry.dt > 0 ? Math.min(telemetry.dt, 0.25) : 0.02;
-    const dtScale = Math.max(0.25, Math.min(2.5, dt / 0.02));
-    if (!telemetry.groundContact && Number.isFinite(hagl) && hagl > 0 && hagl <= 100 && Number.isFinite(kias) && kias >= 50) {
-      const impulseZ = Math.max(0, Math.min(50_000, (100 - hagl) * kias * 0.25 * dtScale));
-      if (Number.isFinite(impulseZ) && impulseZ > 0) {
-        rigid?.applyCentralImpulse?.([0, 0, impulseZ]);
+    if (now >= this.next777Impulse) {
+      this.next777Impulse = now + 100;
+      const dt = Number.isFinite(telemetry.dt) && telemetry.dt > 0 ? Math.min(telemetry.dt, 0.25) : 0.02;
+      const dtScale = Math.max(0.25, Math.min(2.5, dt / 0.02));
+      if (
+        !telemetry.groundContact &&
+        Number.isFinite(hagl) &&
+        hagl >= 5 &&
+        hagl <= 80 &&
+        Number.isFinite(kias) &&
+        kias >= 80 &&
+        kias <= 450 &&
+        (!Number.isFinite(telemetry.vs) || telemetry.vs < 1500) &&
+        (!Number.isFinite(telemetry.gForce) || telemetry.gForce < 1.8)
+      ) {
+        const impulseZ = Math.max(0, Math.min(2_500, (80 - hagl) * 20 * dtScale));
+        if (Number.isFinite(impulseZ) && impulseZ > 0) {
+          rigid?.applyCentralImpulse?.([0, 0, impulseZ]);
+        }
       }
-    }
-    if (!telemetry.groundContact && Number.isFinite(kias) && kias >= 60 && Number.isFinite(telemetry.aoa) && telemetry.aoa > 10 && telemetry.aoa < 85) {
-      const rawHeading = Number(values.heading360);
-      const heading = Number.isFinite(rawHeading) ? rawHeading : telemetry.heading;
-      if (Number.isFinite(heading)) {
-        const headingRad = heading * (Math.PI / 180);
-        const force = Math.min(25_000, Math.random() * (telemetry.aoa - 10) * 800 * dtScale);
-        if (Number.isFinite(force) && force > 0) {
-          rigid?.applyTorqueImpulse?.([force * Math.sin(headingRad), force * Math.cos(headingRad), 0]);
+      if (
+        !telemetry.groundContact &&
+        Number.isFinite(hagl) &&
+        hagl >= 50 &&
+        Number.isFinite(kias) &&
+        kias >= 60 &&
+        kias <= 450 &&
+        Number.isFinite(telemetry.aoa) &&
+        telemetry.aoa > 12 &&
+        telemetry.aoa < 75
+      ) {
+        const rawHeading = Number(values.heading360);
+        const heading = Number.isFinite(rawHeading) ? rawHeading : telemetry.heading;
+        if (Number.isFinite(heading)) {
+          const headingRad = heading * (Math.PI / 180);
+          const force = Math.min(1_500, Math.random() * (telemetry.aoa - 12) * 50 * dtScale);
+          if (Number.isFinite(force) && force > 0) {
+            rigid?.applyTorqueImpulse?.([force * Math.sin(headingRad), force * Math.cos(headingRad), 0]);
+          }
         }
       }
     }
@@ -480,6 +521,7 @@ export class RealismPackModule implements IModule {
     this.captured = new WeakMap();
     this.spoilerArmed = false;
     this.spinSample = undefined;
+    this.next777Impulse = 0;
   }
 
   public destroy(): void {

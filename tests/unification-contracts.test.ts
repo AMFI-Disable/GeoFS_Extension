@@ -153,7 +153,8 @@ describe('Effective Closed-Loop SAS Controller', () => {
     expect(disturbRes.nextAngularVelocity?.[1]).toBeLessThan(0);
     expect(torques.length).toBeGreaterThan(0);
 
-    // Ground contact stops stabilization torque/rates cleanly
+    // Ground contact leaves rigidBody wheel/suspension physics untouched
+    const torquesBeforeGround = torques.length;
     const groundRes = sas.step({
       rigidBody,
       controls: { rawRoll: 0, rawPitch: 0, rawYaw: 0 },
@@ -164,7 +165,8 @@ describe('Effective Closed-Loop SAS Controller', () => {
       sasStrength: 1.5,
       groundContact: true
     });
-    expect(groundRes.nextAngularVelocity).toEqual([0, 0, 0]);
+    expect(groundRes.nextAngularVelocity).toBeNull();
+    expect(torques.length).toBe(torquesBeforeGround);
   });
 });
 
@@ -449,7 +451,7 @@ describe('Physics Stability & Void-Crash Prevention Regressions', () => {
     fuelMod.destroy();
     expect(aircraftInstance.definition.mass).toBe(180_000);
 
-    // When a real 3-axis inertiaTensor is provided, setMassProps is called with scaled [Ixx,Iyy,Izz] and restored on destroy
+    // Even when a real 3-axis inertiaTensor is provided, live rigidBody.setMassProps is NEVER mutated at runtime
     const validInertiaCalls: unknown[][] = [];
     const rigidAircraft = {
       id: '24',
@@ -477,21 +479,21 @@ describe('Physics Stability & Void-Crash Prevention Regressions', () => {
       updateSettings: () => {}
     });
     fuelModValid.update(sim.buildTelemetrySnapshot(0.02, 4));
-    expect(validInertiaCalls).toHaveLength(1);
-    const [updatedMass, updatedInertia] = validInertiaCalls[0] as [number, number[]];
-    expect(updatedMass).toBeGreaterThan(200_000);
-    expect(updatedInertia.every((n) => Number.isFinite(n) && n > 1_000_000)).toBe(true);
+    expect(validInertiaCalls).toHaveLength(0);
+    expect(rigidAircraft.definition.mass).toBeGreaterThan(200_000);
     fuelModValid.destroy();
-    expect(validInertiaCalls).toHaveLength(2);
-    expect(validInertiaCalls[1]).toEqual([200_000, [1_000_000, 2_000_000, 3_000_000]]);
+    expect(rigidAircraft.definition.mass).toBe(200_000);
+    expect(validInertiaCalls).toHaveLength(0);
   });
 
-  it('never shifts setup.parts[0].centerOfMass on propwash aircraft and never fires 777 impulses on runway/low speed', async () => {
+  it('never shifts setup.parts[0].centerOfMass, never teleports via flyToCamera, and throttles/caps 777 impulses', async () => {
     const { RealismPackModule } = await import('../src/modules/realism-pack');
     const mod = new RealismPackModule();
     const origCom: [number, number, number] = [0, 0, 0];
-    const impulses: unknown[][] = [];
-    const torques: unknown[][] = [];
+    const impulses: number[][] = [];
+    const torques: number[][] = [];
+    let flyToCameraCalls = 0;
+    let angularVelocity: [number, number, number] = [6, -4, 3];
     const ac: Record<string, unknown> = {
       id: '2',
       airfoils: [{ forceDirection: 2 }, { forceDirection: 0 }],
@@ -499,16 +501,20 @@ describe('Physics Stability & Void-Crash Prevention Regressions', () => {
       definition: { name: 'Cessna 172' },
       groundContact: true,
       rigidBody: {
-        applyCentralImpulse: (...args: unknown[]) => impulses.push(args),
-        applyTorqueImpulse: (...args: unknown[]) => torques.push(args)
+        getAngularVelocity: () => angularVelocity,
+        setAngularVelocity: (next: [number, number, number]) => { angularVelocity = next; },
+        applyCentralImpulse: (v: number[]) => impulses.push(v),
+        applyTorqueImpulse: (t: number[]) => torques.push(t)
       }
     };
+    const animValues: Record<string, number> = { rpm: 2400, kias: 12, haglFeet: 3, aoa: 45, accZ: 9.81, atilt: 10, heading360: 90 };
     vi.stubGlobal('document', { addEventListener: () => {}, removeEventListener: () => {} });
     vi.stubGlobal('window', {
       geofs: {
         version: '4.0',
+        flyToCamera: () => { flyToCameraCalls++; },
         aircraft: { instance: ac },
-        animation: { values: { rpm: 2400, kias: 12, haglFeet: 3, aoa: 45, accZ: 9.81 } }
+        animation: { values: animValues }
       }
     });
 
@@ -524,8 +530,18 @@ describe('Physics Stability & Void-Crash Prevention Regressions', () => {
     });
 
     const sim = new SimAdapter();
-    mod.update({ ...sim.buildTelemetrySnapshot(0.02, 4), timestamp: Date.now() + 2000 });
+    mod.update({ ...sim.buildTelemetrySnapshot(0.02, 4), timestamp: 2000 });
     expect((ac.setup as { parts: Array<{ centerOfMass: number[] }> }).parts[0].centerOfMass).toEqual([0, 0, 0]);
+
+    // spinFix aircraft experiencing rapid pitch change airborne must damp angular velocity and NEVER call flyToCamera()
+    ac.id = '2948';
+    ac.groundContact = false;
+    animValues.atilt = 5;
+    mod.update({ ...sim.buildTelemetrySnapshot(0.02, 4), aglFeet: 2000, groundContact: false, pitch: 5, timestamp: 4000 });
+    animValues.atilt = 85;
+    mod.update({ ...sim.buildTelemetrySnapshot(0.02, 4), aglFeet: 2000, groundContact: false, pitch: 85, timestamp: 4600 });
+    expect(flyToCameraCalls).toBe(0);
+    expect(angularVelocity).toEqual([2, -2, 1.5]);
 
     // Switch to Boeing 777-300ER ('25') on runway with high AoA sensor noise and low speed
     ac.id = '25';
@@ -548,14 +564,34 @@ describe('Physics Stability & Void-Crash Prevention Regressions', () => {
       kias: 18,
       aglFeet: 16,
       aoa: 42,
-      timestamp: Date.now() + 4000
+      timestamp: 6000
     });
     expect(impulses).toHaveLength(0);
     expect(torques).toHaveLength(0);
+
+    // Airborne within 100ms window: throttled to <= 1 bounded central impulse per 100ms
+    const boeing = {
+      id: '25',
+      name: 'Boeing 777-300ER',
+      category: 'airliner-twin' as const,
+      engineCount: 2,
+      maxFlaps: 6,
+      hasGear: true,
+      hasSpoilers: true,
+      oew: 167800,
+      mtow: 351500,
+      maxFuel: 145538,
+      isDynamic: false
+    };
+    mod.update({ ...sim.buildTelemetrySnapshot(0.02, 4), aircraft: boeing, groundContact: false, kias: 140, aglFeet: 30, aoa: 5, vs: 100, gForce: 1.0, timestamp: 6150 });
+    mod.update({ ...sim.buildTelemetrySnapshot(0.02, 4), aircraft: boeing, groundContact: false, kias: 140, aglFeet: 30, aoa: 5, vs: 100, gForce: 1.0, timestamp: 6166 });
+    mod.update({ ...sim.buildTelemetrySnapshot(0.02, 4), aircraft: boeing, groundContact: false, kias: 140, aglFeet: 30, aoa: 5, vs: 100, gForce: 1.0, timestamp: 6182 });
+    expect(impulses).toHaveLength(1);
+    expect(impulses[0][2]).toBeLessThanOrEqual(2500);
     mod.destroy();
   });
 
-  it('guards SimAdapter.setThrottle and EffectiveSasController against NaN propagation', () => {
+  it('guards SimAdapter.setThrottle, EffectiveSasController ground contact, and Overpowered OP-SYNC bounds', async () => {
     const controls = { throttle: 0.4, rawRoll: 0, rawPitch: 0, rawYaw: 0 };
     vi.stubGlobal('window', { controls });
     const sim = new SimAdapter();
@@ -580,6 +616,70 @@ describe('Physics Stability & Void-Crash Prevention Regressions', () => {
     });
     expect(res.nextAngularVelocity).toBeNull();
     expect(Number.isNaN(av[0])).toBe(true);
+
+    // On groundContact, SAS must not override rigidBody angular velocity
+    let groundAv: [number, number, number] = [0.25, -0.1, 0.05];
+    const groundRes = sas.step({
+      rigidBody: {
+        mass: 5000,
+        getAngularVelocity: () => groundAv,
+        setAngularVelocity: (next) => { groundAv = next; }
+      },
+      controls: { rawRoll: 0, rawPitch: 0, rawYaw: 0 },
+      pitchDeg: 2,
+      rollDeg: 0,
+      kias: 60,
+      multiplier: 10,
+      sasStrength: 1.0,
+      groundContact: true
+    });
+    expect(groundRes.nextAngularVelocity).toBeNull();
+    expect(groundAv).toEqual([0.25, -0.1, 0.05]);
+
+    // OP-SYNC must initialize from 1 (NOT inactive opThrustMultiplier = 1_000_000_000) and cap boosted multiplier
+    const { OverpoweredEnginesModule } = await import('../src/modules/overpowered-engines');
+    const opMod = new OverpoweredEnginesModule();
+    let boostListener: ((payload: { desired: number | null; report: (mult: number) => void }) => void) | undefined;
+    vi.stubGlobal('document', {
+      createElement: () => ({
+        id: '',
+        className: '',
+        classList: { toggle: () => {} },
+        dataset: {},
+        style: {},
+        innerHTML: '',
+        setAttribute: () => {},
+        addEventListener: () => {},
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        remove: () => {}
+      }),
+      querySelector: () => null,
+      removeEventListener: () => {}
+    });
+    opMod.init({
+      sim,
+      audio: {} as never,
+      anchors: {
+        mountControl: () => () => {},
+        mountFloatingPanel: () => () => {},
+        makeDraggable: () => () => {},
+        syncAutopilotPad: () => {},
+        showToast: () => {}
+      } as never,
+      keybinds: { register: () => () => {}, updateCombo: () => {} } as never,
+      emitEvent: () => {},
+      onEvent: ((event: string, cb: (payload: { desired: number | null; report: (mult: number) => void }) => void) => {
+        if (event === 'autothrottle:boost') boostListener = cb;
+        return () => {};
+      }) as never,
+      getSettings: () => ({ ...DEFAULT_SETTINGS, opThrustMultiplier: 1_000_000_000 }),
+      updateSettings: () => {}
+    });
+    let reported = 0;
+    boostListener?.({ desired: 4, report: (m) => { reported = m; } });
+    expect(reported).toBeCloseTo(1 + (4 - 1) * 0.15, 4);
+    opMod.destroy();
   });
 
   it('keeps terrain untouched, restricts blackout/G-Breath to cockpit mode, and retries first-load sound setup', async () => {

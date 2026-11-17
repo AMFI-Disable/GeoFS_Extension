@@ -869,7 +869,8 @@ export class FailureSimulatorModule implements IModule {
             suspensions[fallback])?.collisionPoints?.[0];
         if (!point) return undefined;
         const originalZ = point[2];
-        return repeat(pinValue(point, 2, 30), 1000, () => point[2] === originalZ);
+        const collapsedZ = Math.max((Number.isFinite(originalZ) ? originalZ : -2.5) + 2, 0.5);
+        return repeat(pinValue(point, 2, collapsedZ), 1000, () => point[2] === originalZ);
       }
       case 'ailerons':
       case 'elevators':

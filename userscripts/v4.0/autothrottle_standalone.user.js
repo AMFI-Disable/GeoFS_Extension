@@ -574,18 +574,17 @@
                         const rawError = Math.abs(e - f); // Absolute error
                         const baseMult = activeSpeed / 500;
                         
-                        // Scale errorBoost aggressively for massive hypersonic target differences
-                        let errorBoost = rawError / 100;
-                        if (rawError > 1000) {
-                            errorBoost = (rawError / 10) * (1 + (rawError / 10000));
+                        const clampedError = Math.min(rawError, 5000);
+                        let errorBoost = clampedError / 100;
+                        if (clampedError > 1000) {
+                            errorBoost = (clampedError / 25) * (1 + (clampedError / 10000));
                         }
                         
-                        const targetMult = clamp(baseMult + errorBoost, 1, 1000000000);
+                        const targetMult = clamp(Math.min(activeSpeed, 5000) / 500 + errorBoost, 1, 250);
                         
                         // Smoothly slide the multiplier towards the optimal target
-                        window.opMultiplier += (targetMult - window.opMultiplier) * 0.15;
-                        
-                        window.opMultiplier = clamp(window.opMultiplier, 1, 1000000000);
+                        const currentMult = Number.isFinite(window.opMultiplier) && window.opMultiplier >= 1 ? window.opMultiplier : 1;
+                        window.opMultiplier = clamp(currentMult + (targetMult - currentMult) * 0.15, 1, 250);
                         
                         // Broadcast live updates to sync the Overpowered Engines UI
                         document.dispatchEvent(new CustomEvent('V40_opMultiplierUpdated', { detail: { value: window.opMultiplier } }));

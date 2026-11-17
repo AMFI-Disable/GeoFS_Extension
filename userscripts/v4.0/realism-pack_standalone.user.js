@@ -481,23 +481,32 @@
                     if (PWAircraft.has(Number(geofs.aircraft.instance.id))) {
                         // Logic: Scale lift/drag based on wash direction
                         geofs.aircraft.instance.airfoils.forEach(e => { e.propwash = (e.forceDirection === 2) ? 0.005 : 0.01; });
-                        // Physics Hack: Shift CoM based on RPM-induced torque
-                        if (geofs.aircraft.instance.setup?.parts?.[0]) {
-                            geofs.aircraft.instance.setup.parts[0].centerOfMass = [geofs.animation.values.rpm/1000, 0, 0];
-                        }
                     }
                 }, 100);
             },
 
             initSafetySystems: () => {
                 setInterval(() => {
-                    if (!window.realismSettings.spinFix || !geofs.aircraft.instance) return;
+                    const ac = geofs.aircraft.instance;
+                    if (!window.realismSettings.spinFix || !ac || ac.groundContact || (geofs.animation.values.haglFeet || 0) <= 50) return;
                     const spinIds = [2948, 2581, 2808, 3460, 2988];
-                    if (spinIds.includes(Number(geofs.aircraft.instance.id))) {
+                    if (spinIds.includes(Number(ac.id))) {
                         const pitch = geofs.animation.values.atilt;
+                        if (!Number.isFinite(pitch)) return;
                         setTimeout(() => {
-                            if (Math.abs(geofs.animation.values.atilt - pitch) > 50) {
-                                geofs.flyToCamera();
+                            const cur = geofs.animation.values.atilt;
+                            if (!geofs.aircraft.instance || geofs.aircraft.instance !== ac || ac.groundContact || !Number.isFinite(cur)) return;
+                            const delta = Math.abs((((cur - pitch) + 540) % 360) - 180);
+                            if (delta > 50) {
+                                const rb = ac.rigidBody;
+                                const av = rb?.getAngularVelocity?.();
+                                if (Array.isArray(av) && av.length >= 3 && av.every(Number.isFinite)) {
+                                    rb.setAngularVelocity([
+                                        Math.max(-2, Math.min(2, av[0] * 0.5)),
+                                        Math.max(-2, Math.min(2, av[1] * 0.5)),
+                                        Math.max(-2, Math.min(2, av[2] * 0.5))
+                                    ]);
+                                }
                                 if (window.V40_NOTIF) window.V40_NOTIF.info("SPIN RECOVERY ACTIVE");
                             }
                         }, 500);

@@ -342,6 +342,8 @@ export class FuelSimulatorModule implements IModule {
       const imbalance = this.tanks.left - this.tanks.right;
       const axis = aircraft.object3d?.worldRotation?.[0];
       if (
+        !telemetry.groundContact &&
+        telemetry.kias >= 10 &&
         Array.isArray(axis) &&
         axis.length >= 3 &&
         Number.isFinite(imbalance) &&
@@ -350,9 +352,11 @@ export class FuelSimulatorModule implements IModule {
         Number.isFinite(axis[1]) &&
         Number.isFinite(axis[2])
       ) {
-        const torque = imbalance * 0.000001;
-        if (Number.isFinite(torque)) {
-          aircraft.rigidBody?.applyTorque?.([axis[0] * torque, axis[1] * torque, axis[2] * torque]);
+        const axisLen = Math.hypot(axis[0], axis[1], axis[2]);
+        const torque = Math.max(-5, Math.min(5, imbalance * 0.000001));
+        if (axisLen > 0.001 && Number.isFinite(axisLen) && Number.isFinite(torque)) {
+          const invLen = 1 / axisLen;
+          aircraft.rigidBody?.applyTorque?.([axis[0] * invLen * torque, axis[1] * invLen * torque, axis[2] * invLen * torque]);
         }
       }
     } else {
@@ -436,44 +440,26 @@ export class FuelSimulatorModule implements IModule {
     if (body !== this.massTarget?.body || definition !== this.massTarget?.definition) this.restoreMass();
     if (!definition || !Number.isFinite(mass) || mass <= 0) return;
 
+    const safeMass = Math.max(1, Math.min(10_000_000, mass));
     const prevDefMass = definition.mass;
-    const changed = Math.abs((prevDefMass ?? 0) - mass) > 5;
+    const changed = Math.abs((prevDefMass ?? 0) - safeMass) > 5;
 
     if (!this.massTarget) {
-      const origBodyMass = typeof body?.mass === 'number' && Number.isFinite(body.mass) && body.mass > 0
-        ? body.mass
-        : typeof prevDefMass === 'number' && Number.isFinite(prevDefMass) && prevDefMass > 0
-          ? prevDefMass
-          : undefined;
       this.massTarget = {
         definition,
         originalDefinitionMass: prevDefMass,
         body,
-        originalMass: origBodyMass,
+        originalMass: undefined,
         originalInertia: null,
         calledSetMassProps: false
       };
     }
 
-    definition.mass = mass;
-
-    if (body?.setMassProps && this.massTarget.originalMass !== undefined) {
-      const resolved = resolveScaledInertiaVector(body, definition, this.massTarget.originalMass, mass);
-      if (resolved) {
-        if (!this.massTarget.originalInertia) {
-          this.massTarget.originalInertia = resolved.base;
-        }
-        try {
-          body.setMassProps(mass, resolved.scaled);
-          this.massTarget.calledSetMassProps = true;
-        } catch {
-          this.massTarget.calledSetMassProps = false;
-        }
-      }
-    }
+    // Update aerodynamic definition mass only; mutating live Bullet btRigidBody mass/inertia mid-flight corrupts solver warmstarting.
+    definition.mass = safeMass;
 
     if (changed) {
-      this.ctx?.emitDiag?.('FUEL_MASS_SYNC', { massKg: Math.round(mass), fuelKg: Math.round(this.fuelKg) });
+      this.ctx?.emitDiag?.('FUEL_MASS_SYNC', { massKg: Math.round(safeMass), fuelKg: Math.round(this.fuelKg) });
     }
   }
 
@@ -482,18 +468,6 @@ export class FuelSimulatorModule implements IModule {
     if (target) {
       if (target.originalDefinitionMass === undefined) delete target.definition.mass;
       else target.definition.mass = target.originalDefinitionMass;
-      if (
-        target.calledSetMassProps &&
-        target.body?.setMassProps &&
-        target.originalMass !== undefined &&
-        target.originalInertia
-      ) {
-        try {
-          target.body.setMassProps(target.originalMass, target.originalInertia);
-        } catch {
-          // Ignore restore errors if aircraft rigidBody was already torn down
-        }
-      }
     }
     this.massTarget = undefined;
   }

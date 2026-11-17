@@ -157,7 +157,7 @@ export class AutothrottleModule implements IModule {
       const values = window.geofs?.animation?.values;
       const kias = values?.kias ?? 0;
       const currentMach = values?.mach ?? 0;
-      const ratio = kias > 50 && currentMach > 0 ? kias / currentMach : 661.47;
+      const ratio = kias > 50 && currentMach > 0.05 ? clamp(kias / currentMach, 250, 1000) : 661.47;
       this.machMode = mach;
       this.previousSpeed = null;
       this.applyNativeMode();
@@ -289,7 +289,7 @@ export class AutothrottleModule implements IModule {
     const toKnots = (mach: number) => sim?.utils?.machToKnots?.(mach) ?? mach * 661.47;
     const target = this.machMode ? toKnots(this.targetMach) : this.targetKias;
     const speed = this.machMode ? toKnots(telemetry.mach) : telemetry.kias;
-    if (!Number.isFinite(target) || !Number.isFinite(speed)) return;
+    if (!Number.isFinite(target) || !Number.isFinite(speed) || speed < -500 || speed > 25_000) return;
     if (this.reverse?.definition !== definition) this.restoreReverse();
 
     const reverseThreshold = clamp(0.8 - (telemetry.mach || speed / 661.47) * 0.05, 0.1, 0.8);
@@ -307,8 +307,13 @@ export class AutothrottleModule implements IModule {
     const boostLimit = (instance?.setup?.mass ?? 1000) < 10_000 ? 200 : 500;
     const deltaThreshold = Math.max(25, settings.opDeltaThresholdKts ?? 150);
     const highDelta = error >= deltaThreshold || target > boostLimit || Boolean(this.reverse && speed > boostLimit);
-    const errorBoost = error > 1000 ? (error / 10) * (1 + error / 10_000) : error / 100;
-    const computedDesired = clamp((this.reverse ? speed : target) / 500 + errorBoost, 1, 1e9);
+    const clampedError = Math.min(error, 5000);
+    const errorBoost = clampedError > 1000 ? (clampedError / 25) * (1 + clampedError / 10_000) : clampedError / 100;
+    const computedDesired = clamp(
+      (this.reverse ? Math.min(speed, 2500) : Math.min(target, 5000)) / 500 + errorBoost,
+      1,
+      250
+    );
 
     const configuredPolicy = settings.opSyncPolicy ?? 'ask';
     const effectivePolicy = configuredPolicy === 'ask' && this.sessionOpSyncChoice
