@@ -383,9 +383,9 @@ async function run() {
     assert.equal(apBarInfo.mountedInApBar, true, 'AUTOPILOT, A/THR and OP ENG must mount inside .geofs-autopilot-bar');
     assert.equal(apBarInfo.opText, 'OP ENG', `Expected OP ENG button text, got ${apBarInfo.opText}`);
     assert.equal(apBarInfo.atText, 'A/THR', `Expected A/THR button text, got ${apBarInfo.atText}`);
-    assert(Math.abs(apBarInfo.atWidth - apBarInfo.nativeWidth) <= 0.5, `A/THR width (${apBarInfo.atWidth}) must match AUTOPILOT (${apBarInfo.nativeWidth})`);
+    assert(apBarInfo.atWidth >= 40 && apBarInfo.atWidth < apBarInfo.nativeWidth, `A/THR width (${apBarInfo.atWidth}) must fit its label compactly (< ${apBarInfo.nativeWidth})`);
     assert(Math.abs(apBarInfo.atHeight - apBarInfo.nativeHeight) <= 0.5, `A/THR height (${apBarInfo.atHeight}) must match AUTOPILOT (${apBarInfo.nativeHeight})`);
-    assert(Math.abs(apBarInfo.opWidth - apBarInfo.nativeWidth) <= 0.5, `OP ENG width (${apBarInfo.opWidth}) must match AUTOPILOT (${apBarInfo.nativeWidth})`);
+    assert(apBarInfo.opWidth >= 45 && apBarInfo.opWidth < apBarInfo.nativeWidth, `OP ENG width (${apBarInfo.opWidth}) must fit its label compactly (< ${apBarInfo.nativeWidth})`);
     assert(Math.abs(apBarInfo.opHeight - apBarInfo.nativeHeight) <= 0.5, `OP ENG height (${apBarInfo.opHeight}) must match AUTOPILOT (${apBarInfo.nativeHeight})`);
     assert(Math.abs(apBarInfo.atMidY - apBarInfo.nativeMidY) <= 1, `A/THR vertical alignment (${apBarInfo.atMidY}) must match AUTOPILOT (${apBarInfo.nativeMidY})`);
     assert(Math.abs(apBarInfo.opMidY - apBarInfo.nativeMidY) <= 1, `OP ENG vertical alignment (${apBarInfo.opMidY}) must match AUTOPILOT (${apBarInfo.nativeMidY})`);
@@ -805,8 +805,8 @@ async function run() {
     assert.equal(v4LayoutAudit.opBtnVisible, true);
     assert.equal(v4LayoutAudit.opBtnText, 'OP ENG');
     assert(v4LayoutAudit.opBtnHeight >= 24 && v4LayoutAudit.opBtnHeight <= 27);
-    assert(Math.abs(v4LayoutAudit.atWidth - v4LayoutAudit.nativeWidth) <= 0.5);
-    assert(Math.abs(v4LayoutAudit.opBtnWidth - v4LayoutAudit.nativeWidth) <= 0.5);
+    assert(v4LayoutAudit.atWidth >= 40 && v4LayoutAudit.atWidth < v4LayoutAudit.nativeWidth);
+    assert(v4LayoutAudit.opBtnWidth >= 45 && v4LayoutAudit.opBtnWidth < v4LayoutAudit.nativeWidth);
     assert(Math.abs(v4LayoutAudit.atHeight - v4LayoutAudit.nativeHeight) <= 0.5);
     assert(Math.abs(v4LayoutAudit.opBtnHeight - v4LayoutAudit.nativeHeight) <= 0.5);
 

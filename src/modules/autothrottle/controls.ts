@@ -58,11 +58,11 @@ export const controlStyles = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--geofs-ext-ap-width, 84px);
+    width: auto;
     height: var(--geofs-ext-ap-height, 27px);
-    min-width: var(--geofs-ext-ap-width, 84px);
+    min-width: 0;
     min-height: var(--geofs-ext-ap-height, 27px);
-    padding: 0 4px;
+    padding: 0 12px;
     margin: var(--geofs-ext-ap-margin, 0 10px);
     border-radius: var(--geofs-ext-ap-radius, 15px);
     vertical-align: var(--geofs-ext-ap-valign, middle);
