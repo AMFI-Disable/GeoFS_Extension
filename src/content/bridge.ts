@@ -47,6 +47,7 @@ function mergePatch(current: ExtensionSettings, patch: Partial<ExtensionSettings
     ...patch,
     modules: patch.modules ? { ...current.modules, ...patch.modules } : current.modules,
     keybindings: patch.keybindings ? { ...current.keybindings, ...patch.keybindings } : current.keybindings,
+    simKeyRemaps: patch.simKeyRemaps ? { ...patch.simKeyRemaps } : current.simKeyRemaps,
     failureSystemChances: patch.failureSystemChances
       ? { ...current.failureSystemChances, ...patch.failureSystemChances }
       : current.failureSystemChances,

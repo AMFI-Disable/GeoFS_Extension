@@ -3,9 +3,15 @@ import { parseAircraftOverride } from '../core/aircraft-profile';
 import {
   detectGeoFSKeyCollision,
   detectOsPlatform,
+  eventToComboString,
   formatComboForOs,
   normalizeComboString
 } from '../core/keybind-manager';
+import {
+  SIM_TARGET_KEYS,
+  resolveEffectiveOs,
+  resolveEffectiveSimRemaps
+} from '../core/keyboard-translator';
 import { landingReplayCsv } from '../core/landing-replay';
 import { formatLogbookCsv, triggerDownload } from '../core/logbook-export';
 import { getAllCatalogAircraft, type StaticAircraftSpec } from '../core/sim-adapter';
@@ -41,7 +47,9 @@ import {
   type FpvResolutionMode,
   type ImageryProviderMode,
   type KeybindConfig,
+  type KeyboardOsProfile,
   type LandingRecord,
+  type MacKeyboardType,
   type OpSyncPolicy,
   type ThemeMode
 } from '../types/settings';
@@ -90,6 +98,9 @@ export function App() {
   const [geofsTabs, setGeofsTabs] = useState<GeoFSTabInfo[]>([]);
   const [selectedTabId, setSelectedTabId] = useState<number | undefined>(undefined);
   const [displayInfo, setDisplayInfo] = useState(() => detectDisplayProfile());
+  const [recordingKey, setRecordingKey] = useState<keyof KeybindConfig | null>(null);
+  const [newRemapSource, setNewRemapSource] = useState('');
+  const [newRemapTarget, setNewRemapTarget] = useState('PageUp');
 
   const catalog = useMemo(() => getAllCatalogAircraft(), []);
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,6 +108,27 @@ export function App() {
   const [selectedId, setSelectedId] = useState<string>('4');
 
   const os = detectOsPlatform();
+  const effectiveOs = resolveEffectiveOs(settings.keyboardOsProfile);
+
+  useEffect(() => {
+    if (!recordingKey) return;
+    const onCapture = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === 'Escape') {
+        setRecordingKey(null);
+        return;
+      }
+      const combo = eventToComboString(e);
+      if (!combo) return;
+      const next = { ...settings.keybindings, [recordingKey]: combo };
+      setSettings((prev) => mergeExtensionPatch(prev, { keybindings: next }));
+      void saveExtensionPatch({ keybindings: next });
+      setRecordingKey(null);
+    };
+    window.addEventListener('keydown', onCapture, { capture: true });
+    return () => window.removeEventListener('keydown', onCapture, { capture: true });
+  }, [recordingKey, settings.keybindings]);
 
   useEffect(() => {
     const onResize = () => setDisplayInfo(detectDisplayProfile());
@@ -389,31 +421,165 @@ export function App() {
             </div>
 
             <div class="panel-card">
-              <div class="section-heading">Keyboard Shortcuts ({os.toUpperCase()})</div>
+              <div class="section-heading">Keyboard &amp; OS Adapter ({effectiveOs.toUpperCase()})</div>
+
+              <div class="field-row">
+                <HelpLabel label="OS Keyboard Profile" tip={SETTING_TIPS.keyboardOsProfile} />
+                <select
+                  aria-label="OS Keyboard Profile"
+                  value={settings.keyboardOsProfile}
+                  onChange={(e) =>
+                    patchExt({ keyboardOsProfile: (e.target as HTMLSelectElement).value as KeyboardOsProfile })
+                  }
+                >
+                  <option value="auto">Auto ({os.toUpperCase()})</option>
+                  <option value="mac">macOS</option>
+                  <option value="windows">Windows</option>
+                  <option value="linux">Linux</option>
+                </select>
+              </div>
+
+              {effectiveOs === 'mac' && (
+                <div class="field-row">
+                  <HelpLabel label="Mac Keyboard Hardware" tip={SETTING_TIPS.macKeyboardType} />
+                  <select
+                    aria-label="Mac Keyboard Hardware"
+                    value={settings.macKeyboardType ?? ''}
+                    onChange={(e) => {
+                      const val = (e.target as HTMLSelectElement).value;
+                      patchExt({ macKeyboardType: val ? (val as MacKeyboardType) : null });
+                    }}
+                  >
+                    <option value="">Select Mac keyboard...</option>
+                    <option value="macbook">MacBook / Compact (No Numpad or Del)</option>
+                    <option value="magic">Apple Magic (With Numpad &amp; Forward Del)</option>
+                  </select>
+                </div>
+              )}
+
+              <label class="switch-row">
+                <HelpLabel label="Sim Keystroke Translator" tip={SETTING_TIPS.simKeyTranslatorEnabled} />
+                <input
+                  type="checkbox"
+                  checked={settings.simKeyTranslatorEnabled}
+                  onChange={(e) => patchExt({ simKeyTranslatorEnabled: (e.target as HTMLInputElement).checked })}
+                />
+              </label>
+
+              <div class="section-heading" style="margin-top:4px">
+                Extension Shortcuts (Click Record or Type)
+              </div>
               {(Object.keys(settings.keybindings) as Array<keyof KeybindConfig>).map((k) => {
                 const collision = detectGeoFSKeyCollision(settings.keybindings[k]);
+                const isRec = recordingKey === k;
                 return (
                   <div class="field-col" key={k} style="gap:2px">
                     <div class="field-row">
                       <span>{KEYBIND_LABELS[k] ?? k}</span>
-                      <input
-                        type="text"
-                        style={`width:130px;text-align:right;${collision ? 'border-color:#ef4444' : ''}`}
-                        value={formatComboForOs(settings.keybindings[k], os)}
-                        onChange={(e) =>
-                          patchExt({
-                            keybindings: {
-                              ...settings.keybindings,
-                              [k]: normalizeComboString((e.target as HTMLInputElement).value)
-                            }
-                          })
-                        }
-                      />
+                      <div style="display:flex;gap:4px;align-items:center">
+                        <input
+                          type="text"
+                          style={`width:110px;text-align:right;${collision ? 'border-color:#ef4444' : ''}`}
+                          value={formatComboForOs(settings.keybindings[k], effectiveOs)}
+                          onChange={(e) =>
+                            patchExt({
+                              keybindings: {
+                                ...settings.keybindings,
+                                [k]: normalizeComboString((e.target as HTMLInputElement).value)
+                              }
+                            })
+                          }
+                        />
+                        <button
+                          type="button"
+                          class={`chip-btn ${isRec ? 'active' : ''}`}
+                          onClick={() => setRecordingKey(isRec ? null : k)}
+                        >
+                          {isRec ? 'Press keys...' : 'Record'}
+                        </button>
+                      </div>
                     </div>
                     {collision && <div style="font-size:10px;color:#ef4444;text-align:right">{collision}</div>}
                   </div>
                 );
               })}
+
+              {settings.simKeyTranslatorEnabled && (
+                <details style="margin-top:4px">
+                  <summary style="cursor:pointer;font-size:11px;font-weight:700;color:var(--muted)">
+                    Active Sim Key Translations (
+                    {
+                      Object.keys(
+                        resolveEffectiveSimRemaps(
+                          settings.keyboardOsProfile,
+                          settings.macKeyboardType,
+                          settings.simKeyRemaps
+                        )
+                      ).length
+                    }
+                    )
+                  </summary>
+                  <div class="field-col" style="margin-top:6px;gap:4px">
+                    {Object.entries(
+                      resolveEffectiveSimRemaps(
+                        settings.keyboardOsProfile,
+                        settings.macKeyboardType,
+                        settings.simKeyRemaps
+                      )
+                    ).map(([src, dst]) => (
+                      <div class="field-row" key={src} style="font-size:10px">
+                        <span>
+                          <code>{formatComboForOs(src, effectiveOs)}</code> → <strong>{dst}</strong>
+                        </span>
+                        {settings.simKeyRemaps[src] !== undefined && (
+                          <button
+                            type="button"
+                            class="chip-btn"
+                            onClick={() => {
+                              const next = { ...settings.simKeyRemaps };
+                              delete next[src];
+                              patchExt({ simKeyRemaps: next });
+                            }}
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <div class="field-row" style="margin-top:4px">
+                      <input
+                        type="text"
+                        placeholder="e.g. Alt+Q"
+                        style="width:100px"
+                        value={newRemapSource}
+                        onInput={(e) => setNewRemapSource((e.target as HTMLInputElement).value)}
+                      />
+                      <select
+                        value={newRemapTarget}
+                        onChange={(e) => setNewRemapTarget((e.target as HTMLSelectElement).value)}
+                      >
+                        {Object.keys(SIM_TARGET_KEYS).map((k) => (
+                          <option key={k} value={k}>
+                            {k}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        class="chip-btn"
+                        onClick={() => {
+                          const norm = normalizeComboString(newRemapSource);
+                          if (!norm) return;
+                          patchExt({ simKeyRemaps: { ...settings.simKeyRemaps, [norm]: newRemapTarget } });
+                          setNewRemapSource('');
+                        }}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </details>
+              )}
             </div>
 
             <div class="panel-card">

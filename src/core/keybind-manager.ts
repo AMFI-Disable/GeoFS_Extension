@@ -41,6 +41,48 @@ export function formatComboForOs(combo: string, os: OsPlatform): string {
     .replace(/Shift\+/gi, '⇧');
 }
 
+function normalizeCodeToken(code: string | undefined): string {
+  if (!code) return '';
+  if (code.startsWith('Key') && code.length === 4) return code.slice(3).toLowerCase();
+  if (code.startsWith('Digit') && code.length === 6) return code.slice(5);
+  return code.toLowerCase();
+}
+
+export function eventToComboString(event: KeyboardEvent): string | null {
+  const rawCode = event.code || '';
+  if (
+    rawCode === 'ShiftLeft' ||
+    rawCode === 'ShiftRight' ||
+    rawCode === 'ControlLeft' ||
+    rawCode === 'ControlRight' ||
+    rawCode === 'AltLeft' ||
+    rawCode === 'AltRight' ||
+    rawCode === 'MetaLeft' ||
+    rawCode === 'MetaRight'
+  ) {
+    return null;
+  }
+
+  let keyPart = '';
+  if (rawCode.startsWith('Key') && rawCode.length === 4) {
+    keyPart = rawCode.slice(3).toUpperCase();
+  } else if (rawCode.startsWith('Digit') && rawCode.length === 6) {
+    keyPart = rawCode.slice(5);
+  } else if (rawCode) {
+    keyPart = rawCode;
+  } else if (event.key) {
+    keyPart = event.key.length === 1 ? event.key.toUpperCase() : event.key;
+  }
+  if (!keyPart) return null;
+
+  const mods: string[] = [];
+  if (event.metaKey) mods.push('Cmd');
+  if (event.ctrlKey) mods.push('Ctrl');
+  if (event.altKey) mods.push('Alt');
+  if (event.shiftKey) mods.push('Shift');
+  return [...mods, keyPart].join('+');
+}
+
 export function matchesKeyEvent(event: KeyboardEvent, combo: string): boolean {
   const normalized = normalizeComboString(combo);
   if (!normalized) return false;
@@ -51,8 +93,12 @@ export function matchesKeyEvent(event: KeyboardEvent, combo: string): boolean {
   const needAlt = parts.includes('alt');
   const needMeta = parts.includes('cmd') || parts.includes('meta');
 
+  const keyMatch =
+    (event.code && normalizeCodeToken(event.code) === key) ||
+    (typeof event.key === 'string' && event.key.toLowerCase() === key);
+
   return (
-    event.key.toLowerCase() === key &&
+    keyMatch &&
     event.shiftKey === needShift &&
     event.ctrlKey === needCtrl &&
     event.altKey === needAlt &&
@@ -74,10 +120,23 @@ const GEOFS_DEFAULT_KEYS: Record<string, string> = {
   space: 'Wheel Brakes'
 };
 
+const BROWSER_RESERVED_COMBOS: Record<string, string> = {
+  'cmd+w': 'Reserved by macOS/Chrome (Close Tab)',
+  'cmd+q': 'Reserved by macOS (Quit Browser)',
+  'cmd+r': 'Reserved by macOS/Chrome (Reload Page)',
+  'ctrl+w': 'Reserved by Browser (Close Tab)',
+  'ctrl+r': 'Reserved by Browser (Reload Page)',
+  'alt+f4': 'Reserved by Windows/Linux (Close Window)'
+};
+
 export function detectGeoFSKeyCollision(combo: string): string | null {
   const normalized = normalizeComboString(combo);
   if (!normalized) return null;
-  const parts = normalized.split('+').map((p) => p.trim().toLowerCase()).filter(Boolean);
+  const lowerCombo = normalized.toLowerCase();
+  if (BROWSER_RESERVED_COMBOS[lowerCombo]) {
+    return BROWSER_RESERVED_COMBOS[lowerCombo];
+  }
+  const parts = lowerCombo.split('+').map((p) => p.trim()).filter(Boolean);
   if (parts.length === 0) return null;
   const hasModifier = parts.some((p) => p === 'shift' || p === 'ctrl' || p === 'alt' || p === 'cmd' || p === 'meta');
   const key = parts[parts.length - 1];

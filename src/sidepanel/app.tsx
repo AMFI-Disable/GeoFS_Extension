@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
+import { resolveEffectiveOs } from '../core/keyboard-translator';
 import { REALISM_OPTION_META } from '../modules/realism-pack';
 import { HelpLabel, SETTING_TIPS } from '../shared/help-tip';
 import {
@@ -9,6 +10,7 @@ import {
   openOptionsPage,
   requestActiveTabDiagnostics,
   requestActiveTabTelemetry,
+  saveExtensionPatch,
   saveScriptPatch,
   subscribeSettings,
   type DiagEntry,
@@ -18,6 +20,7 @@ import {
 import {
   DEFAULT_SETTINGS,
   type ExtensionSettings,
+  type MacKeyboardType,
   type OpSyncPolicy,
   type RealismOptions
 } from '../types/settings';
@@ -79,6 +82,11 @@ export function App() {
     document.documentElement.dataset.theme = settings.themeMode;
   }, [settings.themeMode]);
 
+  const patchExt = (patch: Partial<ExtensionSettings>) => {
+    setSettings((prev) => mergeExtensionPatch(prev, patch));
+    void saveExtensionPatch(patch);
+  };
+
   const patchScript = (patch: Partial<ExtensionSettings>) => {
     setSettings((prev) => mergeExtensionPatch(prev, patch));
     void saveScriptPatch(patch);
@@ -91,6 +99,7 @@ export function App() {
 
   const isV4 = live?.simMajor === 4;
   const activeTab = geofsTabs.find((t) => t.id === selectedTabId) ?? geofsTabs[0];
+  const effectiveOs = resolveEffectiveOs(settings.keyboardOsProfile);
 
   return (
     <div class="surface-shell">
@@ -115,6 +124,33 @@ export function App() {
           </button>
         </div>
       </div>
+
+      {effectiveOs === 'mac' && settings.macKeyboardType === null && (
+        <div class="panel-card" style="border-color:var(--accent)">
+          <div class="section-heading" style="color:var(--accent-strong)">
+            Mac Keyboard Setup
+          </div>
+          <div class="muted-hint">
+            Which Mac keyboard are you using? This tunes PageUp/PageDown, Delete, and Numpad keys for GeoFS.
+          </div>
+          <div class="preset-row">
+            <button
+              type="button"
+              class="btn-sm btn-accent"
+              onClick={() => patchExt({ macKeyboardType: 'macbook' as MacKeyboardType })}
+            >
+              MacBook / Compact
+            </button>
+            <button
+              type="button"
+              class="btn-sm"
+              onClick={() => patchExt({ macKeyboardType: 'magic' as MacKeyboardType })}
+            >
+              Magic (Numpad + Del)
+            </button>
+          </div>
+        </div>
+      )}
 
       {geofsTabs.length > 1 && (
         <div class="field-row" style="font-size:11px">
@@ -329,6 +365,39 @@ export function App() {
             </label>
           ))}
         </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="section-heading">Keyboard &amp; OS Adapter ({effectiveOs.toUpperCase()})</div>
+        <label class="switch-row">
+          <HelpLabel label="Sim Key Translator" tip={SETTING_TIPS.simKeyTranslatorEnabled} />
+          <input
+            type="checkbox"
+            checked={settings.simKeyTranslatorEnabled}
+            onChange={(e) => patchExt({ simKeyTranslatorEnabled: (e.target as HTMLInputElement).checked })}
+          />
+        </label>
+        {effectiveOs === 'mac' && (
+          <div class="field-row">
+            <HelpLabel label="Mac Keyboard" tip={SETTING_TIPS.macKeyboardType} />
+            <div class="chip-group">
+              <button
+                type="button"
+                class={`chip-btn ${settings.macKeyboardType !== 'magic' ? 'active' : ''}`}
+                onClick={() => patchExt({ macKeyboardType: 'macbook' })}
+              >
+                MacBook
+              </button>
+              <button
+                type="button"
+                class={`chip-btn ${settings.macKeyboardType === 'magic' ? 'active' : ''}`}
+                onClick={() => patchExt({ macKeyboardType: 'magic' })}
+              >
+                Magic (Numpad)
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div class="panel-card">

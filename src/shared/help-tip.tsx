@@ -7,6 +7,12 @@ export const SETTING_TIPS: Record<string, string> = {
   sidePanelAutoTelemetry: 'Keeps the Chrome Side Panel updated with your live speed, altitude, and fuel while you fly.',
   hudPositionFallback:
     'If GeoFS hides or moves its bottom autopilot bar, this places the addon buttons in a safe backup spot so nothing disappears.',
+  keyboardOsProfile:
+    'Automatically detects Mac, Windows, or Linux so shortcuts and key translations match your keyboard.',
+  macKeyboardType:
+    'MacBook keyboards lack a number pad and Forward Delete key; Apple Magic Keyboards with a numeric keypad already have them.',
+  simKeyTranslatorEnabled:
+    'Automatically translates Mac-friendly key combinations into the PC keys GeoFS expects (like PageUp/PageDown for throttle and Delete).',
 
   // Autothrottle & OP-SYNC
   autothrottleResponsiveness:

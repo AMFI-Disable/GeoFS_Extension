@@ -60,6 +60,7 @@ export function mergeExtensionPatch(
     ...patch,
     modules: patch.modules ? { ...current.modules, ...patch.modules } : current.modules,
     keybindings: patch.keybindings ? { ...current.keybindings, ...patch.keybindings } : current.keybindings,
+    simKeyRemaps: patch.simKeyRemaps ? { ...patch.simKeyRemaps } : current.simKeyRemaps,
     aircraftOverrides: patch.aircraftOverrides ?? current.aircraftOverrides,
     failureSystemChances: patch.failureSystemChances
       ? { ...current.failureSystemChances, ...patch.failureSystemChances }
