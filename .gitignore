@@ -3,13 +3,10 @@
 !public/
 !scripts/
 !tests/
-!geofs-v3.9/
-!geofs-v4.0/
+!userscripts/
 !agents.md
 !readme*.md
 !changelog.md
-!roadmap.md
-!todo.md
 !docs/
 !security.md
 !license

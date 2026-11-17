@@ -5,9 +5,9 @@
 
 ## Aircraft Sound And Realism Parity
 
-- [x] Recover the original 737 Immersion SFX source and audio assets. Located upstream `Ariakim-Taiyo/GeoFs-737-Immersion-SFX` and `kolos26/GeoFs-737-Immersion-SFX-for-Realism-Addon` (live `editmysite.com` audio + `737_autopilot_disconnect.mp3`), and ported 737 engine/cabin/flaps/reverse/overspeed/touchdown/GPWS/TCAS/AP-disconnect cues into [aircraft-sounds.ts](src/modules/realism-pack/aircraft-sounds.ts).
-- [x] Compare the 777 and Airbus ports with their original expansions. Completed remaining cues in [aircraft-sounds.ts](src/modules/realism-pack/aircraft-sounds.ts), including Airbus PTU, windshear (`isWindWarn`), TCAS (`traffic`/`climb`/`descend`/`clear`), and `sounds[3]`/`sounds[4]` volume ratios.
-- [x] Port the 777 ground effect, stall buffeting, tiller, spoiler vibration, wing flex, and gear tilt against the corresponding aircraft definitions. Implemented in [`RealismPackModule`](src/modules/realism-pack/index.ts) with safe part validation and full `restoreAircraft()` cleanup.
+- [x] Recover the original 737 Immersion SFX source and audio assets. Located upstream `Ariakim-Taiyo/GeoFs-737-Immersion-SFX` and `kolos26/GeoFs-737-Immersion-SFX-for-Realism-Addon` (live `editmysite.com` audio + `737_autopilot_disconnect.mp3`), and ported 737 engine/cabin/flaps/reverse/overspeed/touchdown/GPWS/TCAS/AP-disconnect cues into [aircraft-sounds.ts](../src/modules/realism-pack/aircraft-sounds.ts).
+- [x] Compare the 777 and Airbus ports with their original expansions. Completed remaining cues in [aircraft-sounds.ts](../src/modules/realism-pack/aircraft-sounds.ts), including Airbus PTU, windshear (`isWindWarn`), TCAS (`traffic`/`climb`/`descend`/`clear`), and `sounds[3]`/`sounds[4]` volume ratios.
+- [x] Port the 777 ground effect, stall buffeting, tiller, spoiler vibration, wing flex, and gear tilt against the corresponding aircraft definitions. Implemented in [`RealismPackModule`](../src/modules/realism-pack/index.ts) with safe part validation and full `restoreAircraft()` cleanup.
 - [x] Confirm which Realism Pack settings were functional in the original scripts. Functional behavior (`gBreath`, `blackout`, `windAudio`, `cameraShake`, `propwash`, `spinFix`, `bladeCollisions`, `engineInertia`, `spoilerArming`, `soundExpansion`, `performanceMode`) is retained cleanly in background execution (with `vortexEffects` and `carrierOps` clearly gated as unavailable on GeoFS V4.0), controlled via the Chrome Side Panel and New-Tab Options page.
 
 ## Unification Architecture And Controls Parity
@@ -25,12 +25,12 @@
 
 ## Live Simulator Verification
 
-- [ ] Install the current unpacked build from `GeoFS Extension` in Chrome and test both GeoFS V3.9 and V4.0 following the [Live Verification Guide](docs/live-verification-guide.md). Test live toggling, aircraft changes, respawns, and repeated enable/disable cycles.
+- [ ] Install the current unpacked build from `GeoFS Extension` in Chrome and test both GeoFS V3.9 and V4.0 following the [Live Verification Guide](live-verification-guide.md). Test live toggling, aircraft changes, respawns, and repeated enable/disable cycles.
 - [ ] Verify thrust, reverse, landing retard (`<= 27 ft RA`), OP-SYNC prompt decisions (`Allow Once`, `Keep Standard`, `Always Allow`, `Never Allow`), Effective SAS attitude hold/turning authority, and native autopilot interaction with Autothrottle and Overpowered Engines active together.
 - [ ] Verify `ALTITUDE BURN` across multi-engine/asymmetric throttles, `REAL TANKS` wing imbalance torque, `10%` vs `100%` fuel MTOW feel via `setMassProps`, refueling, and flameout lock/recovery.
 - [ ] Verify grouped failures, engine smoke cleanup, cockpit blackout, emergency QRH checklist overrides, `[ATTEMPT RECOVERY]` success & contingency fallback updates, and 100% clean `RESTORE_VERIFIED` resets while other modules are active.
 - [ ] Fly normal, bounced, hard, and off-target approaches using the 3D Cesium `FPV` billboard and `#flightDataDisplay0` glideslope indicator; verify `#statsCard` slide-in animation, audio cues, calibrated vertical speed, and JSON/CSV replay exports.
-- [x] Check the logbook for lost records when stable and beta tabs write concurrently. Serialized all logbook writes through [service-worker.ts](src/background/service-worker.ts) (`SerializedLogbookStore`) with ID deduplication and unit tests.
+- [x] Check the logbook for lost records when stable and beta tabs write concurrently. Serialized all logbook writes through [service-worker.ts](../src/background/service-worker.ts) (`SerializedLogbookStore`) with ID deduplication and unit tests.
 - [ ] Verify the Realism Pack G-force shader (GLSL ES 1.00 / ES 3.00), G-force audio, rotorcraft effects, 737/777/A320 sound expansion cleanup, and V4 `UNAVAILABLE` UI indicators via the Chrome Side Panel.
 
 ## Post-Verification Roadmap
@@ -56,6 +56,6 @@
 
 ## Parity Boundaries
 
-- Preserve the archived userscripts in `geofs-v3.9/` and `geofs-v4.0/`. Keep all ports on the shared telemetry bus and ensure effects are cleanly reversible via live toggles.
+- Preserve the archived userscripts in `userscripts/v3.9/` and `userscripts/v4.0/`. Keep all ports on the shared telemetry bus and ensure effects are cleanly reversible via live toggles.
 - GeoFS V3 imagery parity covers providers and settings the user can legitimately access while preserving GeoFS entitlement checks and ad-reward controls.
 - Keep landing records local inside Chrome extension storage without external third-party telemetry uploads.

@@ -2,14 +2,14 @@
 
 # GeoFS Extension
 
-**Manifest V3 Chrome Extension And Legacy Userscripts For GeoFS V3.x And V4.x**
+**All-In-One Flight Deck Companion For GeoFS V3.9 And V4.0**
 
 ![Version](https://img.shields.io/badge/Version-v0.2.0-blue?style=flat-square)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-brightgreen?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-GeoFS%20V3%20%26%20V4-informational?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-[Roadmap](roadmap.md) · [Changelog](changelog.md) · [Security Policy](security.md) · [MIT License](license)
+[Roadmap](docs/roadmap.md) · [To-Do](docs/todo.md) · [Changelog](changelog.md) · [Legacy Userscripts](userscripts/readme.md) · [Security Policy](security.md) · [MIT License](license)
 
 </div>
 
@@ -18,32 +18,106 @@
 
 ---
 
-## Key Features
+## Key Highlights
 
-- **Unified V3 And V4 SimAdapter**: Automatically detects GeoFS major version (`3` or `4`, ignoring minor updates) and normalizes multi-channel throttles, flaps, gear, spoilers, rotorcraft collective/torque, V-speeds, and `AIRCRAFT_CATALOG` profiles.
-- **Separated Storage And Multi-Surface Chrome UI**: Splits extension configuration (`geofs_ext_config`) from in-sim behavior (`geofs_script_config`) across three coordinated MV3 surfaces: a compact **Toolbar Popup**, a docked **Chrome Side Panel** (`[GeoFS-EXT][DIAG]` stream + Realism Pack switches with V4 `UNAVAILABLE` guards), and a 4-tab **Full Settings Page** in a new tab.
-- **Titleless Four-Tab Shared HUD (`#flightDataDisplay`)**: Uses Native GeoFS dark glass styling (`rgba(0, 0, 0, 0.8)`, `1px solid #888`, `15px` radius, zero blur), hosting `INFO`, `CHECKS`, `FUEL`, and `LAND` with a `40×40` `HUD` circle minimize toggle and a `24×40` left-edge handle.
-- **Autothrottle, Overpowered Engines, And Effective SAS**: Combines GeoFS PID speed hold (`'LCD-Bold'` `LANDING` label and upgraded `.mdl-tooltip` hints), configurable **OP-SYNC** high-delta confirmation (`Ask`, `Allow`, `Never`), Native-styled `#opEngineCard`, and closed-loop `EffectiveSasController` attitude hold and rate damping.
-- **Four-Gate Aircraft Checklists And Failure QRH Overrides**: Provides `PRE-T/O`, `PRE-CRZ`, `PRE-LDG`, and `CHOCKS` tailored per aircraft with hardware actuation and live telemetry auto-checks, expandable situational reference guides, plus standalone `#geofs-failure-menu` fault injection, emergency QRH overrides, and recovery/contingency branching.
-- **Fuel Weight Physics, Realism SFX, 3D FPV, And Logbook**: Supports multi-throttle `ALTITUDE BURN` (`1.35x` reverse scaling), `REAL TANKS` center/wing imbalance and `rigidBody.setMassProps` mass updates, background V3/V4 shaders and 737/777/A320 immersion audio, bundled `512×512` `fpv_hires.png` Cesium 3D billboard + `#flightDataDisplay0` glideslope box, slide-in `#statsCard`, and serialized JSON/CSV replay exports.
+**GeoFS Extension** combines all standalone GeoFS flight addons into a single lightweight Chrome extension designed to feel right at home inside both **GeoFS V3.9** (`www.geo-fs.com`) and **GeoFS V4.0** (`beta.geo-fs.com`).
+
+- **One Install, Zero Script Conflicts**: Replace a dozen separate userscripts with one coordinated package managed from your browser toolbar.
+- **Built-In Cockpit Style**: Matches GeoFS's native dark glass HUD panels and autopilot bar buttons with Day/Night automatic theming.
+- **Fly Any Aircraft**: Includes aircraft-aware speed profiles, fuel weights, and step-by-step checklists for light props, airliners, fighters, supersonic jets, and helicopters.
+- **Turn Features On Or Off Live**: Enable only the addons you want during a flight without reloading your browser.
 
 ---
 
-## Keyboard Hotkeys
+## How To Install
+
+1. Download the latest release from [GitHub Releases](https://github.com/AMFI-Disable/GeoFS_Extension/releases) and unzip the folder somewhere easy to find on your computer *(or build the `GeoFS Extension` folder from source — see [Building From Source](#building-from-source))*.
+2. Open Chrome, Edge, or Brave and go to `chrome://extensions`.
+3. Turn on **Developer mode** using the toggle in the top-right corner.
+4. Click **Load unpacked** and select the extracted extension folder (`GeoFS Extension`).
+5. Pin **GeoFS Extension** to your browser toolbar, then open or refresh [GeoFS V3.9](https://www.geo-fs.com/geofs.php) or [GeoFS V4.0](https://beta.geo-fs.com/geofs.php).
+
+> [!TIP]
+> If you previously installed individual GeoFS scripts in Tampermonkey or Violentmonkey, disable or pause those userscripts before flying with the Chrome extension so two HUDs do not overlap.
+
+---
+
+## Quick Flight Tour
+
+Once loaded into GeoFS, you control the suite from four clean places:
+
+1. **In-Game Floating HUD (Top Right)**: Holds four compact tabs — **INFO**, **CHECKS**, **FUEL**, and **LAND** — with no clutter or scrollbars. Drag it anywhere on screen, click `−` to shrink it into a movable circular **HUD** button, or drag it to the left edge of the screen to dock it as a slim pull-out tab.
+2. **Autopilot Bar Addons (Bottom Bar)**: Adds **A/THR** (Autothrottle + **LANDING** arm button) and **OP ENG** (Overpowered Engines + **SAS** stability hold) alongside your plane's built-in Autopilot buttons.
+3. **Toolbar Popup & Chrome Side Panel**: Click the extension icon in your Chrome toolbar to toggle modules on/off, pick a **Screen Calibrator** size (`1080p`, `1440p`, `4K`, `Ultrawide`, `Laptop`), or open the docked **Side Panel** for live status logs and Realism Pack switches.
+4. **Full Settings Page**: Open from the popup to customize script behavior, manage keyboard shortcuts, edit aircraft V-speeds and specs, or inspect and export your saved **Landing Logbook** (JSON / CSV).
+
+---
+
+## Features At A Glance
+
+| Feature | What It Does In Flight |
+| :--- | :--- |
+| **Autothrottle (`A/THR`)** | Holds your target airspeed (`KTS`) or Mach (`M.`) using aircraft-tuned throttle response. Arm **LANDING** on approach to automatically cut thrust to idle by `27 ft` radar altitude and deploy spoilers on touchdown. |
+| **Overpowered Engines (`OP ENG`)** | Multiplies thrust (`1x` up to `1,000,000,000x`), bypasses altitude ceilings, and includes active **SAS** stability assist to hold pitch and bank steady at extreme speeds. Includes configurable **OP-SYNC** prompts when A/THR requests large speed changes. |
+| **Information Display (`INFO`)** | Shows live per-engine throttle percentages, `[REV]` reverse thrust cues, airspeed, altitude, vertical speed, and clean flight telemetry inside the shared HUD. |
+| **Checklists & Guide (`CHECKS`)** | Guides you through four mandatory flight gates (**PRE-T/O**, **PRE-CRZ**, **PRE-LDG**, **CHOCKS**) tailored to your aircraft. Click interactive rows to operate gear, flaps, brakes, or lights; telemetry checks complete automatically; open **GUIDE** for situational reference steps. |
+| **Fuel & Weight (`FUEL`)** | Adjust fuel percentage on the fly, monitor fuel flow and gross weight impact on takeoff and climb, enable **ALTITUDE BURN** for throttle- and altitude-realistic consumption, or use **REAL TANKS** for center/wing tank balance and flameout protection. |
+| **Landing Scorecard (`LAND`)** | Evaluates every landing (`Butter`, `Silky`, `Great`, `Smooth`, `Firm`, `Hard`, `Bone Shaker`, or `Crash`), slides in a scorecard with sink rate, G-force, bounces, and touchdown zone feedback, and saves replays to your local Chrome Logbook. |
+| **Flight Path Vector (`FPV`)** | Projects a 3D velocity marker ahead of your aircraft showing your true flight path, paired with a bottom-right **Glideslope** indicator for smooth visual approaches. |
+| **Failure Simulator (`FAILURES`)** | Open from the bottom-right `FAILURES` pill to trigger realistic faults (landing gear, controls, engines, hydraulics, electrical, pitot-static, MCAS) or timed random probabilities. Active faults automatically switch your Checklist to an **Emergency QRH** procedure with recovery attempts. |
+| **Realism Pack & Audio** | Adds G-force breathing, blackout/redout effects, cockpit wind and shake, engine inertia, spoiler arming, and airliner cockpit/GPWS/TCAS sound cues *(controlled in the Side Panel and Full Settings; unsupported V4 effects are clearly labeled)*. |
+| **Satellite Map Imagery** | Switch GeoFS ground imagery between Native, Esri, Bing, OpenStreetMap, or a custom tile provider from Settings. |
+
+---
+
+## Keyboard Shortcuts
 
 | Action | Default Shortcut (Windows / Linux) | Default Shortcut (macOS) |
 | :--- | :--- | :--- |
-| Toggle Autothrottle | `Shift + A` | `Shift + A` |
-| Toggle Overpowered Engines Card | `Shift + O` | `Shift + O` |
-| Toggle Shared HUD | `Shift + H` | `Shift + H` |
-| Toggle Flight Path Vector | `Shift + F` | `Shift + F` |
-| Open Checklists Tab / Advance Gate | `Shift + C` | `Shift + C` |
+| Toggle Autothrottle | `Shift + A` | `⇧ + A` |
+| Toggle Overpowered Engines Card | `Shift + O` | `⇧ + O` |
+| Toggle Shared HUD | `Shift + H` | `⇧ + H` |
+| Toggle Flight Path Vector | `Shift + F` | `⇧ + F` |
+| Open Checklists Tab / Advance Gate | `Shift + C` | `⇧ + C` |
 
-*(All keybindings can be inspected and customized in the Full Settings Page with GeoFS hotkey collision detection.)*
+All shortcuts can be rebound in **Full Settings**, which automatically warns you if a shortcut conflicts with GeoFS's built-in flight keys. Shortcuts never fire while you are typing inside text inputs.
 
 ---
 
-## Development And Build
+## Legacy Userscripts
+
+If you prefer installing single standalone `.user.js` scripts with Tampermonkey instead of the unified Chrome extension, archived copies for both simulator generations are kept in [`userscripts/`](userscripts/readme.md):
+
+- **GeoFS V3.9 Scripts**: [`userscripts/v3.9/`](userscripts/v3.9/readme.md) · [Changelog](userscripts/v3.9/changelog.md)
+- **GeoFS V4.0 Scripts**: [`userscripts/v4.0/`](userscripts/v4.0/readme.md) · [Changelog](userscripts/v4.0/changelog.md)
+
+---
+
+## Repository Structure
+
+| Folder | Contents |
+| :--- | :--- |
+| [`docs/`](docs/live-verification-guide.md) | [Roadmap & Awaiting Planes](docs/roadmap.md), [Parity & Post-Verification To-Do](docs/todo.md), and [Live Verification Guide](docs/live-verification-guide.md). |
+| [`userscripts/`](userscripts/readme.md) | Archived standalone `.user.js` scripts organized into [`v3.9`](userscripts/v3.9/readme.md) and [`v4.0`](userscripts/v4.0/readme.md). |
+| `src/` | Unified TypeScript & Preact source code for the Chrome Extension (`core/`, `modules/`, `popup/`, `sidepanel/`, `options/`, `background/`, `content/`). |
+| `public/` | Extension manifest, icons, cockpit audio files, and `FPV` visual assets. |
+| `tests/` | Automated unit, contract, and Playwright Chromium verification suites. |
+| `scripts/` | Build, packaging, and local unpacked-folder sync scripts. |
+
+---
+
+## Tips And Troubleshooting
+
+- **HUD looks too large or too small**: Open the toolbar popup and select your monitor under **Screen Calibrator** (`1080p`, `1440p`, `4K`, `Ultrawide`, `Laptop`).
+- **Missing controls after updating**: Click **Reload** on the GeoFS Extension card in `chrome://extensions`, then refresh your GeoFS browser tab.
+- **Duplicate panels or overlapping buttons**: Make sure old standalone userscripts are turned off in Tampermonkey when running the extension.
+- **Where are my landing logs stored?**: Everything stays locally inside your browser's Chrome extension storage. You can back up or download your flights anytime from **Full Settings -> Logbook & Verification**.
+
+---
+
+## Building From Source
+
+Developers and testers can build and verify the extension locally with Node.js:
 
 ```bash
 npm ci
@@ -53,19 +127,4 @@ npm run build:unpacked
 npm run test:e2e
 ```
 
-1. Open `chrome://extensions` in Chromium or Chrome.
-2. Enable **Developer mode**.
-3. Click **Load unpacked** and select the generated `GeoFS Extension` folder inside the checkout (or run `npm run test:e2e` for automated Chromium verification).
-4. Reload any open GeoFS V3.9 (`www.geo-fs.com`) or V4.0 (`beta.geo-fs.com`) tab and follow the [Live Verification Guide](docs/live-verification-guide.md).
-5. For packaged releases, see [GitHub Releases](https://github.com/AMFI-Disable/GeoFS_Extension/releases).
-
-Run `bash scripts/sync-unpacked.sh` from the checkout to fetch and fast-forward the current branch from its configured upstream, install the locked dependencies, and rebuild `dist/` and the unpacked folder. The script stops if tracked files have local edits or the branches have diverged. Click **Reload** on the extension card and refresh your GeoFS tabs after the build succeeds. To build the current checkout without syncing, run `npm run build:unpacked`.
-
----
-
-## Legacy Userscripts
-
-The GeoFS Extension monorepo contains the Manifest V3 Chrome extension and the archived userscripts for both simulator generations.
-
-- [GeoFS V3.9 Userscripts](geofs-v3.9/readme.md) · [Changelog](geofs-v3.9/changelog.md)
-- [GeoFS V4.0 Userscripts](geofs-v4.0/readme.md) · [Changelog](geofs-v4.0/changelog.md)
+Load the generated `GeoFS Extension` folder via `chrome://extensions` (**Load unpacked**) and follow the [Live Verification Guide](docs/live-verification-guide.md) when testing live flights. To pull upstream updates and refresh the unpacked folder automatically, run `bash scripts/sync-unpacked.sh`.
