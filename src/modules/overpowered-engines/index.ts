@@ -71,20 +71,30 @@ export class EffectiveSasController {
       groundContact
     } = params;
     const sample = readPilotControls(controls);
-    const strength = clamp(sasStrength || 1.0, 0.25, 2.5);
+    const safePitch = Number.isFinite(pitchDeg) ? pitchDeg : 0;
+    const safeRoll = Number.isFinite(rollDeg) ? rollDeg : 0;
+    const safeKias = Number.isFinite(kias) ? kias : 0;
+    const safeMultiplier = Number.isFinite(multiplier) && multiplier >= 1 ? multiplier : 1;
+    const strength = clamp(Number.isFinite(sasStrength) && sasStrength > 0 ? sasStrength : 1.0, 0.25, 2.5);
     const av = rigidBody?.getAngularVelocity?.();
+    const hasValidAv =
+      Array.isArray(av) &&
+      av.length >= 3 &&
+      Number.isFinite(av[0]) &&
+      Number.isFinite(av[1]) &&
+      Number.isFinite(av[2]);
 
     if (sample.controlling) {
       this.targetPitch = null;
       this.targetRoll = null;
       this.wasControlling = true;
-      if (!av || !rigidBody?.setAngularVelocity) {
+      if (!hasValidAv || !rigidBody?.setAngularVelocity) {
         return { mode: 'maneuver', controlling: true, nextAngularVelocity: null };
       }
-      const multScale = Math.min(0.45, Math.log10(Math.max(1, multiplier)) * 0.08);
-      const speedScale = kias > 300 ? Math.max(0.4, 300 / kias) : 1;
+      const multScale = Math.min(0.45, Math.log10(Math.max(1, safeMultiplier)) * 0.08);
+      const speedScale = safeKias > 300 ? Math.max(0.4, 300 / safeKias) : 1;
       const damp = clamp(1 - (0.12 + multScale) * strength * 0.5, 0.35, 0.92);
-      const maxRate = clamp((3.2 / Math.max(1, Math.log10(Math.max(1, multiplier)))) / strength * speedScale, 0.35, 4.0);
+      const maxRate = clamp((3.2 / Math.max(1, Math.log10(Math.max(1, safeMultiplier)))) / strength * speedScale, 0.35, 4.0);
       const next: [number, number, number] = [
         clamp(av[0] * damp, -maxRate, maxRate),
         clamp(av[1] * damp, -maxRate, maxRate),
@@ -95,20 +105,22 @@ export class EffectiveSasController {
     }
 
     if (this.wasControlling || this.targetPitch === null || this.targetRoll === null) {
-      this.targetPitch = pitchDeg;
-      this.targetRoll = clamp(rollDeg, -65, 65);
+      this.targetPitch = safePitch;
+      this.targetRoll = clamp(safeRoll, -65, 65);
       this.wasControlling = false;
     }
 
-    const pitchErr = clamp((this.targetPitch ?? pitchDeg) - pitchDeg, -25, 25);
-    const rollErr = clamp((this.targetRoll ?? rollDeg) - rollDeg, -25, 25);
+    const targetPitch = Number.isFinite(this.targetPitch) ? this.targetPitch : safePitch;
+    const targetRoll = Number.isFinite(this.targetRoll) ? this.targetRoll : clamp(safeRoll, -65, 65);
+    const pitchErr = clamp(targetPitch - safePitch, -25, 25);
+    const rollErr = clamp(targetRoll - safeRoll, -25, 25);
 
     if (!rigidBody?.setAngularVelocity) {
       return { mode: 'hold', controlling: false, nextAngularVelocity: null };
     }
 
     const residualDamp = clamp(0.06 / strength, 0.005, 0.15);
-    const current = av ?? [0, 0, 0];
+    const current: [number, number, number] = hasValidAv ? [av[0], av[1], av[2]] : [0, 0, 0];
     if (groundContact || (Math.abs(pitchErr) < 0.15 && Math.abs(rollErr) < 0.15)) {
       const zeroed: [number, number, number] = [0, 0, 0];
       rigidBody.setAngularVelocity(zeroed);
@@ -121,16 +133,22 @@ export class EffectiveSasController {
       clamp(current[1] * residualDamp + rollErr * corrGain, -0.4, 0.4),
       clamp(current[2] * residualDamp, -0.25, 0.25)
     ];
-    rigidBody.setAngularVelocity(next);
+    if (next.every(Number.isFinite)) {
+      rigidBody.setAngularVelocity(next);
+    }
 
     if (rigidBody.applyTorque) {
-      const mass = Math.max(500, Number(rigidBody.mass || 2000));
+      const rawMass = Number(rigidBody.mass);
+      const mass = Math.max(500, Number.isFinite(rawMass) && rawMass > 0 ? rawMass : 2000);
       const tGain = mass * 0.08 * strength;
-      rigidBody.applyTorque([
+      const torqueVec: [number, number, number] = [
         clamp(pitchErr * tGain, -mass * 1.5, mass * 1.5),
         clamp(rollErr * tGain, -mass * 1.5, mass * 1.5),
         clamp(-current[2] * mass * 0.4, -mass * 0.8, mass * 0.8)
-      ]);
+      ];
+      if (torqueVec.every(Number.isFinite)) {
+        rigidBody.applyTorque(torqueVec);
+      }
     }
 
     return { mode: 'hold', controlling: false, nextAngularVelocity: next };
@@ -142,6 +160,7 @@ export class EngineThrust {
   private originals = new Map<GeoFSEnginePart, ThrustValues>();
 
   public apply(parts: Record<string, GeoFSEnginePart> | undefined, multiplier: number): void {
+    if (!Number.isFinite(multiplier) || multiplier <= 0) return;
     const engines = new Set(Object.values(parts ?? {}).filter((part) => Number.isFinite(part?.thrust)));
     for (const [part, original] of this.originals) {
       if (!engines.has(part)) {
@@ -160,7 +179,10 @@ export class EngineThrust {
       }
       for (const field of THRUST_FIELDS) {
         const value = original[field];
-        if (value !== undefined) part[field] = value * multiplier;
+        if (value !== undefined) {
+          const scaled = value * multiplier;
+          if (Number.isFinite(scaled)) part[field] = scaled;
+        }
       }
     }
   }
@@ -175,6 +197,7 @@ export class EngineCeiling {
   private original?: { definition: GeoFSAircraftDefinition; thrust: number | undefined; rpm: number | undefined };
 
   public apply(definition: GeoFSAircraftDefinition, feet: number): void {
+    if (!Number.isFinite(feet) || feet <= 0) return;
     if (this.original?.definition !== definition) {
       this.restore();
       this.original = { definition, thrust: definition.zeroThrustAltitude, rpm: definition.zeroRPMAltitude };
@@ -628,10 +651,13 @@ export class OverpoweredEnginesModule implements IModule {
     this.unmounts.push(context.onEvent<{ desired: number | null; report: (multiplier: number) => void }>(
       'autothrottle:boost', ({ desired, report }) => {
         const settings = context.getSettings();
-        if (desired === null) this.automaticMultiplier = null;
-        else {
-          const current = this.automaticMultiplier ?? settings.opThrustMultiplier ?? 1;
-          this.automaticMultiplier = current + (desired - current) * 0.15;
+        if (desired === null || !Number.isFinite(desired) || desired <= 0) {
+          this.automaticMultiplier = null;
+        } else {
+          const rawCurrent = this.automaticMultiplier ?? settings.opThrustMultiplier ?? 1;
+          const current = Number.isFinite(rawCurrent) && rawCurrent >= 1 ? rawCurrent : 1;
+          const next = current + (desired - current) * 0.15;
+          this.automaticMultiplier = Number.isFinite(next) && next >= 1 ? next : 1;
         }
         report(this.automaticMultiplier ?? (this.thrustEnabled ? settings.opThrustMultiplier ?? 1 : 1));
       }

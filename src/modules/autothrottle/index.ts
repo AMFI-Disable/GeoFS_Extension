@@ -397,23 +397,27 @@ export class AutothrottleModule implements IModule {
     let multiplier = 1;
     this.ctx.emitEvent('autothrottle:boost', { desired, report: (value: number) => { multiplier = value; } });
 
-    const dt = clamp(telemetry.dt, 0.001, 0.1);
+    const safeMultiplier = Number.isFinite(multiplier) && multiplier >= 1 ? multiplier : 1;
+    const dt = clamp(Number.isFinite(telemetry.dt) ? telemetry.dt : 0.016, 0.001, 0.1);
     const acceleration = this.previousSpeed === null ? 0 : (speed - this.previousSpeed) / dt;
     this.previousSpeed = speed;
     if (Math.abs(acceleration * dt) < 2000) this.acceleration = this.acceleration * 0.8 + acceleration * 0.2;
 
     const ratio = clamp(error / 1000, 0, 1);
-    const damping = (50 / (multiplier + 49) * (1 - ratio) + ratio) *
+    const damping = (50 / (safeMultiplier + 49) * (1 - ratio) + ratio) *
       (1 + 0.2 * Math.sin(Math.min(error / 150, Math.PI / 2)));
     const physicsMs = sim?.api?.renderingSettings?.physicsDeltaMs;
     const steps = physicsMs && physicsMs > 0 ? clamp(Math.floor(dt * 1000 / physicsMs), 1, 10) : 1;
     pid.set(target, this.reverse ? -1 : 0, 1);
     let command = pid.compute(speed, dt / steps);
     if (this.reverse) command = -Math.abs(command);
-    if (multiplier > 1 && this.acceleration > 100) command *= 100 / this.acceleration;
+    if (safeMultiplier > 1 && this.acceleration > 100) command *= 100 / this.acceleration;
     if (Number.isFinite(command)) {
-      const response = clamp(settings.autothrottleResponsiveness || 1, 0.5, 2);
-      this.ctx.sim.setThrottle(clamp(command * damping * response, this.reverse ? -1 : 0, this.reverse ? 0 : 1));
+      const response = clamp(Number.isFinite(settings.autothrottleResponsiveness) ? settings.autothrottleResponsiveness : 1, 0.5, 2);
+      const throttleCmd = clamp(command * damping * response, this.reverse ? -1 : 0, this.reverse ? 0 : 1);
+      if (Number.isFinite(throttleCmd)) {
+        this.ctx.sim.setThrottle(throttleCmd);
+      }
     }
   }
 

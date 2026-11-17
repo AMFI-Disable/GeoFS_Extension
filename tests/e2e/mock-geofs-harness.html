@@ -138,6 +138,12 @@
         lights: 0
       };
 
+      const assertVec3 = (label, v, positive = false) => {
+        if (!Array.isArray(v) || v.length !== 3 || !v.every((n) => typeof n === 'number' && Number.isFinite(n) && (!positive || n > 0))) {
+          throw new Error(`Invalid rigidBody.${label} vector: ${JSON.stringify(v)}`);
+        }
+      };
+
       const rigidBody = {
         mass: 180000,
         _av: [0, 0, 0],
@@ -146,13 +152,27 @@
           return this._av;
         },
         setAngularVelocity(next) {
+          assertVec3('setAngularVelocity', next);
           this._av = next;
         },
-        setMassProps(mass) {
+        setMassProps(mass, inertia) {
+          if (typeof mass !== 'number' || !Number.isFinite(mass) || mass <= 0) {
+            this.mass = NaN;
+            throw new Error(`Invalid rigidBody.setMassProps mass: ${String(mass)}`);
+          }
+          assertVec3('setMassProps.inertia', inertia, true);
           this.mass = mass;
         },
         applyTorque(t) {
+          assertVec3('applyTorque', t);
           this._torques.push(t);
+        },
+        applyTorqueImpulse(t) {
+          assertVec3('applyTorqueImpulse', t);
+          this._torques.push(t);
+        },
+        applyCentralImpulse(v) {
+          assertVec3('applyCentralImpulse', v);
         }
       };
 

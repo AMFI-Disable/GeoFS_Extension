@@ -2,6 +2,61 @@ import type { GeoFSAircraftInstance } from '../../types/geofs.d';
 import type { ExtensionSettings } from '../../types/settings';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 
+export function resolveScaledInertiaVector(
+  body: GeoFSAircraftInstance['rigidBody'] | undefined,
+  definition: GeoFSAircraftInstance['definition'] | undefined,
+  originalMass: number,
+  targetMass: number
+): { base: [number, number, number]; scaled: [number, number, number] } | null {
+  if (!Number.isFinite(originalMass) || originalMass <= 0 || !Number.isFinite(targetMass) || targetMass <= 0) {
+    return null;
+  }
+
+  const isPositiveVec3 = (candidate: unknown): candidate is [number, number, number] =>
+    Array.isArray(candidate) &&
+    candidate.length === 3 &&
+    candidate.every((n) => typeof n === 'number' && Number.isFinite(n) && n > 0);
+
+  let base: [number, number, number] | null = null;
+  const bodyRecord = body as Record<string, unknown> | undefined;
+  for (const key of ['inertia', 'localInertia', 'inertiaTensor']) {
+    const candidate = bodyRecord?.[key];
+    if (isPositiveVec3(candidate)) {
+      base = [candidate[0], candidate[1], candidate[2]];
+      break;
+    }
+  }
+
+  if (!base && typeof bodyRecord?.getInvInertiaDiagLocal === 'function') {
+    try {
+      const inv = (bodyRecord.getInvInertiaDiagLocal as () => unknown)();
+      if (isPositiveVec3(inv)) {
+        const inverted: [number, number, number] = [1 / inv[0], 1 / inv[1], 1 / inv[2]];
+        if (inverted.every((n) => Number.isFinite(n) && n > 0)) {
+          base = inverted;
+        }
+      }
+    } catch {
+      base = null;
+    }
+  }
+
+  // Only accept definition.inertiaTensor when it is an actual 3-axis inertia tensor (never tensorFactor or [1,1,1] factors).
+  if (!base && isPositiveVec3(definition?.inertiaTensor)) {
+    const candidate = definition.inertiaTensor;
+    const looksLikeDimensionlessFactor = originalMass > 100 && Math.min(...candidate) <= 5;
+    if (!looksLikeDimensionlessFactor) {
+      base = [candidate[0], candidate[1], candidate[2]];
+    }
+  }
+
+  if (!base) return null;
+  const scale = Math.max(0.25, Math.min(4, targetMass / originalMass));
+  const scaled: [number, number, number] = [base[0] * scale, base[1] * scale, base[2] * scale];
+  if (!scaled.every((n) => Number.isFinite(n) && n > 0)) return null;
+  return { base, scaled };
+}
+
 // Both archived Fuel Simulator scripts derive fuel consumption from engine thrust across active throttles.
 export function fuelBurnKgHr(aircraft: GeoFSAircraftInstance, telemetry: FlightTelemetry, dynamicSfc = false): number {
   if (aircraft.engine?.on === false) return 0;
@@ -9,7 +64,8 @@ export function fuelBurnKgHr(aircraft: GeoFSAircraftInstance, telemetry: FlightT
   const name = profile?.name ?? '';
   if (profile?.id === '2953' || /atlantis/i.test(name)) return 0;
 
-  const ratedThrust = Number(aircraft.definition?.maxThrust) || 0;
+  const rawRated = Number(aircraft.definition?.maxThrust);
+  const ratedThrust = Number.isFinite(rawRated) && rawRated > 0 ? rawRated : 0;
   const engines = aircraft.engines;
   const thrustOf = (engine: { thrust?: number; on?: boolean }) =>
     engine.on !== false && typeof engine.thrust === 'number' && Number.isFinite(engine.thrust)
@@ -22,15 +78,17 @@ export function fuelBurnKgHr(aircraft: GeoFSAircraftInstance, telemetry: FlightT
   }
   if (thrust <= 0 && ratedThrust > 0) {
     const throttles = telemetry.throttles.length ? telemetry.throttles : [0];
-    const avgThrottle = throttles.reduce((sum, t) => sum + Math.abs(t), 0) / throttles.length;
+    const avgThrottle = throttles.reduce((sum, t) => sum + (Number.isFinite(t) ? Math.abs(t) : 0), 0) / throttles.length;
     thrust = ratedThrust * avgThrottle;
   }
 
+  const alt = Number.isFinite(telemetry.altitude) ? telemetry.altitude : 0;
   const sfc = /shuttle|rocket|x-15/i.test(name) ? 0.85 : ratedThrust > 50_000 ? 0.0075 : 0.0095;
-  const altitudeFactor = dynamicSfc ? Math.max(0.1, 1 - telemetry.altitude / 50_000) ** 1.1 : 1;
-  const reverseActive = telemetry.reverserActive || telemetry.throttles.some((t) => t < -0.05);
+  const altitudeFactor = dynamicSfc ? Math.max(0.1, 1 - alt / 50_000) ** 1.1 : 1;
+  const reverseActive = telemetry.reverserActive || telemetry.throttles.some((t) => Number.isFinite(t) && t < -0.05);
   const reverseFactor = telemetry.simMajor === 4 && reverseActive ? 1.35 : 1;
-  return thrust * sfc * altitudeFactor * reverseFactor;
+  const burn = thrust * sfc * altitudeFactor * reverseFactor;
+  return Number.isFinite(burn) && burn >= 0 ? burn : 0;
 }
 
 const FUEL_OPTIONS: ReadonlyArray<readonly [keyof Pick<ExtensionSettings, 'fuelDynamicSfc' | 'fuelRealisticTanks' | 'fuelAutoRefuel'>, string, string]> = [
@@ -46,8 +104,9 @@ export interface FuelTanks {
 }
 
 export function drainFuelTanks(tanks: FuelTanks, drain: number): FuelTanks {
-  const center = Math.max(0, tanks.center - drain);
-  const wingDrain = Math.max(0, drain - tanks.center) / 2;
+  const safeDrain = Number.isFinite(drain) && drain > 0 ? drain : 0;
+  const center = Math.max(0, tanks.center - safeDrain);
+  const wingDrain = Math.max(0, safeDrain - tanks.center) / 2;
   return { center, left: Math.max(0, tanks.left - wingDrain), right: Math.max(0, tanks.right - wingDrain) };
 }
 
@@ -108,9 +167,10 @@ export class FuelSimulatorModule implements IModule {
     | {
         definition: NonNullable<GeoFSAircraftInstance['definition']>;
         originalDefinitionMass: number | undefined;
-        body: NonNullable<GeoFSAircraftInstance['rigidBody']>;
-        originalMass: number;
-        inertia: unknown;
+        body: NonNullable<GeoFSAircraftInstance['rigidBody']> | undefined;
+        originalMass: number | undefined;
+        originalInertia: [number, number, number] | null;
+        calledSetMassProps: boolean;
       }
     | undefined;
   private massSyncElapsed = 0;
@@ -188,7 +248,7 @@ export class FuelSimulatorModule implements IModule {
     this.panel = el;
 
     const setPercent = (percent: number) => {
-      if (!this.aircraft || this.maxFuelKg <= 0) return;
+      if (!this.aircraft || this.maxFuelKg <= 0 || !Number.isFinite(percent)) return;
       const clamped = Math.max(0, Math.min(100, percent));
       this.fuelKg = (clamped / 100) * this.maxFuelKg;
       if (this.fuelKg > 0) this.restoreFuelEngine();
@@ -232,7 +292,10 @@ export class FuelSimulatorModule implements IModule {
     if (aircraft !== this.aircraft) {
       this.restoreMass();
       this.aircraft = aircraft;
-      this.fuelKg = this.maxFuelKg = profile?.maxFuel ?? 0;
+      const safeMaxFuel = typeof profile?.maxFuel === 'number' && Number.isFinite(profile.maxFuel) && profile.maxFuel > 0
+        ? profile.maxFuel
+        : 0;
+      this.fuelKg = this.maxFuelKg = safeMaxFuel;
       this.flameoutTriggered = false;
       this.distributeFuel();
       this.lowAlert = this.bingoAlert = false;
@@ -240,9 +303,10 @@ export class FuelSimulatorModule implements IModule {
     }
     if (!aircraft?.definition || !profile) return;
 
-    if (this.maxFuelKg !== profile.maxFuel) {
+    const nextMaxFuel = Number.isFinite(profile.maxFuel) && profile.maxFuel > 0 ? profile.maxFuel : 0;
+    if (this.maxFuelKg !== nextMaxFuel) {
       const fraction = this.maxFuelKg > 0 ? this.fuelKg / this.maxFuelKg : 1;
-      this.maxFuelKg = profile.maxFuel;
+      this.maxFuelKg = nextMaxFuel;
       this.fuelKg = fraction * this.maxFuelKg;
       this.distributeFuel();
       if (this.fuelKg > 0) this.restoreFuelEngine();
@@ -262,9 +326,11 @@ export class FuelSimulatorModule implements IModule {
     }
 
     const settings = this.ctx?.getSettings();
+    const dt = Number.isFinite(telemetry.dt) && telemetry.dt > 0 ? Math.min(telemetry.dt, 1) : 0;
     const burnRate = fuelBurnKgHr(aircraft, telemetry, Boolean(settings?.fuelDynamicSfc));
-    const drain = Math.min(this.fuelKg, (burnRate * telemetry.dt) / 3600);
-    this.fuelKg = Math.max(0, this.fuelKg - drain);
+    const rawDrain = (burnRate * dt) / 3600;
+    const drain = Number.isFinite(rawDrain) && rawDrain > 0 ? Math.min(this.fuelKg, rawDrain) : 0;
+    this.fuelKg = Number.isFinite(this.fuelKg) ? Math.max(0, this.fuelKg - drain) : this.maxFuelKg;
     const atlantis = profile.id === '2953' || /atlantis/i.test(profile.name);
 
     if (settings?.fuelAutoRefuel || atlantis) {
@@ -275,9 +341,19 @@ export class FuelSimulatorModule implements IModule {
       this.tanks = drainFuelTanks(this.tanks, drain);
       const imbalance = this.tanks.left - this.tanks.right;
       const axis = aircraft.object3d?.worldRotation?.[0];
-      if (axis && Math.abs(imbalance) > 10) {
+      if (
+        Array.isArray(axis) &&
+        axis.length >= 3 &&
+        Number.isFinite(imbalance) &&
+        Math.abs(imbalance) > 10 &&
+        Number.isFinite(axis[0]) &&
+        Number.isFinite(axis[1]) &&
+        Number.isFinite(axis[2])
+      ) {
         const torque = imbalance * 0.000001;
-        aircraft.rigidBody?.applyTorque?.([axis[0] * torque, axis[1] * torque, axis[2] * torque]);
+        if (Number.isFinite(torque)) {
+          aircraft.rigidBody?.applyTorque?.([axis[0] * torque, axis[1] * torque, axis[2] * torque]);
+        }
       }
     } else {
       this.distributeFuel();
@@ -298,13 +374,15 @@ export class FuelSimulatorModule implements IModule {
     }
 
     if (!atlantis) {
-      this.massSyncElapsed += telemetry.dt;
+      this.massSyncElapsed += dt;
       if (this.massSyncElapsed >= 1) {
         this.massSyncElapsed = 0;
         const payload = Math.max(profile.mtow * 0.1, profile.mtow - profile.oew - profile.maxFuel) * 0.5;
         const mass = profile.oew + payload + this.fuelKg;
-        this.syncMass(aircraft, mass);
-        if (this.weightEl) this.weightEl.textContent = `${Math.round(mass).toLocaleString()} kg`;
+        if (Number.isFinite(mass) && mass > 0) {
+          this.syncMass(aircraft, mass);
+          if (this.weightEl) this.weightEl.textContent = `${Math.round(mass).toLocaleString()} kg`;
+        }
       }
     }
 
@@ -358,24 +436,39 @@ export class FuelSimulatorModule implements IModule {
     if (body !== this.massTarget?.body || definition !== this.massTarget?.definition) this.restoreMass();
     if (!definition || !Number.isFinite(mass) || mass <= 0) return;
 
-    const changed = Math.abs((definition.mass ?? 0) - mass) > 5;
+    const prevDefMass = definition.mass;
+    const changed = Math.abs((prevDefMass ?? 0) - mass) > 5;
+
+    if (!this.massTarget) {
+      const origBodyMass = typeof body?.mass === 'number' && Number.isFinite(body.mass) && body.mass > 0
+        ? body.mass
+        : typeof prevDefMass === 'number' && Number.isFinite(prevDefMass) && prevDefMass > 0
+          ? prevDefMass
+          : undefined;
+      this.massTarget = {
+        definition,
+        originalDefinitionMass: prevDefMass,
+        body,
+        originalMass: origBodyMass,
+        originalInertia: null,
+        calledSetMassProps: false
+      };
+    }
+
     definition.mass = mass;
 
-    if (body?.setMassProps) {
-      if (!this.massTarget) {
-        const originalMass = body.mass ?? definition.mass;
-        if (typeof originalMass === 'number' && Number.isFinite(originalMass) && originalMass > 0) {
-          this.massTarget = {
-            body,
-            definition,
-            originalDefinitionMass: definition.mass,
-            originalMass,
-            inertia: definition.inertiaTensor ?? definition.tensorFactor
-          };
+    if (body?.setMassProps && this.massTarget.originalMass !== undefined) {
+      const resolved = resolveScaledInertiaVector(body, definition, this.massTarget.originalMass, mass);
+      if (resolved) {
+        if (!this.massTarget.originalInertia) {
+          this.massTarget.originalInertia = resolved.base;
         }
-      }
-      if (this.massTarget) {
-        body.setMassProps(mass, this.massTarget.inertia);
+        try {
+          body.setMassProps(mass, resolved.scaled);
+          this.massTarget.calledSetMassProps = true;
+        } catch {
+          this.massTarget.calledSetMassProps = false;
+        }
       }
     }
 
@@ -389,7 +482,18 @@ export class FuelSimulatorModule implements IModule {
     if (target) {
       if (target.originalDefinitionMass === undefined) delete target.definition.mass;
       else target.definition.mass = target.originalDefinitionMass;
-      target.body.setMassProps?.(target.originalMass, target.inertia);
+      if (
+        target.calledSetMassProps &&
+        target.body?.setMassProps &&
+        target.originalMass !== undefined &&
+        target.originalInertia
+      ) {
+        try {
+          target.body.setMassProps(target.originalMass, target.originalInertia);
+        } catch {
+          // Ignore restore errors if aircraft rigidBody was already torn down
+        }
+      }
     }
     this.massTarget = undefined;
   }

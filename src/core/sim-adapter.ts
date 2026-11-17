@@ -218,8 +218,10 @@ export class SimAdapter {
         isDynamic: !idSpec
       };
     } else {
-      const mass = Number(def.mass || ac.setup?.mass || 1200);
-      const maxThrust = Number(def.maxThrust || 0);
+      const rawMass = Number(def.mass || ac.setup?.mass || 1200);
+      const mass = Number.isFinite(rawMass) && rawMass > 0 ? rawMass : 1200;
+      const rawThrust = Number(def.maxThrust);
+      const maxThrust = Number.isFinite(rawThrust) && rawThrust >= 0 ? rawThrust : 0;
       const hasGear = def.hasGear !== undefined ? Boolean(def.hasGear) : (Boolean(def.gearPositions?.length) || ac.parts?.gear !== undefined);
       const hasSpoilers = def.hasAirbrakes !== undefined ? Boolean(def.hasAirbrakes) : (ac.parts?.airbrakes !== undefined || ac.parts?.spoilers !== undefined);
       const maxFlaps = def.flapsSteps ?? (def.flapsPositions ? Math.max(0, def.flapsPositions.length - 1) : 0);
@@ -278,7 +280,8 @@ export class SimAdapter {
         if (typeof val === 'number' && Number.isFinite(val)) numbered.push(val);
       }
       if (numbered.length === engineCount) return numbered;
-      if (typeof c.throttleLeft === 'number' && typeof c.throttleRight === 'number') {
+      if (typeof c.throttleLeft === 'number' && Number.isFinite(c.throttleLeft) &&
+          typeof c.throttleRight === 'number' && Number.isFinite(c.throttleRight)) {
         return [c.throttleLeft, c.throttleRight];
       }
     }
@@ -286,6 +289,7 @@ export class SimAdapter {
   }
 
   public setThrottle(value: number): void {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return;
     const c = window.controls;
     if (!c) return;
     const clamped = Math.max(-1, Math.min(1, value));
@@ -311,6 +315,7 @@ export class SimAdapter {
   }
 
   public setFlaps(step: number): void {
+    if (!Number.isFinite(step)) return;
     const ac = window.geofs?.aircraft?.instance;
     const c = window.controls;
     if (c?.flaps && typeof c.setters?.setFlaps?.set === 'function') {
@@ -333,25 +338,27 @@ export class SimAdapter {
     const isRotorcraft = aircraft?.category === 'rotorcraft';
     const collective = window.controls?.throttle;
     const torque = v.rotorTorque ?? v.torque;
+    const finite = (value: unknown, fallback = 0): number =>
+      typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
     return Object.freeze({
       timestamp: Date.now(),
-      dt,
+      dt: finite(dt, 0.016),
       simMajor,
       paused: Boolean(window.geofs?.isPaused?.()),
       isNight: this.isNight(),
       aircraft,
-      kias: Number.isFinite(v.kias) ? Number(v.kias) : 0,
-      mach: Number.isFinite(v.mach) ? Number(v.mach) : 0,
-      altitude: Number.isFinite(v.altitude) ? Number(v.altitude) : 0,
-      aglFeet: Number.isFinite(v.haglFeet) ? Number(v.haglFeet) : 0,
-      vs: Number.isFinite(v.verticalSpeed) ? Number(v.verticalSpeed) : 0,
-      heading: Number.isFinite(v.heading360) ? Number(v.heading360) : 0,
-      groundSpeed: Number.isFinite(v.groundSpeedKnt) ? Number(v.groundSpeedKnt) : (Number.isFinite(v.groundSpeed) ? Number(v.groundSpeed) : 0),
-      gForce: Number.isFinite(v.loadFactor) ? Number(v.loadFactor) : 1,
-      aoa: Number.isFinite(v.aoa) ? Number(v.aoa) : 0,
-      pitch: Number.isFinite(v.atilt) ? Number(v.atilt) : Number(v.pitch) || 0,
-      roll: Number.isFinite(v.aroll) ? Number(v.aroll) : Number(v.roll) || 0,
+      kias: finite(v.kias, 0),
+      mach: finite(v.mach, 0),
+      altitude: finite(v.altitude, 0),
+      aglFeet: finite(v.haglFeet, 0),
+      vs: finite(v.verticalSpeed, 0),
+      heading: finite(v.heading360, 0),
+      groundSpeed: finite(v.groundSpeedKnt, finite(v.groundSpeed, 0)),
+      gForce: finite(v.loadFactor, 1),
+      aoa: finite(v.aoa, 0),
+      pitch: finite(v.atilt, finite(v.pitch, 0)),
+      roll: finite(v.aroll, finite(v.roll, 0)),
       groundContact: Boolean(ac?.groundContact),
       crashed: Boolean(ac?.crashed),
       autopilotOn: Boolean(window.geofs?.autopilot?.on),
@@ -361,13 +368,13 @@ export class SimAdapter {
         ? Math.min(1, Math.max(0, collective)) : null,
       rotorTorque: isRotorcraft && typeof torque === 'number' && Number.isFinite(torque) ? torque : null,
       parkingBrake: Boolean(v.parkingBrake),
-      gearDown: Number(v.gearPosition ?? 0) > 0.5,
-      flapsTarget: Number(v.flapsTarget ?? 0),
-      airbrakesPosition: Number.isFinite(v.airbrakesPosition) ? v.airbrakesPosition : undefined,
-      glideslopeDeviation: v.NAVVNAV && Number.isFinite(v.NAVGlideAngleDeviation) ? v.NAVGlideAngleDeviation : undefined,
+      gearDown: finite(v.gearPosition, 0) > 0.5,
+      flapsTarget: finite(v.flapsTarget, 0),
+      airbrakesPosition: Number.isFinite(v.airbrakesPosition) ? Number(v.airbrakesPosition) : undefined,
+      glideslopeDeviation: v.NAVVNAV && Number.isFinite(v.NAVGlideAngleDeviation) ? Number(v.NAVGlideAngleDeviation) : undefined,
       lightsOn: Boolean(v.lights),
-      lat: Number(lla[0] || 0),
-      lon: Number(lla[1] || 0)
+      lat: finite(lla[0], 0),
+      lon: finite(lla[1], 0)
     });
   }
 }

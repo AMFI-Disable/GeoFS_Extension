@@ -377,3 +377,208 @@ describe('FPV Asset Resolution & Realism V4 Gating Metadata', () => {
     expect(v4OnlyDisabled).toEqual(['vortexEffects', 'carrierOps']);
   });
 });
+
+describe('Physics Stability & Void-Crash Prevention Regressions', () => {
+  it('never passes undefined, scalar, or dimensionless tensorFactor to setMassProps and scales valid inertia cleanly', async () => {
+    const { FuelSimulatorModule, resolveScaledInertiaVector } = await import('../src/modules/fuel-simulator');
+
+    // Missing/dimensionless inertia must resolve to null instead of corrupting rigidBody physics
+    expect(resolveScaledInertiaVector({}, { tensorFactor: 1.5 }, 50000, 48000)).toBeNull();
+    expect(resolveScaledInertiaVector({}, { tensorFactor: [1, 1, 1] }, 50000, 48000)).toBeNull();
+    expect(resolveScaledInertiaVector({}, { inertiaTensor: [1, 1, 1] }, 50000, 48000)).toBeNull();
+
+    // Valid rigidBody or definition inertia tensor scales proportionally
+    const scaledFromDef = resolveScaledInertiaVector(
+      {},
+      { inertiaTensor: [1_000_000, 2_000_000, 3_000_000] },
+      100_000,
+      120_000
+    );
+    expect(scaledFromDef).toEqual({
+      base: [1_000_000, 2_000_000, 3_000_000],
+      scaled: [1_200_000, 2_400_000, 3_600_000]
+    });
+
+    // FuelSimulatorModule captures true originalDefinitionMass and skips setMassProps when inertia is missing
+    const setMassPropsCalls: unknown[][] = [];
+    const docEl = {
+      innerHTML: '',
+      className: '',
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      remove: () => {}
+    };
+    vi.stubGlobal('document', {
+      createElement: () => ({ ...docEl, setAttribute: () => {}, addEventListener: () => {} })
+    });
+    const aircraftInstance = {
+      id: '24',
+      engine: { on: true },
+      engines: [{ on: true, thrust: 10_000 }],
+      definition: { name: 'Airbus A350-900', mass: 180_000, tensorFactor: [1, 1, 1], maxThrust: 374_000 },
+      rigidBody: {
+        mass: 180_000,
+        setMassProps: (...args: unknown[]) => setMassPropsCalls.push(args)
+      }
+    };
+    vi.stubGlobal('window', {
+      geofs: { version: '4.0', aircraft: { instance: aircraftInstance }, animation: { values: {} } },
+      controls: { throttle: 0.25 }
+    });
+
+    const fuelMod = new FuelSimulatorModule();
+    const sim = new SimAdapter();
+    fuelMod.init({
+      sim,
+      audio: {} as never,
+      anchors: {
+        registerHudTab: () => () => {},
+        showToast: () => {}
+      } as never,
+      keybinds: {} as never,
+      emitEvent: () => {},
+      onEvent: () => () => {},
+      getSettings: () => DEFAULT_SETTINGS,
+      updateSettings: () => {}
+    });
+
+    fuelMod.update(sim.buildTelemetrySnapshot(0.02, 4));
+    expect(setMassPropsCalls).toHaveLength(0);
+    expect(aircraftInstance.definition.mass).not.toBe(180_000);
+
+    fuelMod.destroy();
+    expect(aircraftInstance.definition.mass).toBe(180_000);
+
+    // When a real 3-axis inertiaTensor is provided, setMassProps is called with scaled [Ixx,Iyy,Izz] and restored on destroy
+    const validInertiaCalls: unknown[][] = [];
+    const rigidAircraft = {
+      id: '24',
+      engine: { on: true },
+      engines: [{ on: true, thrust: 10_000 }],
+      definition: { name: 'Airbus A350-900', mass: 200_000, inertiaTensor: [1_000_000, 2_000_000, 3_000_000], maxThrust: 374_000 },
+      rigidBody: {
+        mass: 200_000,
+        setMassProps: (...args: unknown[]) => validInertiaCalls.push(args)
+      }
+    };
+    vi.stubGlobal('window', {
+      geofs: { version: '4.0', aircraft: { instance: rigidAircraft }, animation: { values: {} } },
+      controls: { throttle: 0.25 }
+    });
+    const fuelModValid = new FuelSimulatorModule();
+    fuelModValid.init({
+      sim,
+      audio: {} as never,
+      anchors: { registerHudTab: () => () => {}, showToast: () => {} } as never,
+      keybinds: {} as never,
+      emitEvent: () => {},
+      onEvent: () => () => {},
+      getSettings: () => DEFAULT_SETTINGS,
+      updateSettings: () => {}
+    });
+    fuelModValid.update(sim.buildTelemetrySnapshot(0.02, 4));
+    expect(validInertiaCalls).toHaveLength(1);
+    const [updatedMass, updatedInertia] = validInertiaCalls[0] as [number, number[]];
+    expect(updatedMass).toBeGreaterThan(200_000);
+    expect(updatedInertia.every((n) => Number.isFinite(n) && n > 1_000_000)).toBe(true);
+    fuelModValid.destroy();
+    expect(validInertiaCalls).toHaveLength(2);
+    expect(validInertiaCalls[1]).toEqual([200_000, [1_000_000, 2_000_000, 3_000_000]]);
+  });
+
+  it('never shifts setup.parts[0].centerOfMass on propwash aircraft and never fires 777 impulses on runway/low speed', async () => {
+    const { RealismPackModule } = await import('../src/modules/realism-pack');
+    const mod = new RealismPackModule();
+    const origCom: [number, number, number] = [0, 0, 0];
+    const impulses: unknown[][] = [];
+    const torques: unknown[][] = [];
+    const ac: Record<string, unknown> = {
+      id: '2',
+      airfoils: [{ forceDirection: 2 }, { forceDirection: 0 }],
+      setup: { parts: [{ centerOfMass: origCom }] },
+      definition: { name: 'Cessna 172' },
+      groundContact: true,
+      rigidBody: {
+        applyCentralImpulse: (...args: unknown[]) => impulses.push(args),
+        applyTorqueImpulse: (...args: unknown[]) => torques.push(args)
+      }
+    };
+    vi.stubGlobal('document', { addEventListener: () => {}, removeEventListener: () => {} });
+    vi.stubGlobal('window', {
+      geofs: {
+        version: '4.0',
+        aircraft: { instance: ac },
+        animation: { values: { rpm: 2400, kias: 12, haglFeet: 3, aoa: 45, accZ: 9.81 } }
+      }
+    });
+
+    mod.init({
+      sim: new SimAdapter(),
+      audio: {} as never,
+      anchors: { showToast: () => {} } as never,
+      keybinds: {} as never,
+      emitEvent: () => {},
+      onEvent: () => () => {},
+      getSettings: () => DEFAULT_SETTINGS,
+      updateSettings: () => {}
+    });
+
+    const sim = new SimAdapter();
+    mod.update({ ...sim.buildTelemetrySnapshot(0.02, 4), timestamp: Date.now() + 2000 });
+    expect((ac.setup as { parts: Array<{ centerOfMass: number[] }> }).parts[0].centerOfMass).toEqual([0, 0, 0]);
+
+    // Switch to Boeing 777-300ER ('25') on runway with high AoA sensor noise and low speed
+    ac.id = '25';
+    mod.update({
+      ...sim.buildTelemetrySnapshot(0.02, 4),
+      aircraft: {
+        id: '25',
+        name: 'Boeing 777-300ER',
+        category: 'airliner-twin',
+        engineCount: 2,
+        maxFlaps: 6,
+        hasGear: true,
+        hasSpoilers: true,
+        oew: 167800,
+        mtow: 351500,
+        maxFuel: 145538,
+        isDynamic: false
+      },
+      groundContact: true,
+      kias: 18,
+      aglFeet: 16,
+      aoa: 42,
+      timestamp: Date.now() + 4000
+    });
+    expect(impulses).toHaveLength(0);
+    expect(torques).toHaveLength(0);
+    mod.destroy();
+  });
+
+  it('guards SimAdapter.setThrottle and EffectiveSasController against NaN propagation', () => {
+    const controls = { throttle: 0.4, rawRoll: 0, rawPitch: 0, rawYaw: 0 };
+    vi.stubGlobal('window', { controls });
+    const sim = new SimAdapter();
+    sim.setThrottle(Number.NaN);
+    expect(controls.throttle).toBe(0.4);
+
+    const sas = new EffectiveSasController();
+    let av: [number, number, number] = [Number.NaN, 0.2, 0];
+    const res = sas.step({
+      rigidBody: {
+        mass: 5000,
+        getAngularVelocity: () => av,
+        setAngularVelocity: (next) => { av = next; }
+      },
+      controls: { rawRoll: 0.5 },
+      pitchDeg: Number.NaN,
+      rollDeg: Number.NaN,
+      kias: Number.NaN,
+      multiplier: Number.NaN,
+      sasStrength: Number.NaN,
+      groundContact: false
+    });
+    expect(res.nextAngularVelocity).toBeNull();
+    expect(Number.isNaN(av[0])).toBe(true);
+  });
+});
