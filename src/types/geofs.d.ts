@@ -210,11 +210,14 @@ export interface GeoFSGlobal {
   aircraft?: {
     instance?: GeoFSAircraftInstance & { toggleGear?: () => void };
   };
-  camera?: { lla?: [number, number, number]; translate?: (x: number, y: number, z: number) => void };
+  camera?: { lla?: [number, number, number]; currentModeName?: string; translate?: (x: number, y: number, z: number) => void };
   preferences?: { crashDetection?: boolean };
   flyToCamera?: () => void;
   cautiousWithTerrain?: boolean;
   fx?: {
+    atmosphere?: {
+      atmospherePostProcessStage?: { _ready?: boolean };
+    };
     ParticleEmitter?: new (options: Record<string, unknown>) => GeoFSParticleEmitter;
     setParticlesColor?: (color: unknown) => void;
     particles?: Record<string, {

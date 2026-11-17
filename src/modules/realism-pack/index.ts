@@ -1,4 +1,4 @@
-import { BOEING_777_IDS, installAircraftSounds } from './aircraft-sounds';
+import { AIRBUS_IDS, BOEING_737_IDS, BOEING_777_IDS, installAircraftSounds } from './aircraft-sounds';
 import type { ExtensionSettings, RealismOptions } from '../../types/settings';
 import type { GeoFSAircraftInstance } from '../../types/geofs.d';
 import type { FlightTelemetry, IModule, ModuleContext, SimMajorVersion } from '../../types/module';
@@ -11,28 +11,35 @@ export function buildGForceShader(simMajor: SimMajorVersion): string {
     uniform sampler2D colorTexture;
     ${input} vec2 v_textureCoordinates;
     uniform float strength;
-    vec4 vignette(float strength, vec2 coordinate, vec2 texCoord) {
+    vec4 vignette(float s, vec2 coordinate, vec2 texCoord) {
         vec2 uv = coordinate.xy / czm_viewport.zw;
-        uv *=  1.0 - uv.yx;
-        float vig = (uv.x*uv.y) * 15.0;
-        vig = pow(vig, strength);
-        return mix(vec4(vig), ${sample}(colorTexture, texCoord), vig);
+        uv *= 1.0 - uv.yx;
+        float vig = clamp((uv.x * uv.y) * 15.0, 0.0, 1.0);
+        vig = s > 0.0001 ? pow(max(vig, 0.0001), s) : 1.0;
+        return mix(vec4(0.0, 0.0, 0.0, 1.0), ${sample}(colorTexture, texCoord), vig);
     }
-    vec4 grayOut(float strength, vec2 coordinate, vec2 texCoord) {
-      vec4 initialCol = vignette(strength * 20.0, coordinate, texCoord);
+    vec4 grayOut(float s, vec2 coordinate, vec2 texCoord) {
+      vec4 initialCol = vignette(s * 20.0, coordinate, texCoord);
       vec4 grayCol = vec4(vec3(initialCol.r), 1.0);
-      return mix(initialCol, grayCol, strength * 3.0);
+      return mix(initialCol, grayCol, clamp(s * 3.0, 0.0, 1.0));
     }
-    vec4 blur(float strength, vec2 coordinate, vec2 texCoord) {
-      float radius = strength / 10.0;
-      vec4 initialCol  = grayOut(strength, coordinate, texCoord);
-      vec4 blurCol1    = grayOut(strength, coordinate + vec2(radius, 0.0), texCoord + vec2(radius, 0.0));
-      vec4 blurCol2    = grayOut(strength, coordinate + vec2(-radius, 0.0), texCoord + vec2(-radius, 0.0));
-      vec4 blurCol3    = grayOut(strength, coordinate + vec2(0.0, radius), texCoord + vec2(0.0, radius));
-      vec4 blurCol4    = grayOut(strength, coordinate + vec2(0.0, -radius), texCoord + vec2(0.0, -radius));
-      return mix(initialCol, (blurCol1 + blurCol2 + blurCol3 + blurCol4) / 4.0, strength * 2.0);
+    vec4 blur(float s, vec2 coordinate, vec2 texCoord) {
+      float uvRadius = s * 0.005;
+      vec2 pxRadius = vec2(uvRadius) * czm_viewport.zw;
+      vec4 initialCol  = grayOut(s, coordinate, texCoord);
+      vec4 blurCol1    = grayOut(s, coordinate + vec2(pxRadius.x, 0.0), clamp(texCoord + vec2(uvRadius, 0.0), 0.0, 1.0));
+      vec4 blurCol2    = grayOut(s, coordinate + vec2(-pxRadius.x, 0.0), clamp(texCoord + vec2(-uvRadius, 0.0), 0.0, 1.0));
+      vec4 blurCol3    = grayOut(s, coordinate + vec2(0.0, pxRadius.y), clamp(texCoord + vec2(0.0, uvRadius), 0.0, 1.0));
+      vec4 blurCol4    = grayOut(s, coordinate + vec2(0.0, -pxRadius.y), clamp(texCoord + vec2(0.0, -uvRadius), 0.0, 1.0));
+      return mix(initialCol, (blurCol1 + blurCol2 + blurCol3 + blurCol4) / 4.0, clamp(s * 2.0, 0.0, 1.0));
     }
-    void main() { ${output} = blur(strength, gl_FragCoord.xy, v_textureCoordinates); }
+    void main() {
+      if (strength <= 0.0001) {
+        ${output} = ${sample}(colorTexture, v_textureCoordinates);
+        return;
+      }
+      ${output} = blur(strength, gl_FragCoord.xy, v_textureCoordinates);
+    }
   `;
 }
 
@@ -83,6 +90,12 @@ function isEnabled(options: Partial<RealismOptions> | undefined, key: keyof Real
   return options?.[key] ?? (key !== 'performanceMode');
 }
 
+function isCockpitView(): boolean {
+  const view = window.geofs?.animation?.values?.view;
+  const mode = window.geofs?.camera?.currentModeName;
+  return view === 'cockpit' || mode === 'cockpit';
+}
+
 export class RealismPackModule implements IModule {
   public readonly id = 'realism-pack';
   public readonly name = 'Realism Pack';
@@ -93,7 +106,7 @@ export class RealismPackModule implements IModule {
   private ctx: ModuleContext | null = null;
   private optionKey = '';
   private lastSimMajor: SimMajorVersion | null = null;
-  private stage: unknown = null;
+  private stage: { enabled?: boolean } | null = null;
   private removeStage: (() => void) | undefined;
   private uniforms = { strength: 0 };
   private overGSeconds = 0;
@@ -111,7 +124,6 @@ export class RealismPackModule implements IModule {
   private spoilerArmed = false;
   private breath?: HTMLAudioElement;
   private wind?: HTMLAudioElement;
-  private restoreRunwayVisibility?: () => void;
   private aircraftSounds?: ReturnType<typeof installAircraftSounds>;
   private checkedAircraftSounds = false;
 
@@ -146,6 +158,7 @@ export class RealismPackModule implements IModule {
       this.uniforms.strength = 0;
       this.overGSeconds = 0;
       this.blackoutActive = false;
+      if (this.stage) this.stage.enabled = false;
     }
     this.emitRealismDiag(options);
   }
@@ -174,16 +187,21 @@ export class RealismPackModule implements IModule {
     if (this.stage) return;
     const Stage = window.Cesium?.PostProcessStage;
     const stages = window.geofs?.api?.viewer?.scene?.postProcessStages;
+    const atmoStage = window.geofs?.fx?.atmosphere?.atmospherePostProcessStage;
     if (!Stage || !stages?.add) return;
+    if (atmoStage && !atmoStage._ready) return;
     try {
-      this.stage = stages.add(new Stage({
+      const added = stages.add(new Stage({
         fragmentShader: buildGForceShader(major),
         uniforms: { strength: () => this.uniforms.strength }
-      }));
-      const stage = this.stage;
-      this.removeStage = () => stages.remove?.(stage);
+      })) as { enabled?: boolean } | undefined;
+      if (added) {
+        added.enabled = false;
+        this.stage = added;
+        this.removeStage = () => stages.remove?.(added);
+      }
     } catch (err) {
-      console.warn('[GeoFS Extension] Could not initialize the archived blackout effect:', err);
+      console.warn('[GeoFS Extension] Could not initialize the blackout effect:', err);
     }
   }
 
@@ -212,55 +230,80 @@ export class RealismPackModule implements IModule {
       this.restoreAircraft();
       this.aircraft = aircraft;
     }
-    if (!aircraft || !values || telemetry.paused || telemetry.crashed) return;
+    if (!aircraft || !values || telemetry.paused || telemetry.crashed) {
+      if (this.stage) this.stage.enabled = false;
+      return;
+    }
     const now = telemetry.timestamp;
     const g = telemetry.gForce;
-    const cockpit = values.view === 'cockpit';
+    const cockpit = isCockpitView();
     const id = telemetry.aircraft?.id ?? '';
     const options = this.ctx?.getSettings().realismOptions;
 
-    if (now >= this.nextBreath) {
-      this.nextBreath = now + 3500;
-      if (g >= 3 && isEnabled(options, 'gBreath')) void this.breath?.play().catch(() => {});
-      if (g > 6 && isEnabled(options, 'gBreath')) this.ctx?.anchors.showToast('High G-Load — Pilot Strain Detected', 'warn');
-    }
-    if (now >= this.nextWind) {
-      this.nextWind = now + 1000;
+    if (!this.breath) {
       const base = this.ctx?.getAudioUrl?.('');
-      if (base && !this.breath && typeof Audio !== 'undefined') {
+      if (base && typeof Audio !== 'undefined') {
         this.breath = new Audio(base + 'cutgbreath.mp3');
         this.wind = new Audio(base + 'wind.mp3');
         this.breath.preload = this.wind.preload = 'none';
       }
-      if (!this.checkedAircraftSounds && aircraft.definition?.sounds?.length && window.audio?.soundplayer &&
-          isEnabled(options, 'soundExpansion')) {
-        this.aircraftSounds = installAircraftSounds(aircraft);
-        this.checkedAircraftSounds = true;
-      }
-      const runways = sim?.runways;
-      if (runways?.nearRunways && runways.setRunwayModelVisibility && runways.modelVisibility !== undefined) {
-        const visible = Object.values(runways.nearRunways)[0]?.icao === 'VNLK';
-        if (Boolean(runways.modelVisibility) !== visible) {
-          const original = runways.modelVisibility;
-          this.restoreRunwayVisibility ??= () => runways.setRunwayModelVisibility?.(original);
-          runways.setRunwayModelVisibility(Number(visible));
+    }
+
+    if (!cockpit || !isEnabled(options, 'gBreath')) {
+      this.breath?.pause();
+    } else if (now >= this.nextBreath) {
+      this.nextBreath = now + 3500;
+      if (g >= 3) void this.breath?.play().catch(() => {});
+      if (g > 6) this.ctx?.anchors.showToast('High G-Load — Pilot Strain Detected', 'warn');
+    }
+
+    if (now >= this.nextWind) {
+      this.nextWind = now + 1000;
+      if (!this.checkedAircraftSounds && isEnabled(options, 'soundExpansion')) {
+        const supportsSoundPack = BOEING_737_IDS.has(id) || BOEING_777_IDS.has(id) || AIRBUS_IDS.has(id);
+        if (!supportsSoundPack) {
+          this.checkedAircraftSounds = true;
+        } else if (
+          aircraft.definition?.sounds?.length &&
+          window.audio?.soundplayer?.stopSound &&
+          window.audio?.sounds &&
+          Object.keys(window.audio.sounds).length > 0
+        ) {
+          this.aircraftSounds = installAircraftSounds(aircraft);
+          if (this.aircraftSounds) {
+            this.checkedAircraftSounds = true;
+          }
         }
       }
       if (cockpit && Number(values.accZ) >= 50 && isEnabled(options, 'windAudio')) void this.wind?.play().catch(() => {});
-      this.ensureStage(telemetry.simMajor);
     }
     this.aircraftSounds?.update(telemetry, values);
     const safeDt = Number.isFinite(telemetry.dt) && telemetry.dt > 0 ? Math.min(telemetry.dt, 0.25) : 0.016;
     const steps = safeDt / 0.01;
     const safeG = Number.isFinite(g) ? g : 1;
-    if (cockpit && safeG > 9 && isEnabled(options, 'blackout')) {
-      this.overGSeconds += 0.05 * steps;
-      if (this.overGSeconds > 0.1) this.blackoutActive = true;
-      if (this.blackoutActive) this.uniforms.strength = Math.min(1, this.uniforms.strength + 0.001 * (safeG - 5) / 10 * steps);
+    const blackoutEnabled = isEnabled(options, 'blackout');
+    if (cockpit && blackoutEnabled) {
+      if (safeG > 9) {
+        this.overGSeconds += 0.05 * steps;
+        if (this.overGSeconds > 0.1) this.blackoutActive = true;
+        if (this.blackoutActive) this.uniforms.strength = Math.min(1, this.uniforms.strength + 0.001 * (safeG - 5) / 10 * steps);
+      } else {
+        this.overGSeconds = 0;
+        this.uniforms.strength = Math.max(0, this.uniforms.strength - 0.0005 * steps);
+        if (!this.uniforms.strength) this.blackoutActive = false;
+      }
     } else {
       this.overGSeconds = 0;
-      this.uniforms.strength = Math.max(0, this.uniforms.strength - 0.0005 * steps);
-      if (!this.uniforms.strength) this.blackoutActive = false;
+      this.uniforms.strength = 0;
+      this.blackoutActive = false;
+    }
+
+    const stageActive = cockpit && blackoutEnabled && this.uniforms.strength > 0;
+    if (stageActive) {
+      this.ensureStage(telemetry.simMajor);
+    }
+    if (this.stage) {
+      this.stage.enabled = stageActive;
     }
 
     const camera = sim?.camera;
@@ -446,8 +489,6 @@ export class RealismPackModule implements IModule {
     this.optionKey = '';
     this.lastSimMajor = null;
     this.resetAircraftSounds();
-    this.restoreRunwayVisibility?.();
-    this.restoreRunwayVisibility = undefined;
     this.removeStage?.();
     this.stage = null;
     this.removeStage = undefined;

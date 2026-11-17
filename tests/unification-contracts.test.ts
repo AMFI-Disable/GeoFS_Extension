@@ -581,4 +581,141 @@ describe('Physics Stability & Void-Crash Prevention Regressions', () => {
     expect(res.nextAngularVelocity).toBeNull();
     expect(Number.isNaN(av[0])).toBe(true);
   });
+
+  it('keeps terrain untouched, restricts blackout/G-Breath to cockpit mode, and retries first-load sound setup', async () => {
+    const { RealismPackModule, buildGForceShader } = await import('../src/modules/realism-pack');
+    const shaderV4 = buildGForceShader(4);
+    expect(shaderV4).toContain('if (strength <= 0.0001)');
+    expect(shaderV4).toContain('pow(max(vig, 0.0001), s)');
+
+    const stagesAdded: Array<{ enabled?: boolean }> = [];
+    const runwayCalls: unknown[] = [];
+    const playCalls: number[] = [];
+    const pauseCalls: number[] = [];
+    const toastCalls: string[] = [];
+    const soundsMap: Record<string, unknown> = {};
+    const animValues: Record<string, unknown> = {
+      view: 'follow',
+      loadFactor: 10.5,
+      accZ: 9.81
+    };
+    const atmoStage = { _ready: false };
+
+    class MockAudio {
+      preload = '';
+      paused = true;
+      play() {
+        this.paused = false;
+        playCalls.push(Date.now());
+        return Promise.resolve();
+      }
+      pause() {
+        this.paused = true;
+        pauseCalls.push(Date.now());
+      }
+    }
+
+    vi.stubGlobal('Audio', MockAudio as unknown as typeof Audio);
+    vi.stubGlobal('document', { addEventListener: () => {}, removeEventListener: () => {} });
+    vi.stubGlobal('Cesium', {
+      PostProcessStage: class {
+        public enabled = true;
+      }
+    });
+    vi.stubGlobal('audio', {
+      sounds: soundsMap,
+      soundplayer: { stopSound: () => {} }
+    });
+    vi.stubGlobal('geofs', undefined);
+    vi.stubGlobal('window', {
+      audio: { sounds: soundsMap, soundplayer: { stopSound: () => {} } },
+      Cesium: {
+        PostProcessStage: class {
+          public enabled = true;
+        }
+      },
+      geofs: {
+        version: '4.0',
+        aircraft: {
+          instance: {
+            id: '25',
+            definition: {
+              name: 'Boeing 777-300ER',
+              sounds: [{ id: 's0', file: 'f0', effects: { volume: {}, pitch: {} } }]
+            },
+            groundContact: false
+          }
+        },
+        animation: { values: animValues },
+        camera: { currentModeName: 'follow' },
+        fx: { atmosphere: { atmospherePostProcessStage: atmoStage } },
+        runways: {
+          nearRunways: { KJFK: { icao: 'KJFK' } },
+          modelVisibility: 1,
+          setRunwayModelVisibility: (v: unknown) => runwayCalls.push(v)
+        },
+        api: {
+          viewer: {
+            scene: {
+              postProcessStages: {
+                add: (stage: { enabled?: boolean }) => {
+                  stagesAdded.push(stage);
+                  return stage;
+                },
+                remove: () => {}
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const mod = new RealismPackModule();
+    mod.init({
+      sim: new SimAdapter(),
+      audio: {} as never,
+      anchors: { showToast: (msg: string) => toastCalls.push(msg) } as never,
+      keybinds: {} as never,
+      getAudioUrl: (f: string) => `chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/audio/${f}`,
+      emitEvent: () => {},
+      onEvent: () => () => {},
+      getSettings: () => DEFAULT_SETTINGS,
+      updateSettings: () => {}
+    });
+
+    const baseTelemetry = new SimAdapter().buildTelemetrySnapshot(0.2, 4);
+    const t0 = 10_000;
+
+    // 1) In external ("follow") view at 10.5G: NO blackout stage, NO G-Breath, NO runway hiding, and sounds don't latch before audio.sounds is ready
+    mod.update({ ...baseTelemetry, gForce: 10.5, timestamp: t0 });
+    expect(runwayCalls).toHaveLength(0);
+    expect(stagesAdded).toHaveLength(0);
+    expect(playCalls).toHaveLength(0);
+    expect(toastCalls).toHaveLength(0);
+
+    // 2) Switch to cockpit mode while atmosphere isn't ready yet, and populate window.audio.sounds now
+    animValues.view = 'cockpit';
+    soundsMap['s0'] = { id: 's0', file: 'f0', effects: { volume: {}, pitch: {} } };
+    mod.update({ ...baseTelemetry, gForce: 10.5, timestamp: t0 + 3600 });
+    expect(playCalls.length).toBe(1); // G-Breath plays in cockpit
+    expect(toastCalls).toContain('High G-Load — Pilot Strain Detected');
+    expect(soundsMap['geofs-ext-realism-50']).toBeDefined(); // Sounds installed on retry after window.audio.sounds populated!
+    expect(stagesAdded).toHaveLength(0); // Not added while atmospherePostProcessStage._ready is false
+
+    // 3) Atmosphere becomes ready -> blackout stage attaches and activates in cockpit
+    atmoStage._ready = true;
+    mod.update({ ...baseTelemetry, gForce: 10.5, timestamp: t0 + 3700 });
+    expect(stagesAdded).toHaveLength(1);
+    expect(stagesAdded[0].enabled).toBe(true);
+
+    // 4) Switch back out of cockpit -> blackout stage immediately disables & G-Breath pauses
+    animValues.view = 'follow';
+    (window.geofs as { camera: { currentModeName: string } }).camera.currentModeName = 'follow';
+    const pausesBefore = pauseCalls.length;
+    mod.update({ ...baseTelemetry, gForce: 10.5, timestamp: t0 + 7500 });
+    expect(stagesAdded[0].enabled).toBe(false);
+    expect(pauseCalls.length).toBeGreaterThan(pausesBefore);
+
+    mod.destroy();
+  });
 });
