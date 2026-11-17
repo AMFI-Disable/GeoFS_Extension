@@ -55,11 +55,11 @@ npm run test:e2e
 
 1. Open `chrome://extensions` in Chromium or Chrome.
 2. Enable **Developer mode**.
-3. Click **Load unpacked** and select the generated sibling `GeoFS Extension` folder (or run `npm run test:e2e` for automated Chromium verification).
+3. Click **Load unpacked** and select the generated `GeoFS Extension` folder inside the checkout (or run `npm run test:e2e` for automated Chromium verification).
 4. Reload any open GeoFS V3.9 (`www.geo-fs.com`) or V4.0 (`beta.geo-fs.com`) tab and follow the [Live Verification Guide](docs/live-verification-guide.md).
 5. For packaged releases, see [GitHub Releases](https://github.com/AMFI-Disable/GeoFS_Extension/releases).
 
-For each commit you want to test, run `npm run build:unpacked` from the checkout and click **Reload** on the extension card. The command also refreshes `dist/`.
+Run `bash scripts/sync-unpacked.sh` from the checkout to fetch and fast-forward the current branch from its configured upstream, install the locked dependencies, and rebuild `dist/` and the unpacked folder. The script stops if tracked files have local edits or the branches have diverged. Click **Reload** on the extension card and refresh your GeoFS tabs after the build succeeds. To build the current checkout without syncing, run `npm run build:unpacked`.
 
 ---
 

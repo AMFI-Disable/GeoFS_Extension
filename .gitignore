@@ -24,6 +24,7 @@
 # Section 2: Ignored Build Artifacts And Local Files
 node_modules/
 dist/
+/GeoFS Extension/
 release/
 coverage/
 .DS_Store
