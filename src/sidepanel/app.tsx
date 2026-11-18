@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'preact/hooks';
+import { resolveEffectiveOs } from '../core/keyboard-translator';
 import { REALISM_OPTION_META } from '../modules/realism-pack';
+import { HelpLabel, SETTING_TIPS } from '../shared/help-tip';
 import {
+  focusGeoFSTab,
+  getOpenGeoFSTabs,
   loadSplitSettings,
+  mergeExtensionPatch,
   openOptionsPage,
   requestActiveTabDiagnostics,
   requestActiveTabTelemetry,
@@ -9,20 +14,22 @@ import {
   saveScriptPatch,
   subscribeSettings,
   type DiagEntry,
+  type GeoFSTabInfo,
   type LiveTelemetrySummary
 } from '../shared/settings-store';
 import { ApPpPanel } from './ap-pp-panel';
 import {
   DEFAULT_SETTINGS,
   type ExtensionSettings,
+  type MacKeyboardType,
   type OpSyncPolicy,
   type RealismOptions
 } from '../types/settings';
 
 const OP_SYNC_POLICIES: readonly { id: OpSyncPolicy; label: string }[] = [
   { id: 'ask', label: 'Ask' },
-  { id: 'allow', label: 'Allow' },
-  { id: 'never', label: 'Never' }
+  { id: 'allow', label: 'Auto' },
+  { id: 'never', label: 'Off' }
 ];
 
 const THRUST_PRESETS = [1, 2, 10, 100, 1000, 1000000] as const;
@@ -31,16 +38,23 @@ export function App() {
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);
   const [diags, setDiags] = useState<DiagEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<'ap-pp' | 'realism' | 'diag'>('ap-pp');
+  const [panelTab, setActiveTab] = useState<'ap-pp' | 'realism' | 'diag'>('ap-pp');
+  const [geofsTabs, setGeofsTabs] = useState<GeoFSTabInfo[]>([]);
+  const [selectedTabId, setSelectedTabId] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     void loadSplitSettings().then(setSettings);
     const unsubSettings = subscribeSettings(setSettings);
 
     const refreshLive = () => {
-      void requestActiveTabTelemetry().then(setLive);
-      void requestActiveTabDiagnostics().then((entries) => {
-        if (entries.length) setDiags(entries.slice(-30));
+      void getOpenGeoFSTabs().then((tabs) => {
+        setGeofsTabs(tabs);
+        const targetId =
+          selectedTabId !== undefined && tabs.some((t) => t.id === selectedTabId) ? selectedTabId : tabs[0]?.id;
+        void requestActiveTabTelemetry(targetId).then(setLive);
+        void requestActiveTabDiagnostics(targetId).then((entries) => {
+          if (entries.length) setDiags(entries.slice(-30));
+        });
       });
     };
     refreshLive();
@@ -64,19 +78,20 @@ export function App() {
       unsubSettings();
       chrome.runtime?.onMessage?.removeListener(onRuntimeMessage);
     };
-  }, []);
+  }, [selectedTabId]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = settings.themeMode;
   }, [settings.themeMode]);
 
+  const patchExt = (patch: Partial<ExtensionSettings>) => {
+    setSettings((prev) => mergeExtensionPatch(prev, patch));
+    void saveExtensionPatch(patch);
+  };
+
   const patchScript = (patch: Partial<ExtensionSettings>) => {
-    setSettings((prev) => ({
-      ...prev,
-      ...patch,
-      realismOptions: patch.realismOptions ? { ...prev.realismOptions, ...patch.realismOptions } : prev.realismOptions
-    }));
-    void saveScriptPatch(patch).then(setSettings);
+    setSettings((prev) => mergeExtensionPatch(prev, patch));
+    void saveScriptPatch(patch);
   };
 
   const toggleRealism = (key: keyof RealismOptions) => {
@@ -85,25 +100,76 @@ export function App() {
   };
 
   const isV4 = live?.simMajor === 4;
+  const activeTab = geofsTabs.find((t) => t.id === selectedTabId) ?? geofsTabs[0];
+  const effectiveOs = resolveEffectiveOs(settings.keyboardOsProfile);
 
   return (
     <div class="surface-shell">
       <div class="header">
         <div style="min-width:0">
           <div class="title">Cockpit Companion</div>
-          <div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-            {live?.aircraftProfile ? live.aircraftProfile.name : 'Waiting for GeoFS flight...'}
+          <div class="muted-hint" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            {live?.aircraftProfile ? live.aircraftProfile.name : 'Open GeoFS to sync live flight data'}
           </div>
         </div>
-        <div style="display:flex;gap:4px;align-items:center">
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
           <span class={`badge ${live?.simMajor ? 'badge--ok' : ''}`}>
             {live?.simMajor ? `V${live.simMajor}` : 'Offline'}
           </span>
+          {activeTab && !activeTab.active && (
+            <button type="button" class="chip-btn" onClick={() => void focusGeoFSTab(activeTab.id)}>
+              Focus
+            </button>
+          )}
           <button type="button" class="btn-sm" onClick={() => openOptionsPage()}>
-            Full Settings
+            Settings
           </button>
         </div>
       </div>
+
+      {effectiveOs === 'mac' && settings.macKeyboardType === null && (
+        <div class="panel-card" style="border-color:var(--accent)">
+          <div class="section-heading" style="color:var(--accent-strong)">
+            Mac Keyboard Setup
+          </div>
+          <div class="muted-hint">
+            Which Mac keyboard are you using? This tunes PageUp/PageDown, Delete, and Numpad keys for GeoFS.
+          </div>
+          <div class="preset-row">
+            <button
+              type="button"
+              class="btn-sm btn-accent"
+              onClick={() => patchExt({ macKeyboardType: 'macbook' as MacKeyboardType })}
+            >
+              MacBook / Compact
+            </button>
+            <button
+              type="button"
+              class="btn-sm"
+              onClick={() => patchExt({ macKeyboardType: 'magic' as MacKeyboardType })}
+            >
+              Magic (Numpad + Del)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {geofsTabs.length > 1 && (
+        <div class="field-row" style="font-size:11px">
+          <span class="muted-hint">Synced Tab</span>
+          <select
+            aria-label="Synced GeoFS Tab"
+            value={activeTab?.id ?? ''}
+            onChange={(e) => setSelectedTabId(Number((e.target as HTMLSelectElement).value))}
+          >
+            {geofsTabs.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.url.includes('beta.') ? 'GeoFS V4' : 'GeoFS V3'} · {t.title.slice(0, 22)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div class="telemetry-strip telemetry-strip--wide">
         <div>
@@ -147,34 +213,31 @@ export function App() {
         </span>
       </div>
 
-      <div class="chip-group" style="margin-bottom:2px">
+      <div class="tabs" style="margin-bottom:2px">
         <button
           type="button"
-          class={`chip-btn ${activeTab === 'ap-pp' ? 'active' : ''}`}
-          style="flex:1"
+          class={`tab-btn ${panelTab === 'ap-pp' ? 'active' : ''}`}
           onClick={() => setActiveTab('ap-pp')}
         >
           AP++ (Beta)
         </button>
         <button
           type="button"
-          class={`chip-btn ${activeTab === 'realism' ? 'active' : ''}`}
-          style="flex:1"
+          class={`tab-btn ${panelTab === 'realism' ? 'active' : ''}`}
           onClick={() => setActiveTab('realism')}
         >
-          Realism & Fuel
+          Realism &amp; Fuel
         </button>
         <button
           type="button"
-          class={`chip-btn ${activeTab === 'diag' ? 'active' : ''}`}
-          style="flex:1"
+          class={`tab-btn ${panelTab === 'diag' ? 'active' : ''}`}
           onClick={() => setActiveTab('diag')}
         >
           OP / Diag
         </button>
       </div>
 
-      {activeTab === 'ap-pp' && (
+      {panelTab === 'ap-pp' && (
         <ApPpPanel
           enabled={Boolean(settings.modules['autopilot-pp'])}
           snapshot={live?.apPp}
@@ -186,12 +249,12 @@ export function App() {
         />
       )}
 
-      {activeTab === 'diag' && (
+      {panelTab === 'diag' && (
         <>
           <div class="panel-card">
-        <div class="section-heading">Autothrottle & OP-SYNC</div>
+        <div class="section-heading">Autothrottle &amp; Boost</div>
         <div class="field-row">
-          <span>OP-SYNC Confirmation</span>
+          <HelpLabel label="Auto-Boost (OP-SYNC)" tip={SETTING_TIPS.opSyncPolicy} />
           <div class="chip-group">
             {OP_SYNC_POLICIES.map((p) => (
               <button
@@ -206,13 +269,13 @@ export function App() {
           </div>
         </div>
         <div class="field-row">
-          <span>High-Delta Prompt (kts)</span>
+          <HelpLabel label="Boost Prompt Threshold (kts)" tip={SETTING_TIPS.opDeltaThresholdKts} />
           <input
             type="number"
             min="25"
             max="1000"
             step="25"
-            style="width:76px;text-align:right"
+            style="width:72px;text-align:right"
             value={settings.opDeltaThresholdKts}
             onChange={(e) =>
               patchScript({
@@ -222,7 +285,10 @@ export function App() {
           />
         </div>
         <div class="field-row">
-          <span>A/THR Gain ({settings.autothrottleResponsiveness.toFixed(1)}x)</span>
+          <HelpLabel
+            label={`Throttle Response (${settings.autothrottleResponsiveness.toFixed(1)}x)`}
+            tip={SETTING_TIPS.autothrottleResponsiveness}
+          />
           <input
             type="range"
             min="0.5"
@@ -235,9 +301,9 @@ export function App() {
       </div>
 
       <div class="panel-card">
-        <div class="section-heading">OP Engines & Closed-Loop SAS</div>
+        <div class="section-heading">Engine Power &amp; Stability</div>
         <label class="switch-row">
-          <span>Effective SAS Stability</span>
+          <HelpLabel label="Stability Assist (SAS)" tip={SETTING_TIPS.opStability} />
           <input
             type="checkbox"
             checked={settings.opStability}
@@ -245,7 +311,7 @@ export function App() {
           />
         </label>
         <div class="field-row">
-          <span>SAS Strength ({settings.sasStrength.toFixed(1)}x)</span>
+          <HelpLabel label={`Stability Strength (${settings.sasStrength.toFixed(1)}x)`} tip={SETTING_TIPS.sasStrength} />
           <input
             type="range"
             min="0.5"
@@ -256,7 +322,7 @@ export function App() {
           />
         </div>
         <div class="field-row">
-          <span>Thrust Multiplier</span>
+          <HelpLabel label="Thrust Multiplier" tip={SETTING_TIPS.opThrustMultiplier} />
           <span class="badge">{settings.opThrustMultiplier.toLocaleString()}x</span>
         </div>
         <div class="chip-group">
@@ -274,9 +340,9 @@ export function App() {
       </div>
 
       <div class="panel-card">
-        <div class="section-heading">Fuel & Failures Live Control</div>
+        <div class="section-heading">Fuel &amp; Failures</div>
         <label class="switch-row">
-          <span>Altitude Burn (Across All Throttles)</span>
+          <HelpLabel label="Altitude Burn" tip={SETTING_TIPS.fuelDynamicSfc} />
           <input
             type="checkbox"
             checked={settings.fuelDynamicSfc}
@@ -284,7 +350,7 @@ export function App() {
           />
         </label>
         <label class="switch-row">
-          <span>Real Tanks (Center → Wings Imbalance)</span>
+          <HelpLabel label="Real Wing Tanks" tip={SETTING_TIPS.fuelRealisticTanks} />
           <input
             type="checkbox"
             checked={settings.fuelRealisticTanks}
@@ -292,7 +358,7 @@ export function App() {
           />
         </label>
         <label class="switch-row">
-          <span>Auto-Refuel on Empty</span>
+          <HelpLabel label="Auto-Refuel on Empty" tip={SETTING_TIPS.fuelAutoRefuel} />
           <input
             type="checkbox"
             checked={settings.fuelAutoRefuel}
@@ -300,7 +366,7 @@ export function App() {
           />
         </label>
         <label class="switch-row">
-          <span>Failure Probability Timer</span>
+          <HelpLabel label="Random Failures" tip={SETTING_TIPS.failureProbabilitiesEnabled} />
           <input
             type="checkbox"
             checked={settings.failureProbabilitiesEnabled}
@@ -310,7 +376,10 @@ export function App() {
           />
         </label>
         <div class="field-row">
-          <span>Recovery Chance ({settings.failureRecoveryChancePct}%)</span>
+          <HelpLabel
+            label={`Recovery Chance (${settings.failureRecoveryChancePct}%)`}
+            tip={SETTING_TIPS.failureRecoveryChancePct}
+          />
           <input
             type="range"
             min="0"
@@ -323,11 +392,11 @@ export function App() {
       </div>
 
       <div class="panel-card">
-        <div class="section-heading">Realism Pack (Background Engine)</div>
+        <div class="section-heading">Realism &amp; Audio</div>
         <div class="field-col">
           {REALISM_OPTION_META.filter((item) => !(isV4 && item.v4Unavailable)).map((item) => (
             <label class="switch-row" key={item.key}>
-              <span>{item.label}</span>
+              <HelpLabel label={item.label} tip={SETTING_TIPS[`realism.${item.key}`]} />
               <input
                 type="checkbox"
                 checked={Boolean(settings.realismOptions[item.key])}
@@ -340,11 +409,45 @@ export function App() {
         </>
       )}
 
-      {activeTab === 'diag' && (
+      {panelTab === 'diag' && (
+        <>
+          <div class="panel-card">
+        <div class="section-heading">Keyboard &amp; OS Adapter ({effectiveOs.toUpperCase()})</div>
+        <label class="switch-row">
+          <HelpLabel label="Sim Key Translator" tip={SETTING_TIPS.simKeyTranslatorEnabled} />
+          <input
+            type="checkbox"
+            checked={settings.simKeyTranslatorEnabled}
+            onChange={(e) => patchExt({ simKeyTranslatorEnabled: (e.target as HTMLInputElement).checked })}
+          />
+        </label>
+        {effectiveOs === 'mac' && (
+          <div class="field-row">
+            <HelpLabel label="Mac Keyboard" tip={SETTING_TIPS.macKeyboardType} />
+            <div class="chip-group">
+              <button
+                type="button"
+                class={`chip-btn ${settings.macKeyboardType !== 'magic' ? 'active' : ''}`}
+                onClick={() => patchExt({ macKeyboardType: 'macbook' })}
+              >
+                MacBook
+              </button>
+              <button
+                type="button"
+                class={`chip-btn ${settings.macKeyboardType === 'magic' ? 'active' : ''}`}
+                onClick={() => patchExt({ macKeyboardType: 'magic' })}
+              >
+                Magic (Numpad)
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div class="panel-card">
         <div class="field-row">
           <span class="section-heading" style="border:none;padding:0">
-            Live Diagnostics ([GeoFS-EXT][DIAG])
+            Session Log
           </span>
           <button type="button" class="chip-btn" onClick={() => setDiags([])}>
             Clear
@@ -374,6 +477,7 @@ export function App() {
           )}
         </div>
       </div>
+        </>
       )}
     </div>
   );

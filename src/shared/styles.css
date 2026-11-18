@@ -629,3 +629,133 @@ table.data-table th {
 table.data-table tr.selected {
   background: rgba(16, 185, 129, 0.14);
 }
+
+.sync-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+
+.sync-banner--live {
+  border-color: var(--accent);
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--muted);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.sync-dot--live {
+  background: var(--accent-strong);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.help-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.help-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  outline: none;
+}
+
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  cursor: help;
+  user-select: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.help-wrap:hover .help-icon,
+.help-wrap:focus-visible .help-icon {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.help-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 240px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  white-space: normal;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.14s ease;
+  z-index: 999;
+}
+
+:root[data-theme="light"] .help-bubble {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+.help-wrap:hover .help-bubble,
+.help-wrap:focus-visible .help-bubble {
+  opacity: 1;
+  visibility: visible;
+}
+
+html[data-surface="sidepanel"] .help-bubble {
+  left: auto;
+  right: -8px;
+  transform: none;
+  max-width: 210px;
+}
+
+.muted-hint {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+

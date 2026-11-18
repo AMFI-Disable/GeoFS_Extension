@@ -14,6 +14,7 @@ import {
   subscribeSettings,
   type LiveTelemetrySummary
 } from '../shared/settings-store';
+import { detectDisplayProfile } from '../shared/display-calibrator';
 import {
   DEFAULT_SETTINGS,
   type CalibratorPreset,
@@ -185,7 +186,7 @@ export function App() {
         <div class="field-col">
           <div class="panel-group">
             <div class="module-row" style="cursor:default">
-              <span>Screen Calibrator</span>
+              <span>HUD Display Size</span>
               <select
                 aria-label="Screen Calibrator"
                 value={settings.calibratorPreset}
@@ -195,6 +196,7 @@ export function App() {
                   void saveExtensionPatch({ calibratorPreset: preset }).then(setSettings);
                 }}
               >
+                <option value="auto">Auto · {detectDisplayProfile().label}</option>
                 <option value="1080p">1080p FHD (1.0x)</option>
                 <option value="1440p">1440p QHD (1.1x)</option>
                 <option value="4k">4K UHD (1.35x)</option>

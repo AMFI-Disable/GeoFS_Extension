@@ -7,10 +7,12 @@ export const LEGACY_SETTINGS_KEY = 'geofs_ext_settings';
 export const LOGBOOK_KEY = 'geofs_ext_logbook';
 
 export type ThemeMode = 'auto' | 'dark' | 'light';
-export type CalibratorPreset = '1080p' | '1440p' | '4k' | 'ultrawide' | 'laptop';
+export type CalibratorPreset = 'auto' | '1080p' | '1440p' | '4k' | 'ultrawide' | 'laptop';
 export type ImageryProviderMode = 'native' | 'esri' | 'bing' | 'osm' | 'custom';
 export type OpSyncPolicy = 'ask' | 'allow' | 'never';
 export type FpvResolutionMode = 'auto' | 'hires' | 'lowres';
+export type KeyboardOsProfile = 'auto' | 'mac' | 'windows' | 'linux';
+export type MacKeyboardType = 'macbook' | 'magic';
 
 export interface KeybindConfig {
   toggleAutothrottle: string;
@@ -88,6 +90,10 @@ export interface ExtensionConfig {
   showStartupDiagnostics: boolean;
   sidePanelAutoTelemetry: boolean;
   hudPositionFallback: boolean;
+  keyboardOsProfile: KeyboardOsProfile;
+  macKeyboardType: MacKeyboardType | null;
+  simKeyTranslatorEnabled: boolean;
+  simKeyRemaps: Record<string, string>;
 }
 
 export interface ScriptConfig {
@@ -131,7 +137,7 @@ export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
     'satellite-imagery': false
   },
   themeMode: 'auto',
-  calibratorPreset: '1080p',
+  calibratorPreset: 'auto',
   keybindings: {
     toggleAutothrottle: 'Shift+A',
     toggleOpEngines: 'Shift+O',
@@ -145,7 +151,11 @@ export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
   aircraftOverrides: {},
   showStartupDiagnostics: true,
   sidePanelAutoTelemetry: true,
-  hudPositionFallback: true
+  hudPositionFallback: true,
+  keyboardOsProfile: 'auto',
+  macKeyboardType: null,
+  simKeyTranslatorEnabled: true,
+  simKeyRemaps: {}
 };
 
 export const DEFAULT_SCRIPT_CONFIG: ScriptConfig = {
@@ -156,7 +166,7 @@ export const DEFAULT_SCRIPT_CONFIG: ScriptConfig = {
   opCeilingFeet: 3_000_000,
   opStability: false,
   sasStrength: 1.0,
-  checklistAutoAdvance: false,
+  checklistAutoAdvance: true,
   checklistEnforceMandatoryGates: true,
   fuelDynamicSfc: false,
   fuelRealisticTanks: false,
@@ -193,7 +203,11 @@ export function splitSettings(settings: ExtensionSettings): {
       aircraftOverrides: parseAircraftOverrides(settings.aircraftOverrides),
       showStartupDiagnostics: settings.showStartupDiagnostics,
       sidePanelAutoTelemetry: settings.sidePanelAutoTelemetry,
-      hudPositionFallback: settings.hudPositionFallback
+      hudPositionFallback: settings.hudPositionFallback,
+      keyboardOsProfile: settings.keyboardOsProfile,
+      macKeyboardType: settings.macKeyboardType ?? null,
+      simKeyTranslatorEnabled: settings.simKeyTranslatorEnabled,
+      simKeyRemaps: { ...settings.simKeyRemaps }
     },
     scriptConfig: {
       autothrottleResponsiveness: settings.autothrottleResponsiveness,
@@ -243,6 +257,10 @@ export function mergeSettings(
       ...DEFAULT_EXTENSION_CONFIG.keybindings,
       ...(legacy.keybindings ?? {}),
       ...(ext.keybindings ?? {})
+    },
+    simKeyRemaps: {
+      ...(legacy.simKeyRemaps ?? {}),
+      ...(ext.simKeyRemaps ?? {})
     },
     aircraftOverrides: parseAircraftOverrides(ext.aircraftOverrides ?? legacy.aircraftOverrides),
     failureSystemChances: {

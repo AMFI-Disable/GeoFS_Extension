@@ -3,7 +3,15 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { AnchorManager } from '../src/core/anchor-manager';
 import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-adapter';
 import { ModuleManager } from '../src/core/module-manager';
-import { detectGeoFSKeyCollision, formatComboForOs } from '../src/core/keybind-manager';
+import {
+  detectGeoFSKeyCollision,
+  eventToComboString,
+  formatComboForOs,
+  matchesKeyEvent,
+  normalizeComboString
+} from '../src/core/keybind-manager';
+import { KeyboardTranslator, resolveEffectiveSimRemaps } from '../src/core/keyboard-translator';
+import { detectDisplayProfile } from '../src/shared/display-calibrator';
 import { formatLogbookCsv } from '../src/core/logbook-export';
 import { SerializedLogbookStore } from '../src/background/logbook-store';
 import { hasAircraftCallouts, installAircraftSounds } from '../src/modules/realism-pack/aircraft-sounds';
@@ -389,5 +397,114 @@ describe('Archived Engine and Flight Path Behavior', () => {
       .toEqual({ isWarning: true, hue: 0 });
     expect(resolveFpvColorState({ vs: Number.NaN, aoa: Number.NaN, kias: 200, groundContact: false }, null))
       .toEqual({ isWarning: false, hue: 120 });
+  });
+
+  it('auto-detects laptop, external 1080p/1440p/4K, and ultrawide displays', () => {
+    expect(detectDisplayProfile({ screen: { width: 1440, height: 900 }, devicePixelRatio: 2 }).preset).toBe('laptop');
+    expect(detectDisplayProfile({ screen: { width: 1920, height: 1080 }, devicePixelRatio: 1 }).preset).toBe('1080p');
+    expect(detectDisplayProfile({ screen: { width: 2560, height: 1440 }, devicePixelRatio: 1 }).preset).toBe('1440p');
+    expect(detectDisplayProfile({ screen: { width: 3840, height: 2160 }, devicePixelRatio: 1 }).preset).toBe('4k');
+    expect(detectDisplayProfile({ screen: { width: 3440, height: 1440 }, devicePixelRatio: 1 }).preset).toBe('ultrawide');
+  });
+
+  it('normalizes macOS modifier symbols without corrupting keybindings', () => {
+    expect(normalizeComboString('⇧A')).toBe('Shift+A');
+    expect(normalizeComboString('⌘ + ⌥ + H')).toBe('Cmd+Alt+H');
+    expect(detectGeoFSKeyCollision('⇧A')).toBeNull();
+    expect(detectGeoFSKeyCollision('Cmd+W')).toContain('Reserved');
+  });
+
+  it('matches macOS Option dead-key events via event.code and captures Press-to-Record combos', () => {
+    const macOptionA = {
+      key: 'å',
+      code: 'KeyA',
+      shiftKey: false,
+      ctrlKey: false,
+      altKey: true,
+      metaKey: false
+    } as unknown as KeyboardEvent;
+    expect(matchesKeyEvent(macOptionA, 'Alt+A')).toBe(true);
+    expect(eventToComboString(macOptionA)).toBe('Alt+A');
+  });
+
+  it('selects MacBook vs Magic keyboard remaps and translates keystrokes without stuck keys', () => {
+    const macbookRemaps = resolveEffectiveSimRemaps('mac', 'macbook');
+    expect(macbookRemaps['Alt+ArrowUp']).toBe('PageUp');
+    expect(macbookRemaps['Alt+Backspace']).toBe('Delete');
+    expect(macbookRemaps['Alt+1']).toBe('Numpad1');
+
+    const magicRemaps = resolveEffectiveSimRemaps('mac', 'magic', { 'Alt+Q': 'PageUp' });
+    expect(magicRemaps['Alt+Backspace']).toBeUndefined();
+    expect(magicRemaps['Alt+Q']).toBe('PageUp');
+
+    const dispatched: Array<{ type: string; code: string; key: string }> = [];
+    const listeners = new Map<string, Array<(e: unknown) => void>>();
+    (globalThis as unknown as { window: Record<string, unknown> }).window = {
+      addEventListener: (type: string, fn: (e: unknown) => void) => {
+        const list = listeners.get(type) ?? [];
+        list.push(fn);
+        listeners.set(type, list);
+      },
+      removeEventListener: () => {}
+    };
+    (globalThis as unknown as { document: Record<string, unknown> }).document = {
+      dispatchEvent: (ev: { type: string; code: string; key: string }) => {
+        dispatched.push({ type: ev.type, code: ev.code, key: ev.key });
+        return true;
+      }
+    };
+    (globalThis as unknown as { KeyboardEvent: unknown }).KeyboardEvent = class {
+      public type: string;
+      public key: string;
+      public code: string;
+      constructor(type: string, init: { key: string; code: string }) {
+        this.type = type;
+        this.key = init.key;
+        this.code = init.code;
+      }
+    };
+
+    const translator = new KeyboardTranslator();
+    translator.updateConfig({ enabled: true, osProfile: 'mac', macKeyboardType: 'macbook', customRemaps: {} });
+    translator.start();
+
+    let prevented = false;
+    let stopped = false;
+    const keydownHandler = listeners.get('keydown')?.[0];
+    const keyupHandler = listeners.get('keyup')?.[0];
+    keydownHandler?.({
+      isTrusted: true,
+      code: 'ArrowUp',
+      key: 'ArrowUp',
+      altKey: true,
+      shiftKey: false,
+      ctrlKey: false,
+      metaKey: false,
+      repeat: false,
+      target: { tagName: 'BODY' },
+      preventDefault: () => {
+        prevented = true;
+      },
+      stopImmediatePropagation: () => {
+        stopped = true;
+      }
+    });
+    expect(prevented).toBe(true);
+    expect(stopped).toBe(true);
+    expect(dispatched[0]).toEqual({ type: 'keydown', code: 'PageUp', key: 'PageUp' });
+
+    // Release ArrowUp after Alt was already released -> must still emit PageUp keyup!
+    keyupHandler?.({
+      isTrusted: true,
+      code: 'ArrowUp',
+      key: 'ArrowUp',
+      altKey: false,
+      preventDefault: () => {},
+      stopImmediatePropagation: () => {}
+    });
+    expect(dispatched[1]).toEqual({ type: 'keyup', code: 'PageUp', key: 'PageUp' });
+
+    delete (globalThis as unknown as { document?: unknown }).document;
+    delete (globalThis as unknown as { KeyboardEvent?: unknown }).KeyboardEvent;
   });
 });

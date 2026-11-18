@@ -2,6 +2,7 @@ import { SimAdapter, parseSimMajor } from '../core/sim-adapter';
 import { TelemetryBus } from '../core/telemetry-bus';
 import { AudioEngine } from '../core/audio-engine';
 import { KeybindManager } from '../core/keybind-manager';
+import { KeyboardTranslator } from '../core/keyboard-translator';
 import { AnchorManager } from '../core/anchor-manager';
 import { ModuleManager } from '../core/module-manager';
 import { createBuiltinModules } from '../modules';
@@ -70,6 +71,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
       const sim = new SimAdapter();
       const audio = new AudioEngine();
       const keybinds = new KeybindManager();
+      const translator = new KeyboardTranslator();
       const anchors = new AnchorManager();
       const bus = new TelemetryBus(sim, simMajor);
 
@@ -78,6 +80,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
         ...patch,
         modules: patch.modules ? { ...settings.modules, ...patch.modules } : settings.modules,
         keybindings: patch.keybindings ? { ...settings.keybindings, ...patch.keybindings } : settings.keybindings,
+        simKeyRemaps: patch.simKeyRemaps ? { ...patch.simKeyRemaps } : settings.simKeyRemaps,
         failureSystemChances: patch.failureSystemChances
           ? { ...settings.failureSystemChances, ...patch.failureSystemChances }
           : settings.failureSystemChances,
@@ -90,6 +93,12 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
         // Keep native GeoFS dark translucent glass styling in auto/dark mode; allow explicit light theme.
         anchors.setTheme(cfg.themeMode === 'light' ? 'light' : 'dark');
         anchors.setCalibratorPreset(cfg.calibratorPreset);
+        translator.updateConfig({
+          enabled: cfg.simKeyTranslatorEnabled,
+          osProfile: cfg.keyboardOsProfile,
+          macKeyboardType: cfg.macKeyboardType,
+          customRemaps: cfg.simKeyRemaps
+        });
       };
 
       const manager = new ModuleManager(simMajor, {
@@ -123,6 +132,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
       anchors.init();
 
       keybinds.start();
+      translator.start();
       keybinds.register('hud-toggle', settings.keybindings.toggleHud, () => {
         anchors.toggleHudVisibility();
       });
@@ -167,7 +177,6 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
 
       let lastBridgeSyncMs = 0;
       bus.subscribe((telemetry) => {
-        applyGlobalVisuals(settings);
         manager.dispatchTelemetry(telemetry);
 
         if (telemetry.timestamp - lastBridgeSyncMs >= 250) {

@@ -1,4 +1,5 @@
 import type { CalibratorPreset } from '../types/settings';
+import { resolveCalibratorScale } from '../shared/display-calibrator';
 
 export type AnchorZone = 'top' | 'bottom' | 'right' | 'corner' | 'autopilot';
 
@@ -8,14 +9,6 @@ export interface PromptAction {
   variant?: 'primary' | 'danger' | 'neutral';
   onClick: () => void;
 }
-
-const PRESET_SCALES: Record<CalibratorPreset, number> = {
-  '1080p': 1.0,
-  '1440p': 1.1,
-  '4k': 1.35,
-  'ultrawide': 1.08,
-  'laptop': 0.9
-};
 
 const TAB_ORDER = ['info', 'checks', 'fuel', 'land'] as const;
 
@@ -29,7 +22,7 @@ export class AnchorManager {
   private tabPanels = new Map<string, { label: string; el: HTMLElement }>();
   private activeTabId: string | null = null;
   private currentTheme: 'dark' | 'light' = 'dark';
-  private currentPreset: CalibratorPreset = '1080p';
+  private currentPreset: CalibratorPreset = 'auto';
   private mountedControls = new Map<string, HTMLElement>();
   private syncedAutopilotPads = new Map<HTMLElement, { wrapper?: HTMLElement; sig: string; lastCheckMs: number }>();
   private dragCleanups = new Set<() => void>();
@@ -64,7 +57,7 @@ export class AnchorManager {
 
   public setCalibratorPreset(preset: CalibratorPreset): void {
     this.currentPreset = preset;
-    const scale = PRESET_SCALES[preset] ?? 1.0;
+    const { scale } = resolveCalibratorScale(preset);
     if (typeof document !== 'undefined') {
       document.documentElement.style.setProperty('--geofs-ext-scale', String(scale));
     }
@@ -348,6 +341,9 @@ export class AnchorManager {
     }
     if (!this.resizeListener) {
       this.resizeListener = () => {
+        if (this.currentPreset === 'auto') {
+          this.setCalibratorPreset('auto');
+        }
         this.clampAll();
         for (const [pad, meta] of Array.from(this.syncedAutopilotPads.entries())) {
           if (!pad.isConnected) {
@@ -358,6 +354,12 @@ export class AnchorManager {
         }
       };
       window.addEventListener('resize', this.resizeListener);
+      if (typeof window.screen !== 'undefined' && 'onchange' in window.screen) {
+        (window.screen as Screen & { addEventListener?: (t: string, cb: () => void) => void }).addEventListener?.(
+          'change',
+          this.resizeListener
+        );
+      }
     }
   }
 
