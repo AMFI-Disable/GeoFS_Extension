@@ -95,9 +95,9 @@ async function run() {
     await assertNoHorizontalOverflow(popupPage, 'popup');
 
     // Verify action launcher buttons exist
-    const sideBtnText = await popupPage.locator('button:has-text("Side Panel")').textContent();
-    const optBtnText = await popupPage.locator('button:has-text("Full Settings")').textContent();
-    assert(sideBtnText && optBtnText, 'Popup missing Side Panel / Full Settings buttons');
+    const sideBtnVisible = await popupPage.locator('button[aria-label="Open Side Panel"]').isVisible();
+    const optBtnVisible = await popupPage.locator('button[aria-label="Open Full Settings"]').isVisible();
+    assert(sideBtnVisible && optBtnVisible, 'Popup missing Side Panel / Full Settings buttons');
     await popupPage.close();
 
     // 2. Verify Options New-Tab Page (All 4 Tabs + Enable OP Engines & Failure Simulator)
@@ -817,6 +817,7 @@ async function run() {
     await sidePage.goto(`chrome-extension://${extId}/sidepanel/index.html`, { waitUntil: 'domcontentloaded' });
     await sidePage.waitForSelector('[data-surface="sidepanel"]');
     await sidePage.waitForSelector('.badge--ok:has-text("V4")', { timeout: 10000 });
+    await sidePage.click('button.tab-btn:has-text("OP / Diag")');
     await sidePage.waitForSelector('text=UI_MOUNT', { timeout: 10000 });
     await sidePage.waitForSelector('.diag-line--error:has-text("REALISM_FEATURE_ERROR")', { timeout: 10000 });
     const sideText = await sidePage.locator('body').textContent();

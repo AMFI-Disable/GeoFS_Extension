@@ -141,6 +141,7 @@ export class RealismPackModule implements IModule {
 
   public init(context: ModuleContext): void {
     this.ctx = context;
+    this.lastSimMajor = context.simMajor ?? null;
     this.onSettingsChange(context.getSettings());
     if (typeof document !== 'undefined') {
       document.addEventListener('keydown', this.onKeyDown);

@@ -64,6 +64,9 @@ export class LandingStatisticsModule implements IModule {
 
   private ctx: ModuleContext | null = null;
   private wasAirborne = false;
+  private crashLatched = false;
+  private airborneStartTime: number | null = null;
+  private lastLandingTime = 0;
   private aircraftId: string | null = null;
   private replay = new LandingReplay();
   private reportTimer: ReturnType<typeof setTimeout> | undefined;
@@ -317,6 +320,9 @@ export class LandingStatisticsModule implements IModule {
     if (aircraftId !== this.aircraftId) {
       this.aircraftId = aircraftId;
       this.wasAirborne = false;
+      this.crashLatched = false;
+      this.airborneStartTime = null;
+      this.lastLandingTime = 0;
       this.closeReport();
       this.lastGroundHeight = undefined;
       this.calibratedVsFpm = undefined;
@@ -339,12 +345,42 @@ export class LandingStatisticsModule implements IModule {
       this.lastGroundHeight = { feet: groundHeight, time: telemetry.timestamp };
     }
 
+    if (telemetry.crashed) {
+      const shouldRecordCrash = !this.crashLatched && this.wasAirborne;
+      this.crashLatched = true;
+      this.airborneStartTime = null;
+      if (!shouldRecordCrash) {
+        this.wasAirborne = false;
+        this.lastApproach = null;
+        this.gpwsFired.clear();
+        this.replay.reset();
+        return;
+      }
+    } else if (this.crashLatched) {
+      const cleanlyAirborne = !telemetry.groundContact && telemetry.aglFeet >= 15;
+      const cleanlyResetOnGround = telemetry.groundContact && Math.abs(telemetry.vs) < 50 && telemetry.groundSpeed < 5;
+      if (!cleanlyAirborne && !cleanlyResetOnGround) {
+        return;
+      }
+      this.crashLatched = false;
+    }
+
     if (!telemetry.groundContact && !telemetry.crashed) {
-      this.wasAirborne = true;
-      this.lastApproach = telemetry;
-      this.replay.record(telemetry);
+      if (this.airborneStartTime === null) this.airborneStartTime = telemetry.timestamp;
+      const airborneMs = telemetry.timestamp - this.airborneStartTime;
+      const movingFast = Math.max(telemetry.groundSpeed, telemetry.kias) >= 15;
+      const armed = this.reportOpen
+        ? (telemetry.timestamp - this.lastLandingTime >= 400 && (telemetry.aglFeet >= 3 || (airborneMs >= 250 && movingFast)))
+        : (telemetry.aglFeet >= 10 || (airborneMs >= 1500 && movingFast));
+      if (armed) {
+        this.wasAirborne = true;
+      }
+      if (this.wasAirborne) {
+        this.lastApproach = telemetry;
+        this.replay.record(telemetry);
+      }
       if (telemetry.aglFeet > 80) this.gpwsFired.clear();
-      if (!hasAircraftCallouts() && telemetry.vs < -100) {
+      if (this.wasAirborne && !hasAircraftCallouts() && telemetry.vs < -100) {
         const thresholds: Array<{ ft: number; callout: '50' | '40' | '30' | '20' | '10' }> = [
           { ft: 50, callout: '50' },
           { ft: 40, callout: '40' },
@@ -365,6 +401,7 @@ export class LandingStatisticsModule implements IModule {
       return;
     }
 
+    this.airborneStartTime = null;
     if (this.wasAirborne) {
       this.wasAirborne = false;
       this.gpwsFired.clear();
@@ -372,6 +409,11 @@ export class LandingStatisticsModule implements IModule {
         this.replay.reset();
         return;
       }
+      if (!telemetry.crashed && telemetry.timestamp - this.lastLandingTime < 400) {
+        this.replay.reset();
+        return;
+      }
+      this.lastLandingTime = telemetry.timestamp;
       const isBounce = this.reportOpen;
       this.bounces = isBounce ? this.bounces + 1 : 0;
       if (!isBounce) this.inTouchdownZone = isInTouchdownZone();

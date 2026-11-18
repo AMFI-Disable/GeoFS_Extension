@@ -330,6 +330,26 @@ export class SimAdapter {
     window.controls?.setters?.setGear?.set?.();
   }
 
+  private isCrashed(
+    ac: { crashed?: unknown; animationValue?: Record<string, unknown> } | undefined,
+    v: Record<string, unknown>
+  ): boolean {
+    if (ac?.crashed) return true;
+    const geofsAny = window.geofs as Record<string, unknown> | undefined;
+    if (geofsAny?.crashed) return true;
+    if (v?.crashed || ac?.animationValue?.crashed) return true;
+    if (typeof document !== 'undefined' && typeof document.querySelector === 'function') {
+      const crashOverlay = document.querySelector('.geofs-crash, .geofs-crash-overlay');
+      if (crashOverlay instanceof HTMLElement) {
+        const style = typeof getComputedStyle === 'function' ? getComputedStyle(crashOverlay) : null;
+        if (style ? style.display !== 'none' && style.visibility !== 'hidden' : crashOverlay.offsetParent !== null) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   public buildTelemetrySnapshot(dt: number, simMajor: SimMajorVersion): FlightTelemetry {
     const v = window.geofs?.animation?.values || {};
     const ac = window.geofs?.aircraft?.instance;
@@ -360,7 +380,7 @@ export class SimAdapter {
       pitch: finite(v.atilt, finite(v.pitch, 0)),
       roll: finite(v.aroll, finite(v.roll, 0)),
       groundContact: Boolean(ac?.groundContact),
-      crashed: Boolean(ac?.crashed),
+      crashed: this.isCrashed(ac, v),
       autopilotOn: Boolean(window.geofs?.autopilot?.on),
       reverserActive: Boolean(v.reverser || window.controls?.reversers),
       throttles: this.getThrottles(),

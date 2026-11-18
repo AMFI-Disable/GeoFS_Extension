@@ -1,4 +1,4 @@
-import { pinValue } from '../src/modules/failure-simulator';
+import { FailureSimulatorModule, pinValue } from '../src/modules/failure-simulator';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AnchorManager } from '../src/core/anchor-manager';
 import { parseSimMajor, classifyAircraft, SimAdapter } from '../src/core/sim-adapter';
@@ -15,14 +15,14 @@ import { detectDisplayProfile } from '../src/shared/display-calibrator';
 import { formatLogbookCsv } from '../src/core/logbook-export';
 import { SerializedLogbookStore } from '../src/background/logbook-store';
 import { hasAircraftCallouts, installAircraftSounds } from '../src/modules/realism-pack/aircraft-sounds';
-import { buildGForceShader } from '../src/modules/realism-pack';
-import { rateLanding, scoreLanding } from '../src/modules/landing-statistics';
+import { buildGForceShader, RealismPackModule } from '../src/modules/realism-pack';
+import { LandingStatisticsModule, rateLanding, scoreLanding } from '../src/modules/landing-statistics';
 import { EngineCeiling, EngineThrust } from '../src/modules/overpowered-engines';
 import { drainFuelTanks, fuelBurnKgHr } from '../src/modules/fuel-simulator';
 import { projectFlightPath, resolveFpvColorState, resolveGlideslopeAppearance } from '../src/modules/flight-path-vector';
 import { DEFAULT_SETTINGS } from '../src/types/settings';
 import type { GeoFSAnimationValues, GeoFSSound } from '../src/types/geofs.d';
-import type { IModule } from '../src/types/module';
+import type { FlightTelemetry, IModule, ModuleContext } from '../src/types/module';
 
 describe('SimAdapter & Version Detection', () => {
   beforeEach(() => {
@@ -508,3 +508,147 @@ describe('Archived Engine and Flight Path Behavior', () => {
     delete (globalThis as unknown as { KeyboardEvent?: unknown }).KeyboardEvent;
   });
 });
+
+describe('Live Verification Regression Fixes', () => {
+  beforeEach(() => {
+    (globalThis as unknown as { window: Record<string, unknown> }).window = {};
+  });
+
+  it('detects V4 crash flags across geofs.crashed and animation.values.crashed', () => {
+    const sim = new SimAdapter();
+    (globalThis as unknown as { window: { geofs: Record<string, unknown> } }).window.geofs = {
+      crashed: true,
+      aircraft: { instance: { id: '24', name: 'Phenom 100', crashed: false, groundContact: true } },
+      animation: { values: {} }
+    };
+    expect(sim.buildTelemetrySnapshot(0.016, 4).crashed).toBe(true);
+
+    (globalThis as unknown as { window: { geofs: Record<string, unknown> } }).window.geofs = {
+      crashed: false,
+      aircraft: { instance: { id: '24', name: 'Phenom 100', crashed: false, groundContact: true } },
+      animation: { values: { crashed: true } }
+    };
+    expect(sim.buildTelemetrySnapshot(0.016, 4).crashed).toBe(true);
+  });
+
+  it('prevents false/repeated LANDING_RECORDED loops after a crash or stationary ground jitter', () => {
+    const diags: Array<{ code: string; detail?: Record<string, unknown> }> = [];
+    const ctx = {
+      simMajor: 4,
+      sim: new SimAdapter(),
+      audio: { playGpwsAlert: () => {}, playGpwsCallout: () => {} },
+      anchors: { showToast: () => {}, registerTab: () => () => {} },
+      keybinds: {},
+      getSettings: () => DEFAULT_SETTINGS,
+      updateSettings: () => {},
+      emitEvent: () => {},
+      emitDiag: (code: string, detail?: Record<string, unknown>) => diags.push({ code, detail })
+    } as unknown as ModuleContext;
+
+    const mod = new LandingStatisticsModule();
+    mod.init(ctx);
+
+    const baseTelemetry: FlightTelemetry = {
+      timestamp: 1000,
+      dt: 0.016,
+      simMajor: 4,
+      paused: false,
+      isNight: false,
+      aircraft: { id: '24', name: 'Phenom 100', category: 'airliner-twin', engineCount: 2, maxFlaps: 3, hasGear: true, hasSpoilers: true, oew: 3200, mtow: 4800, maxFuel: 1200, isDynamic: true, vSpeeds: { VR: 100, Vne: 320 } },
+      kias: 0,
+      mach: 0,
+      altitude: 100,
+      aglFeet: 0,
+      vs: 0,
+      heading: 0,
+      groundSpeed: 0,
+      gForce: 1,
+      aoa: 0,
+      pitch: 0,
+      roll: 0,
+      groundContact: true,
+      crashed: false,
+      autopilotOn: false,
+      reverserActive: false,
+      throttles: [0],
+      collective: null,
+      rotorTorque: null,
+      parkingBrake: false,
+      gearDown: true,
+      flapsTarget: 0,
+      lightsOn: false,
+      lat: 0,
+      lon: 0
+    };
+
+    // Rapid groundContact flicker while parked/crashed (aglFeet=0, groundSpeed=0) must not record landings
+    for (let i = 0; i < 10; i++) {
+      mod.update({ ...baseTelemetry, timestamp: 1000 + i * 20, groundContact: i % 2 === 0 });
+    }
+    expect(diags.filter((d) => d.code === 'LANDING_RECORDED')).toHaveLength(0);
+
+    // Genuine flight -> crash records at most once and latches until clean reset
+    mod.update({ ...baseTelemetry, timestamp: 2000, groundContact: false, aglFeet: 250, kias: 120, groundSpeed: 120, vs: -1200 });
+    mod.update({ ...baseTelemetry, timestamp: 2200, groundContact: true, crashed: true, aglFeet: 0, kias: 0, groundSpeed: 0, vs: 0 });
+    mod.update({ ...baseTelemetry, timestamp: 2220, groundContact: false, crashed: false, aglFeet: 1, kias: 0, groundSpeed: 0, vs: 0 });
+    mod.update({ ...baseTelemetry, timestamp: 2240, groundContact: true, crashed: false, aglFeet: 0, kias: 0, groundSpeed: 0, vs: 0 });
+    const landings = diags.filter((d) => d.code === 'LANDING_RECORDED');
+    expect(landings).toHaveLength(1);
+    expect(landings[0]?.detail?.rating).toBe('Crash');
+  });
+
+  it('emits RESTORE_VERIFIED only once per successful failure recovery', () => {
+    const diags: Array<{ code: string; detail?: Record<string, unknown> }> = [];
+    (globalThis as unknown as { window: { geofs: Record<string, unknown>; instruments: { update: () => void } } }).window = {
+      geofs: {
+        aircraft: { instance: { id: '1', name: 'Cessna 172', crashed: false } },
+        animation: { values: {} }
+      },
+      instruments: { update: () => {} }
+    };
+    const ctx = {
+      simMajor: 4,
+      sim: new SimAdapter(),
+      audio: { playGpwsAlert: () => {} },
+      anchors: { showToast: () => {}, registerTab: () => () => {} },
+      keybinds: {},
+      getSettings: () => ({ ...DEFAULT_SETTINGS, failureRecoveryChancePct: 100 }),
+      updateSettings: () => {},
+      emitEvent: () => {},
+      onEvent: () => () => {},
+      emitDiag: (code: string, detail?: Record<string, unknown>) => diags.push({ code, detail })
+    } as unknown as ModuleContext;
+
+    const mod = new FailureSimulatorModule();
+    mod.init(ctx);
+    mod.update({ timestamp: 1000 } as FlightTelemetry);
+    (mod as unknown as { fail: (type: 'pitotStatic', render?: boolean) => void }).fail('pitotStatic', false);
+    expect(mod.attemptRecovery('pitotStatic', 0)).toBe(true);
+    expect(diags.filter((d) => d.code === 'RESTORE_VERIFIED')).toHaveLength(1);
+  });
+
+  it('reports simMajor 4 and V4_UNSUPPORTED immediately on RealismPackModule.init()', () => {
+    const diags: Array<{ code: string; detail?: Record<string, unknown> }> = [];
+    const ctx = {
+      simMajor: 4,
+      sim: new SimAdapter(),
+      audio: {},
+      anchors: { showToast: () => {}, registerTab: () => () => {} },
+      keybinds: {},
+      getSettings: () => DEFAULT_SETTINGS,
+      updateSettings: () => {},
+      emitEvent: () => {},
+      emitDiag: (code: string, detail?: Record<string, unknown>) => diags.push({ code, detail })
+    } as unknown as ModuleContext;
+
+    const mod = new RealismPackModule();
+    mod.init(ctx);
+
+    const stateDiag = diags.find((d) => d.code === 'REALISM_STATE');
+    expect(stateDiag?.detail?.simMajor).toBe(4);
+    expect(stateDiag?.detail?.vortexStatus).toBe('V4_UNSUPPORTED');
+    expect(stateDiag?.detail?.carrierStatus).toBe('V4_UNSUPPORTED');
+    expect(diags.some((d) => d.code === 'REALISM_FEATURE_ERROR')).toBe(true);
+  });
+});
+

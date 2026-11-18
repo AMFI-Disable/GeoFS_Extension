@@ -74,6 +74,7 @@ export class ModuleManager {
 
     const ctx: ModuleContext = {
       ...this.baseContext,
+      simMajor: this.simMajor,
       emitEvent: (event, detail) => this.emit(event, detail),
       onEvent: (event, handler) => this.on(event, handler as (d: unknown) => void)
     };

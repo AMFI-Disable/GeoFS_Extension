@@ -1046,7 +1046,6 @@ export class FailureSimulatorModule implements IModule {
     if (ok) {
       const verified = this.fix(type);
       if (verified) {
-        this.ctx.emitDiag?.('RESTORE_VERIFIED', { type });
         this.ctx.anchors.showToast(`${label(type)} RECOVERED & RESTORED`, 'info');
         this.render();
         return true;

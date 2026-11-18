@@ -66,6 +66,7 @@ export interface FlightTelemetry {
 }
 
 export interface ModuleContext {
+  simMajor?: SimMajorVersion;
   sim: SimAdapter;
   audio: AudioEngine;
   anchors: AnchorManager;
