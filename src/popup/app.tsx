@@ -79,19 +79,38 @@ export function App() {
   return (
     <div class="popup-shell">
       <div class="header">
-        <span class="title">GeoFS Extension</span>
-        <span class={`badge ${live?.simMajor ? 'badge--ok' : ''}`}>
-          {live?.simMajor ? `GeoFS V${live.simMajor}` : 'Standby'} · {os.toUpperCase()}
-        </span>
-      </div>
-
-      <div class="action-strip">
-        <button type="button" class="btn-sm btn-accent" onClick={() => void handleOpenSidePanel()}>
-          Open Side Panel
-        </button>
-        <button type="button" class="btn-sm" onClick={() => openOptionsPage()}>
-          Open Full Settings
-        </button>
+        <div style="display:flex;align-items:center;gap:6px;min-width:0">
+          <span class="title">GeoFS Ext</span>
+          <span class={`badge ${live?.simMajor ? 'badge--ok' : ''}`}>
+            {live?.simMajor ? `V${live.simMajor}` : 'STBY'} · {os.toUpperCase()}
+          </span>
+        </div>
+        <div class="header-actions">
+          <button
+            type="button"
+            class="icon-btn icon-btn--accent"
+            title="Open Side Panel"
+            aria-label="Open Side Panel"
+            onClick={() => void handleOpenSidePanel()}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" />
+              <line x1="10" y1="2.5" x2="10" y2="13.5" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="icon-btn"
+            title="Open Full Settings"
+            aria-label="Open Full Settings"
+            onClick={() => openOptionsPage()}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+              <circle cx="8" cy="8" r="2.2" />
+              <path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M12.6 3.4l-1.1 1.1M4.5 11.5l-1.1 1.1" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {panelHint && <p class="reload-notice">{panelHint}</p>}
@@ -124,31 +143,32 @@ export function App() {
           Modules
         </button>
         <button type="button" class={`tab-btn ${tab === 'quick' ? 'active' : ''}`} onClick={() => setTab('quick')}>
-          Quick Control ({logbook.length})
+          Quick ({logbook.length})
         </button>
       </div>
 
       {tab === 'modules' && (
         <>
-          <div class="preset-row">
-            <button type="button" class="btn-sm" onClick={() => applyPreset('all')}>
-              All On
-            </button>
-            <button type="button" class="btn-sm" onClick={() => applyPreset('minimal')}>
-              Minimal
-            </button>
-            <button type="button" class="btn-sm" onClick={() => applyPreset('none')}>
-              All Off
-            </button>
+          <div class="preset-bar">
+            <span class="preset-bar-label">Avionics & Addons</span>
+            <div class="preset-links">
+              <button type="button" class="link-btn" onClick={() => applyPreset('all')}>
+                All On
+              </button>
+              <button type="button" class="link-btn" onClick={() => applyPreset('minimal')}>
+                Minimal
+              </button>
+              <button type="button" class="link-btn" onClick={() => applyPreset('none')}>
+                All Off
+              </button>
+            </div>
           </div>
-          <div class="list">
+          <div class="panel-group panel-group--scroll">
             {MODULE_META.map((m) => (
-              <label class="card" key={m.id} style="cursor:pointer">
+              <label class="module-row" key={m.id}>
                 <div style="min-width:0">
-                  <div style="font-weight:700">{m.name}</div>
-                  <div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                    {m.desc}
-                  </div>
+                  <div class="module-row-title">{m.name}</div>
+                  <div class="module-row-desc">{m.desc}</div>
                 </div>
                 <input
                   type="checkbox"
@@ -163,40 +183,42 @@ export function App() {
 
       {tab === 'quick' && (
         <div class="field-col">
-          <div class="card field-row">
-            <span>Screen Calibrator</span>
-            <select
-              aria-label="Screen Calibrator"
-              value={settings.calibratorPreset}
-              onChange={(e) => {
-                const preset = (e.target as HTMLSelectElement).value as CalibratorPreset;
-                setSettings((p) => ({ ...p, calibratorPreset: preset }));
-                void saveExtensionPatch({ calibratorPreset: preset }).then(setSettings);
-              }}
-            >
-              <option value="1080p">1080p FHD (1.0x)</option>
-              <option value="1440p">1440p QHD (1.1x)</option>
-              <option value="4k">4K UHD (1.35x)</option>
-              <option value="ultrawide">Ultrawide (1.08x)</option>
-              <option value="laptop">Laptop (0.9x)</option>
-            </select>
-          </div>
+          <div class="panel-group">
+            <div class="module-row" style="cursor:default">
+              <span>Screen Calibrator</span>
+              <select
+                aria-label="Screen Calibrator"
+                value={settings.calibratorPreset}
+                onChange={(e) => {
+                  const preset = (e.target as HTMLSelectElement).value as CalibratorPreset;
+                  setSettings((p) => ({ ...p, calibratorPreset: preset }));
+                  void saveExtensionPatch({ calibratorPreset: preset }).then(setSettings);
+                }}
+              >
+                <option value="1080p">1080p FHD (1.0x)</option>
+                <option value="1440p">1440p QHD (1.1x)</option>
+                <option value="4k">4K UHD (1.35x)</option>
+                <option value="ultrawide">Ultrawide (1.08x)</option>
+                <option value="laptop">Laptop (0.9x)</option>
+              </select>
+            </div>
 
-          <div class="card field-row">
-            <span>Appearance</span>
-            <select
-              aria-label="Appearance"
-              value={settings.themeMode}
-              onChange={(e) => {
-                const themeMode = (e.target as HTMLSelectElement).value as ThemeMode;
-                setSettings((p) => ({ ...p, themeMode }));
-                void saveExtensionPatch({ themeMode }).then(setSettings);
-              }}
-            >
-              <option value="auto">Auto (GeoFS Dark)</option>
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-            </select>
+            <div class="module-row" style="cursor:default">
+              <span>Appearance</span>
+              <select
+                aria-label="Appearance"
+                value={settings.themeMode}
+                onChange={(e) => {
+                  const themeMode = (e.target as HTMLSelectElement).value as ThemeMode;
+                  setSettings((p) => ({ ...p, themeMode }));
+                  void saveExtensionPatch({ themeMode }).then(setSettings);
+                }}
+              >
+                <option value="auto">Auto (GeoFS Dark)</option>
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </div>
           </div>
 
           {live?.aircraftProfile && <AircraftEditor key={live.aircraftProfile.id} profile={live.aircraftProfile} />}
@@ -204,14 +226,14 @@ export function App() {
           <div class="panel-card">
             <div class="field-row">
               <strong>Recent Touchdowns</strong>
-              <span class="badge">{logbook.length} Logged</span>
+              <span class="badge mono-num">{logbook.length} Logged</span>
             </div>
             {logbook.slice(0, 2).map((rec) => (
               <div class="field-row" key={rec.id} style="font-size:10px;color:var(--muted)">
                 <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                   {rec.aircraftName}
                 </span>
-                <span class="badge">
+                <span class="badge mono-num">
                   {rec.rating} · {rec.vsFpm} fpm
                 </span>
               </div>
