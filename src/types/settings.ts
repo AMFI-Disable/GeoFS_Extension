@@ -119,6 +119,7 @@ export type ExtensionSettings = ExtensionConfig & ScriptConfig;
 export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
   modules: {
     'autothrottle': true,
+    'autopilot-pp': false,
     'information-display': true,
     'fuel-simulator': true,
     'overpowered-engines': false,

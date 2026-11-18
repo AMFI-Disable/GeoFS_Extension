@@ -116,7 +116,8 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
         opSyncActive: false,
         sasActive: false,
         checklistPhase: 'PRE-TAKEOFF',
-        checklistPending: 0
+        checklistPending: 0,
+        apPp: null as unknown
       };
 
       anchors.init();
@@ -151,6 +152,9 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
         if (phase) liveState.checklistPhase = phase;
         if (Number.isFinite(pending)) liveState.checklistPending = pending;
       });
+      subscribe<unknown>('autopilot-pp:state', (snapshot) => {
+        liveState.apPp = snapshot ?? null;
+      });
 
       window.__geofsExt = {
         manager,
@@ -166,7 +170,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
         applyGlobalVisuals(settings);
         manager.dispatchTelemetry(telemetry);
 
-        if (telemetry.timestamp - lastBridgeSyncMs >= 500) {
+        if (telemetry.timestamp - lastBridgeSyncMs >= 250) {
           lastBridgeSyncMs = telemetry.timestamp;
           window.postMessage(
             {
@@ -185,7 +189,8 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
                 opSyncActive: liveState.opSyncActive,
                 sasActive: liveState.sasActive || Boolean(settings.opStability),
                 checklistPhase: liveState.checklistPhase,
-                checklistPending: liveState.checklistPending
+                checklistPending: liveState.checklistPending,
+                apPp: liveState.apPp
               }
             },
             '*'

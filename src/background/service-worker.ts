@@ -91,6 +91,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return false;
   }
 
+  if (msg?.type === 'GEOFS_EXT_OPEN_SIDEPANEL') {
+    const windowId = sender?.tab?.windowId;
+    const sp = (chrome as unknown as { sidePanel?: { open?: (opts: { windowId?: number }) => Promise<void> } }).sidePanel;
+    if (windowId !== undefined && sp?.open) {
+      sp.open({ windowId }).catch(() => {
+        // Chrome may reject non-extension-gesture sidePanel.open calls; ignore gracefully
+      });
+    }
+    return false;
+  }
+
   if (msg?.type === 'GET_CACHED_LIVE_STATE') {
     const candidateIds: number[] = [];
     if (typeof msg.tabId === 'number') candidateIds.push(msg.tabId);

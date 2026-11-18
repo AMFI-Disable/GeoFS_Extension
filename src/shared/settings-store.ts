@@ -1,4 +1,5 @@
 import { AIRCRAFT_OVERRIDE_PREFIX, parseAircraftOverride } from '../core/aircraft-profile';
+import type { ApPpCommand, ApPpSnapshot } from '../modules/autopilot-pp/types';
 import type { AircraftProfile } from '../types/module';
 import {
   DEFAULT_SETTINGS,
@@ -29,6 +30,7 @@ export interface LiveTelemetrySummary {
   sasActive?: boolean;
   checklistPhase?: string;
   checklistPending?: number;
+  apPp?: ApPpSnapshot | null;
 }
 
 export interface DiagEntry {
@@ -40,6 +42,7 @@ export interface DiagEntry {
 
 export const MODULE_META: ReadonlyArray<{ id: string; name: string; desc: string }> = [
   { id: 'autothrottle', name: 'Autothrottle', desc: 'GeoFS PID, reverse thrust, LCD landing pad & OP-SYNC' },
+  { id: 'autopilot-pp', name: 'AP++ (Beta)', desc: 'Unified FCU in Side Panel: VNAV/FLCH, Hold, LAT/LON, Autoland & Envelope Protection' },
   { id: 'information-display', name: 'Information Display', desc: 'HUD telemetry, AGL/GS dev & multi-engine % THR' },
   { id: 'fuel-simulator', name: 'Fuel Simulator', desc: 'Multi-throttle altitude burn, tank balance & flameout' },
   { id: 'overpowered-engines', name: 'Overpowered Engines', desc: 'Native thrust/ceiling card & closed-loop SAS' },
@@ -318,6 +321,19 @@ export async function requestActiveTabDiagnostics(): Promise<DiagEntry[]> {
   }
   const cached = await getCachedLiveState(tabIds[0]);
   return cached.diagnostics;
+}
+
+export async function sendApPpCommand(command: ApPpCommand): Promise<boolean> {
+  const tabIds = await getCandidateGeoFSTabIds();
+  if (!tabIds.length || !chrome.tabs) return false;
+  for (const tabId of tabIds) {
+    const resp = await sendTabMessageSafe<{ ok?: boolean }>(tabId, {
+      type: 'GEOFS_EXT_AP_PP_COMMAND',
+      command
+    });
+    if (resp?.ok) return true;
+  }
+  return false;
 }
 
 export async function openSidePanelFromAction(): Promise<boolean> {

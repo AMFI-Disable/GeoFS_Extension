@@ -155,6 +155,10 @@ window.addEventListener('message', (event) => {
     chrome.runtime?.sendMessage?.({ type: 'GEOFS_EXT_DIAG_EVENT', entry: msg.entry }, () => {
       void chrome.runtime.lastError;
     });
+  } else if (msg.type === 'GEOFS_EXT_OPEN_SIDEPANEL') {
+    chrome.runtime?.sendMessage?.({ type: 'GEOFS_EXT_OPEN_SIDEPANEL' }, () => {
+      void chrome.runtime.lastError;
+    });
   }
 });
 
@@ -165,6 +169,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     sendResponse({ diagnostics: diagBuffer });
   } else if (msg?.type === 'GEOFS_EXT_APPLY_SETTINGS') {
     refreshSettings();
+    sendResponse({ ok: true });
+  } else if (msg?.type === 'GEOFS_EXT_AP_PP_COMMAND' && msg.command) {
+    window.postMessage({ type: 'GEOFS_EXT_AP_PP_COMMAND', command: msg.command }, '*');
     sendResponse({ ok: true });
   } else if (msg?.type === 'GEOFS_EXT_PING') {
     sendResponse({ ok: true });

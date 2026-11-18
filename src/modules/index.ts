@@ -1,4 +1,5 @@
 import type { IModule } from '../types/module';
+import { AutopilotPlusModule } from './autopilot-pp';
 import { AutothrottleModule } from './autothrottle';
 import { InformationDisplayModule } from './information-display';
 import { FuelSimulatorModule } from './fuel-simulator';
@@ -13,6 +14,7 @@ import { SatelliteImageryModule } from './satellite-imagery';
 export function createBuiltinModules(): IModule[] {
   return [
     new AutothrottleModule(),
+    new AutopilotPlusModule(),
     new InformationDisplayModule(),
     new FuelSimulatorModule(),
     new OverpoweredEnginesModule(),

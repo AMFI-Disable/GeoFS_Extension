@@ -5,11 +5,13 @@ import {
   openOptionsPage,
   requestActiveTabDiagnostics,
   requestActiveTabTelemetry,
+  saveExtensionPatch,
   saveScriptPatch,
   subscribeSettings,
   type DiagEntry,
   type LiveTelemetrySummary
 } from '../shared/settings-store';
+import { ApPpPanel } from './ap-pp-panel';
 import {
   DEFAULT_SETTINGS,
   type ExtensionSettings,
@@ -29,6 +31,7 @@ export function App() {
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);
   const [diags, setDiags] = useState<DiagEntry[]>([]);
+  const [activeTab, setActiveTab] = useState<'ap-pp' | 'realism' | 'diag'>('ap-pp');
 
   useEffect(() => {
     void loadSplitSettings().then(setSettings);
@@ -144,7 +147,48 @@ export function App() {
         </span>
       </div>
 
-      <div class="panel-card">
+      <div class="chip-group" style="margin-bottom:2px">
+        <button
+          type="button"
+          class={`chip-btn ${activeTab === 'ap-pp' ? 'active' : ''}`}
+          style="flex:1"
+          onClick={() => setActiveTab('ap-pp')}
+        >
+          AP++ (Beta)
+        </button>
+        <button
+          type="button"
+          class={`chip-btn ${activeTab === 'realism' ? 'active' : ''}`}
+          style="flex:1"
+          onClick={() => setActiveTab('realism')}
+        >
+          Realism & Fuel
+        </button>
+        <button
+          type="button"
+          class={`chip-btn ${activeTab === 'diag' ? 'active' : ''}`}
+          style="flex:1"
+          onClick={() => setActiveTab('diag')}
+        >
+          OP / Diag
+        </button>
+      </div>
+
+      {activeTab === 'ap-pp' && (
+        <ApPpPanel
+          enabled={Boolean(settings.modules['autopilot-pp'])}
+          snapshot={live?.apPp}
+          onEnableBeta={() => {
+            const nextModules = { ...settings.modules, 'autopilot-pp': true, 'autothrottle': false };
+            setSettings((prev) => ({ ...prev, modules: nextModules }));
+            void saveExtensionPatch({ modules: nextModules }).then(setSettings);
+          }}
+        />
+      )}
+
+      {activeTab === 'diag' && (
+        <>
+          <div class="panel-card">
         <div class="section-heading">Autothrottle & OP-SYNC</div>
         <div class="field-row">
           <span>OP-SYNC Confirmation</span>
@@ -293,7 +337,10 @@ export function App() {
           ))}
         </div>
       </div>
+        </>
+      )}
 
+      {activeTab === 'diag' && (
       <div class="panel-card">
         <div class="field-row">
           <span class="section-heading" style="border:none;padding:0">
@@ -327,6 +374,7 @@ export function App() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
