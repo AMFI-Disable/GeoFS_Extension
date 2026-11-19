@@ -44,11 +44,23 @@ export class EffectiveSasController {
   public targetPitch: number | null = null;
   public targetRoll: number | null = null;
   private wasControlling = false;
+  private pitchIntegral = 0;
+  private rollIntegral = 0;
+  private prevPitchDeg: number | null = null;
+  private prevRollDeg: number | null = null;
+  private lastCmdPitch = 0;
+  private lastCmdRoll = 0;
 
   public reset(): void {
     this.targetPitch = null;
     this.targetRoll = null;
     this.wasControlling = false;
+    this.pitchIntegral = 0;
+    this.rollIntegral = 0;
+    this.prevPitchDeg = null;
+    this.prevRollDeg = null;
+    this.lastCmdPitch = 0;
+    this.lastCmdRoll = 0;
   }
 
   public step(params: {
@@ -60,6 +72,7 @@ export class EffectiveSasController {
     multiplier: number;
     sasStrength: number;
     groundContact: boolean;
+    autopilotOn?: boolean;
   }): { mode: 'maneuver' | 'hold'; controlling: boolean; nextAngularVelocity: [number, number, number] | null } {
     const {
       rigidBody,
@@ -69,13 +82,26 @@ export class EffectiveSasController {
       kias,
       multiplier,
       sasStrength,
-      groundContact
+      groundContact,
+      autopilotOn
     } = params;
-    if (groundContact) {
+    if (groundContact || autopilotOn) {
       this.reset();
       return { mode: 'hold', controlling: false, nextAngularVelocity: null };
     }
-    const sample = readPilotControls(controls);
+
+    const baseSample = readPilotControls(controls);
+    const rawPitchMissing = controls?.rawPitch === undefined && controls?.pitch !== undefined;
+    const rawRollMissing = controls?.rawRoll === undefined && controls?.roll !== undefined;
+    const pitchActive = rawPitchMissing
+      ? Math.abs((controls?.pitch ?? 0) - this.lastCmdPitch) > 0.03
+      : Math.abs(baseSample.pitch) > 0.03;
+    const rollActive = rawRollMissing
+      ? Math.abs((controls?.roll ?? 0) - this.lastCmdRoll) > 0.03
+      : Math.abs(baseSample.roll) > 0.03;
+    const yawActive = Math.abs(baseSample.yaw) > 0.03;
+    const controlling = pitchActive || rollActive || yawActive;
+
     const safePitch = Number.isFinite(pitchDeg) ? pitchDeg : 0;
     const safeRoll = Number.isFinite(rollDeg) ? rollDeg : 0;
     const safeKias = Number.isFinite(kias) ? kias : 0;
@@ -89,9 +115,15 @@ export class EffectiveSasController {
       Number.isFinite(av[1]) &&
       Number.isFinite(av[2]);
 
-    if (sample.controlling) {
+    if (controlling) {
       this.targetPitch = null;
       this.targetRoll = null;
+      this.pitchIntegral = 0;
+      this.rollIntegral = 0;
+      this.prevPitchDeg = null;
+      this.prevRollDeg = null;
+      this.lastCmdPitch = 0;
+      this.lastCmdRoll = 0;
       this.wasControlling = true;
       if (!hasValidAv || !rigidBody?.setAngularVelocity) {
         return { mode: 'maneuver', controlling: true, nextAngularVelocity: null };
@@ -112,48 +144,56 @@ export class EffectiveSasController {
     if (this.wasControlling || this.targetPitch === null || this.targetRoll === null) {
       this.targetPitch = safePitch;
       this.targetRoll = clamp(safeRoll, -65, 65);
+      this.pitchIntegral = 0;
+      this.rollIntegral = 0;
+      this.prevPitchDeg = safePitch;
+      this.prevRollDeg = safeRoll;
       this.wasControlling = false;
     }
 
     const targetPitch = Number.isFinite(this.targetPitch) ? this.targetPitch : safePitch;
     const targetRoll = Number.isFinite(this.targetRoll) ? this.targetRoll : clamp(safeRoll, -65, 65);
-    const pitchErr = clamp(targetPitch - safePitch, -25, 25);
-    const rollErr = clamp(targetRoll - safeRoll, -25, 25);
+    const pitchErr = clamp(targetPitch - safePitch, -30, 30);
+    const rollErr = clamp(targetRoll - safeRoll, -30, 30);
 
-    if (!rigidBody?.setAngularVelocity) {
+    const pitchRate = this.prevPitchDeg !== null ? clamp((safePitch - this.prevPitchDeg) / 0.02, -120, 120) : 0;
+    const rollRate = this.prevRollDeg !== null ? clamp((safeRoll - this.prevRollDeg) / 0.02, -180, 180) : 0;
+    this.prevPitchDeg = safePitch;
+    this.prevRollDeg = safeRoll;
+
+    const maxInt = 0.5 / Math.max(0.5, strength);
+    this.pitchIntegral = clamp(this.pitchIntegral + pitchErr * 0.02, -maxInt, maxInt);
+    this.rollIntegral = clamp(this.rollIntegral + rollErr * 0.02, -maxInt, maxInt);
+
+    if (controls) {
+      const aeroScale = safeKias > 220 ? clamp(220 / safeKias, 0.35, 1) : 1;
+      const pitchCmd = clamp((pitchErr * 0.045 + this.pitchIntegral * 0.85 - pitchRate * 0.015) * strength * aeroScale, -0.8, 0.8);
+      const rollCmd = clamp((rollErr * 0.04 + this.rollIntegral * 0.75 - rollRate * 0.014) * strength * aeroScale, -0.8, 0.8);
+      controls.pitch = pitchCmd;
+      controls.roll = rollCmd;
+      this.lastCmdPitch = pitchCmd;
+      this.lastCmdRoll = rollCmd;
+    }
+
+    if (!hasValidAv || !rigidBody?.setAngularVelocity) {
       return { mode: 'hold', controlling: false, nextAngularVelocity: null };
     }
 
-    const residualDamp = clamp(0.06 / strength, 0.005, 0.15);
-    const current: [number, number, number] = hasValidAv ? [av[0], av[1], av[2]] : [0, 0, 0];
-    if (Math.abs(pitchErr) < 0.15 && Math.abs(rollErr) < 0.15) {
+    const settled = Math.abs(pitchErr) < 0.15 && Math.abs(rollErr) < 0.15 && Math.abs(pitchRate) < 0.5 && Math.abs(rollRate) < 0.5;
+    if (settled) {
       const zeroed: [number, number, number] = [0, 0, 0];
       rigidBody.setAngularVelocity(zeroed);
       return { mode: 'hold', controlling: false, nextAngularVelocity: zeroed };
     }
 
-    const corrGain = 0.014 * strength;
+    const damp = clamp(0.88 - 0.06 * strength, 0.65, 0.92);
     const next: [number, number, number] = [
-      clamp(current[0] * residualDamp + pitchErr * corrGain, -0.4, 0.4),
-      clamp(current[1] * residualDamp + rollErr * corrGain, -0.4, 0.4),
-      clamp(current[2] * residualDamp, -0.25, 0.25)
+      clamp(av[0] * damp, -0.8, 0.8),
+      clamp(av[1] * damp, -0.8, 0.8),
+      clamp(av[2] * damp, -0.5, 0.5)
     ];
     if (next.every(Number.isFinite)) {
       rigidBody.setAngularVelocity(next);
-    }
-
-    if (rigidBody.applyTorque) {
-      const rawMass = Number(rigidBody.mass);
-      const mass = Math.max(500, Number.isFinite(rawMass) && rawMass > 0 ? rawMass : 2000);
-      const tGain = mass * 0.08 * strength;
-      const torqueVec: [number, number, number] = [
-        clamp(pitchErr * tGain, -mass * 1.5, mass * 1.5),
-        clamp(rollErr * tGain, -mass * 1.5, mass * 1.5),
-        clamp(-current[2] * mass * 0.4, -mass * 0.8, mass * 0.8)
-      ];
-      if (torqueVec.every(Number.isFinite)) {
-        rigidBody.applyTorque(torqueVec);
-      }
     }
 
     return { mode: 'hold', controlling: false, nextAngularVelocity: next };
@@ -728,7 +768,8 @@ export class OverpoweredEnginesModule implements IModule {
           kias: telemetry.kias,
           multiplier: activeMultiplier,
           sasStrength: settings.sasStrength ?? 1.0,
-          groundContact: telemetry.groundContact
+          groundContact: telemetry.groundContact,
+          autopilotOn: telemetry.autopilotOn
         });
       }
     }

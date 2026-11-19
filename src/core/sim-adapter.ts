@@ -388,7 +388,7 @@ export class SimAdapter {
         ? Math.min(1, Math.max(0, collective)) : null,
       rotorTorque: isRotorcraft && typeof torque === 'number' && Number.isFinite(torque) ? torque : null,
       parkingBrake: Boolean(v.parkingBrake),
-      gearDown: finite(v.gearPosition, 0) > 0.5,
+      gearDown: finite(v.gearPosition, 0) < 0.5,
       flapsTarget: finite(v.flapsTarget, 0),
       airbrakesPosition: Number.isFinite(v.airbrakesPosition) ? Number(v.airbrakesPosition) : undefined,
       glideslopeDeviation: v.NAVVNAV && Number.isFinite(v.NAVGlideAngleDeviation) ? Number(v.NAVGlideAngleDeviation) : undefined,

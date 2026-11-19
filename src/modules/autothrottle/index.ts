@@ -444,6 +444,7 @@ export class AutothrottleModule implements IModule {
     if (this.opSyncEngaged) {
       this.opSyncEngaged = false;
       this.ctx?.emitEvent('autothrottle:opsync-state', { active: false });
+      this.ctx?.emitDiag?.('OPSYNC_RELEASED', { desired: null });
     }
     this.restoreReverse();
     this.restoreThrottleAxis?.();

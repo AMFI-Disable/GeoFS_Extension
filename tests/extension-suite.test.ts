@@ -17,7 +17,7 @@ import { SerializedLogbookStore } from '../src/background/logbook-store';
 import { hasAircraftCallouts, installAircraftSounds } from '../src/modules/realism-pack/aircraft-sounds';
 import { buildGForceShader, RealismPackModule } from '../src/modules/realism-pack';
 import { LandingStatisticsModule, rateLanding, scoreLanding } from '../src/modules/landing-statistics';
-import { EngineCeiling, EngineThrust } from '../src/modules/overpowered-engines';
+import { EffectiveSasController, EngineCeiling, EngineThrust } from '../src/modules/overpowered-engines';
 import { drainFuelTanks, fuelBurnKgHr } from '../src/modules/fuel-simulator';
 import { executeChecklistHardwareAction } from '../src/modules/checklist-system';
 import { projectFlightPath, resolveFpvColorState, resolveGlideslopeAppearance } from '../src/modules/flight-path-vector';
@@ -686,6 +686,52 @@ describe('Live Verification Regression Fixes', () => {
     };
     expect(executeChecklistHardwareAction('lightsOn', { ...telemetry, lightsOn: false }, ac, ctx)).toBe(true);
     expect(called).toBe(true);
+  });
+
+  it('normalizes gearDown with GeoFS convention (gearPosition 0 is down, 1 is up)', () => {
+    const sim = new SimAdapter();
+    (globalThis as unknown as { window: Record<string, unknown> }).window = {
+      geofs: { animation: { values: { gearPosition: 0 } } }
+    };
+    expect(sim.buildTelemetrySnapshot(0.02, 4).gearDown).toBe(true);
+
+    (globalThis as unknown as { window: Record<string, unknown> }).window = {
+      geofs: { animation: { values: { gearPosition: 1 } } }
+    };
+    expect(sim.buildTelemetrySnapshot(0.02, 4).gearDown).toBe(false);
+  });
+
+  it('commands controls.pitch and controls.roll in SAS hold mode and yields when autopilot is on', () => {
+    const sas = new EffectiveSasController();
+    const controls = { pitch: 0, roll: 0, rawPitch: 0, rawRoll: 0, rawYaw: 0 };
+    const rigidBody = {
+      mass: 4200,
+      getAngularVelocity: (): [number, number, number] => [0.05, -0.04, 0],
+      setAngularVelocity: () => {}
+    };
+
+    // Capture initial target pitch=3, roll=-10
+    sas.step({ rigidBody, controls, pitchDeg: 3, rollDeg: -10, kias: 240, multiplier: 500, sasStrength: 1.0, groundContact: false });
+    expect(sas.targetPitch).toBe(3);
+    expect(sas.targetRoll).toBe(-10);
+
+    // Pitch rises to 8 deg (+5 deg error -> nose-down negative pitch command)
+    const holdRes = sas.step({ rigidBody, controls, pitchDeg: 8, rollDeg: -10, kias: 300, multiplier: 500, sasStrength: 1.0, groundContact: false });
+    expect(holdRes.mode).toBe('hold');
+    expect(controls.pitch).toBeLessThan(0);
+
+    // Without rawPitch, SAS does not treat its own controls.pitch output as pilot override
+    const noRawControls = { pitch: 0, roll: 0 };
+    const sasNoRaw = new EffectiveSasController();
+    sasNoRaw.step({ rigidBody, controls: noRawControls, pitchDeg: 2, rollDeg: 0, kias: 220, multiplier: 1, sasStrength: 1.0, groundContact: false });
+    sasNoRaw.step({ rigidBody, controls: noRawControls, pitchDeg: 6, rollDeg: 0, kias: 220, multiplier: 1, sasStrength: 1.0, groundContact: false });
+    const third = sasNoRaw.step({ rigidBody, controls: noRawControls, pitchDeg: 6, rollDeg: 0, kias: 220, multiplier: 1, sasStrength: 1.0, groundContact: false });
+    expect(third.mode).toBe('hold');
+
+    // Yields when native autopilot is active
+    const apRes = sas.step({ rigidBody, controls, pitchDeg: 8, rollDeg: -10, kias: 300, multiplier: 500, sasStrength: 1.0, groundContact: false, autopilotOn: true });
+    expect(apRes.nextAngularVelocity).toBeNull();
+    expect(sas.targetPitch).toBeNull();
   });
 });
 

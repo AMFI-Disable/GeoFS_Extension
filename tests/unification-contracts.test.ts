@@ -137,10 +137,11 @@ describe('Effective Closed-Loop SAS Controller', () => {
     expect(sas.targetRoll).toBe(12);
     expect(currentAv).toEqual([0, 0, 0]);
 
-    // Perturb aircraft away from captured attitude -> corrective angular velocity & torque applied
+    // Perturb aircraft away from captured attitude -> corrective aerodynamic controls applied without world-axis torque corruption
+    const disturbControls = { rawRoll: 0, rawPitch: 0, rawYaw: 0, pitch: 0, roll: 0 };
     const disturbRes = sas.step({
       rigidBody,
-      controls: { rawRoll: 0, rawPitch: 0, rawYaw: 0 },
+      controls: disturbControls,
       pitchDeg: 4,
       rollDeg: 22,
       kias: 650,
@@ -149,9 +150,9 @@ describe('Effective Closed-Loop SAS Controller', () => {
       groundContact: false
     });
     expect(disturbRes.mode).toBe('hold');
-    expect(disturbRes.nextAngularVelocity?.[0]).toBeGreaterThan(0);
-    expect(disturbRes.nextAngularVelocity?.[1]).toBeLessThan(0);
-    expect(torques.length).toBeGreaterThan(0);
+    expect(disturbControls.pitch).toBeGreaterThan(0);
+    expect(disturbControls.roll).toBeLessThan(0);
+    expect(torques.length).toBe(0);
 
     // Ground contact leaves rigidBody wheel/suspension physics untouched
     const torquesBeforeGround = torques.length;
