@@ -51,7 +51,7 @@
 ### Flightradar-Integrated Flight Tracking And Star Rating Evaluation
 
 - [ ] Integrate continuous takeoff-to-landing flight session tracking (`Authentic Flights` verified via Flightradar-style telemetry continuity vs `Normal Untracked Flights` from mid-air or quick runway spawns).
-- [ ] Implement a calibrated **1–5★ Rating System** alongside structured **Phase-By-Phase Critique Comments** covering departure configuration, cruise discipline, approach stabilization, centerline/touchdown zone accuracy, flare sink rate, and rollout execution.
+- [ ] Implement a calibrated **1–5-Star Rating System** alongside structured **Phase-By-Phase Critique Comments** covering departure configuration, cruise discipline, approach stabilization, centerline/touchdown zone accuracy, flare sink rate, and rollout execution.
 - [ ] Extend Chrome Logbook storage, Side Panel live session readout, and Options Logbook exporter with Authentic Flight badges, star ratings, and debrief notes.
 
 ## Parity Boundaries

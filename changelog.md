@@ -3,6 +3,31 @@
 > [!CAUTION]
 > **Educational And Fair-Play Disclaimer**: Use this extension for education and single-player simulation. Respect GeoFS subscriptions, ad-reward entitlements, multiplayer rules, and access controls.
 
+---
+
+## [Unreleased]
+
+### Added
+
+- Unified project website (`website/`) with Vite/TypeScript landing page, GitHub Pages deployment workflow (`.github/workflows/pages.yml`), hub navigation link, and adaptive system, display, and accessibility detection (`prefers-color-scheme`, `prefers-contrast`, `prefers-reduced-motion`, HiDPI, and coarse-pointer support).
+- Consolidated GeoFS V4.0 live verification status summary (`docs/live-v4-status.md`) and leg-by-leg verification reports (`docs/live-leg2-2026-11-19.md`, `docs/live-leg3-2026-11-19.md`, `docs/live-leg4-2026-11-19.md`).
+- `OPSYNC_RELEASED` diagnostic emission in `AutothrottleModule` when releasing OP-SYNC on teardown.
+
+### Changed
+
+- Updated website and extension icon assets (`public/icons/`, `dist/icons/`, and `website/public/`) to the unified project design.
+- Updated `FuelSimulatorModule` to prefer live `engine.currentThrust` over fixed rated thrust for idle/asymmetric fuel burn and synchronize live `rigidBody.setMassProps` with scaled inertia vectors (restoring original mass and inertia on teardown).
+- Reworked `EffectiveSasController` to apply PID aerodynamic `controls.pitch` / `controls.roll` stabilization with angular-velocity damping instead of world-axis torque injection, ignore its own control outputs when raw pilot inputs are absent, and yield when native autopilot is active.
+- Updated the Side Panel `Realism & Fuel` tab to show V4-unsupported realism options as disabled with `Unavailable on V4` badges instead of hiding them.
+
+### Fixed
+
+- Fixed `SimAdapter` `gearDown` detection to follow the GeoFS convention (`gearPosition < 0.5` indicates gear down).
+- Fixed `ChecklistSystemModule` `lightsOn` hardware actuation to fall back to `toggleLights` and surface a warning toast when no light setter is available.
+- Restored the missing `Realism & Fuel` tab container in `src/sidepanel/app.tsx` and refreshed the unpacked `dist/sidepanel` bundle.
+
+---
+
 ## [0.2.0] - Unified Cockpit Architecture And Parity
 
 ### Added

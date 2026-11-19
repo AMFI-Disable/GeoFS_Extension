@@ -65,7 +65,7 @@ For the next run, pause the legacy GeoFS scripts, reload both simulator tabs, an
 
 ### Leg 2: Pre-Takeoff Checklist And Fuel Weight Verification
 
-1. Open the `CHECKS` tab and step through `PRE-T/O` (`Pre-Takeoff`). Click interactive hardware rows (`⚡` Parking Brake, Flaps, Gear, Lights) to confirm real simulator actuation, and click `GUIDE` to inspect situational reference guides.
+1. Open the `CHECKS` tab and step through `PRE-T/O` (`Pre-Takeoff`). Click interactive hardware rows (`[Action]` Parking Brake, Flaps, Gear, Lights) to confirm real simulator actuation, and click `GUIDE` to inspect situational reference guides.
 2. Open the `FUEL` tab and move the fuel slider from `100%` to `10%`, confirming `FUEL_MASS_SYNC` updates `Gross Weight` and `setMassProps`.
 3. Conduct a short takeoff roll at `100%` fuel versus `10%` fuel to confirm heavier takeoff acceleration and pitch response, then enable `ALTITUDE BURN` and `REAL TANKS` briefly to verify multi-throttle burn readout and wing tank drain (`L/C/R`).
 
@@ -74,7 +74,7 @@ For the next run, pause the legacy GeoFS scripts, reload both simulator tabs, an
 1. Engage `A/THR` and set a large speed target delta (`>= 150 kts`) while `OP-SYNC Policy` is set to `Ask Every Session`. Confirm the non-blocking bottom-right toast prompt appears (`Allow Once`, `Keep Standard`, `Always Allow`, `Never Allow`) alongside `OPSYNC_PROMPT` in diagnostics.
 2. Open `#opEngineCard` via `OP ENG`, engage `ACTIVATE THRUST` at `500x`–`1,000x` with `SAS` active (`SAS_ACTIVE`), and climb smoothly through cruise.
 3. Release stick/keyboard controls cleanly to verify closed-loop `EffectiveSasController` holds current pitch and bank rock-solid without oscillation, then command a turn to confirm speed-compensated turn authority.
-4. Switch to `PRE-CRZ` (`Pre-Cruise`) in `CHECKS` and confirm live `⏱` telemetry rows automatically check off as gear retracts, flaps reach `0`, and altitude/cruise speed targets are crossed.
+4. Switch to `PRE-CRZ` (`Pre-Cruise`) in `CHECKS` and confirm live `[Timer]` telemetry rows automatically check off as gear retracts, flaps reach `0`, and altitude/cruise speed targets are crossed.
 
 ### Leg 4: Failures, Emergency QRH Override And Verified Recovery
 
