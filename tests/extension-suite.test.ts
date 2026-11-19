@@ -19,7 +19,7 @@ import { buildGForceShader, RealismPackModule } from '../src/modules/realism-pac
 import { LandingStatisticsModule, rateLanding, scoreLanding } from '../src/modules/landing-statistics';
 import { EffectiveSasController, EngineCeiling, EngineThrust } from '../src/modules/overpowered-engines';
 import { drainFuelTanks, fuelBurnKgHr } from '../src/modules/fuel-simulator';
-import { executeChecklistHardwareAction } from '../src/modules/checklist-system';
+import { ChecklistSystemModule, executeChecklistHardwareAction } from '../src/modules/checklist-system';
 import { projectFlightPath, resolveFpvColorState, resolveGlideslopeAppearance } from '../src/modules/flight-path-vector';
 import { DEFAULT_SETTINGS } from '../src/types/settings';
 import type { GeoFSAnimationValues, GeoFSSound } from '../src/types/geofs.d';
@@ -732,6 +732,57 @@ describe('Live Verification Regression Fixes', () => {
     const apRes = sas.step({ rigidBody, controls, pitchDeg: 8, rollDeg: -10, kias: 300, multiplier: 500, sasStrength: 1.0, groundContact: false, autopilotOn: true });
     expect(apRes.nextAngularVelocity).toBeNull();
     expect(sas.targetPitch).toBeNull();
+  });
+
+  it('enters contingency mode immediately for permanent (non-recoverable) failures', () => {
+    const handlers = new Map<string, (payload: unknown) => void>();
+    const makeNode = () => ({
+      id: '',
+      className: '',
+      textContent: '',
+      title: '',
+      tabIndex: 0,
+      style: {} as Record<string, string>,
+      children: [] as unknown[],
+      setAttribute: () => {},
+      addEventListener: () => {},
+      append: (...args: unknown[]) => { void args; },
+      appendChild: (c: unknown) => c,
+      replaceChildren: () => {},
+      remove: () => {}
+    });
+    (globalThis as unknown as { document: Record<string, unknown> }).document = {
+      head: { appendChild: () => {} },
+      createElement: () => makeNode()
+    };
+
+    const mod = new ChecklistSystemModule();
+    mod.init({
+      sim: new SimAdapter(),
+      audio: {} as never,
+      anchors: { registerHudTab: () => () => {}, openHudTab: () => {}, showToast: () => {} } as never,
+      keybinds: { register: () => () => {}, updateCombo: () => {} } as never,
+      emitEvent: () => {},
+      onEvent: ((event: string, cb: (payload: unknown) => void) => {
+        handlers.set(event, cb);
+        return () => {};
+      }) as never,
+      getSettings: () => DEFAULT_SETTINGS,
+      updateSettings: () => {}
+    });
+
+    const onTrigger = handlers.get('failure:triggered');
+    expect(onTrigger).toBeDefined();
+    onTrigger?.({
+      type: 'structural',
+      recoverable: false,
+      procedure: { title: 'STRUCTURAL AIRFRAME DAMAGE', items: [{ text: 'Reduce below 220 kt', desc: 'Avoid >1.5G' }] }
+    });
+
+    const emergencies = (mod as unknown as { emergencies: Map<string, { recoverable: boolean; contingency: boolean }> }).emergencies;
+    expect(emergencies.get('structural')).toEqual(
+      expect.objectContaining({ recoverable: false, contingency: true })
+    );
   });
 });
 

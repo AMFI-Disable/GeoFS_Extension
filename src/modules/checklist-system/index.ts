@@ -254,11 +254,12 @@ export class ChecklistSystemModule implements IModule {
         'failure:triggered',
         ({ type, procedure, recoverable }) => {
           if (!procedure) return;
+          const isRecoverable = recoverable !== false;
           this.emergencies.set(type, {
             type,
             procedure,
-            recoverable: recoverable !== false,
-            contingency: false
+            recoverable: isRecoverable,
+            contingency: !isRecoverable
           });
           // Switch directly to emergency QRH tab
           this.activePhase = 4 + Array.from(this.emergencies.keys()).indexOf(type);
