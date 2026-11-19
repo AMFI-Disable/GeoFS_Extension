@@ -4,6 +4,7 @@
 
 **All-In-One Flight Deck Companion For GeoFS V3.9 And V4.0**
 
+[![Website: Live](https://img.shields.io/badge/Website-Live-66BB6A.svg?style=flat-square)](https://amfi-disable.github.io/GeoFS_Extension/)
 ![Version](https://img.shields.io/badge/Version-v0.2.0-blue?style=flat-square)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-brightgreen?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-GeoFS%20V3%20%26%20V4-informational?style=flat-square)
