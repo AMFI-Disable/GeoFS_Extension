@@ -61,6 +61,7 @@ export interface GeoFSAircraftDefinition {
 
 export interface GeoFSEnginePart {
   thrust?: number;
+  currentThrust?: number;
   afterBurnerThrust?: number;
   reverseThrust?: number;
   torque?: number;
@@ -76,6 +77,7 @@ export interface GeoFSEngine {
   points?: { contrailAnchor?: unknown };
   object3d?: { worldPosition?: [number, number, number] };
   thrust?: number;
+  currentThrust?: number;
   on?: boolean;
   [key: string]: unknown;
 }

@@ -12,25 +12,50 @@ export function resolveScaledInertiaVector(
     return null;
   }
 
-  const isPositiveVec3 = (candidate: unknown): candidate is [number, number, number] =>
-    Array.isArray(candidate) &&
-    candidate.length === 3 &&
-    candidate.every((n) => typeof n === 'number' && Number.isFinite(n) && n > 0);
+  const extractPositiveVec3 = (candidate: unknown): [number, number, number] | null => {
+    if (
+      Array.isArray(candidate) &&
+      candidate.length === 3 &&
+      candidate.every((n) => typeof n === 'number' && Number.isFinite(n) && n > 0)
+    ) {
+      return [candidate[0], candidate[1], candidate[2]];
+    }
+    if (candidate && typeof candidate === 'object') {
+      const obj = candidate as { x?: unknown; y?: unknown; z?: unknown };
+      const readAxis = (val: unknown): number | null => {
+        if (typeof val === 'number' && Number.isFinite(val) && val > 0) return val;
+        if (typeof val === 'function') {
+          try {
+            const res = (val as () => unknown).call(candidate);
+            if (typeof res === 'number' && Number.isFinite(res) && res > 0) return res;
+          } catch {
+            return null;
+          }
+        }
+        return null;
+      };
+      const x = readAxis(obj.x);
+      const y = readAxis(obj.y);
+      const z = readAxis(obj.z);
+      if (x !== null && y !== null && z !== null) return [x, y, z];
+    }
+    return null;
+  };
 
   let base: [number, number, number] | null = null;
   const bodyRecord = body as Record<string, unknown> | undefined;
   for (const key of ['inertia', 'localInertia', 'inertiaTensor']) {
-    const candidate = bodyRecord?.[key];
-    if (isPositiveVec3(candidate)) {
-      base = [candidate[0], candidate[1], candidate[2]];
+    const vec = extractPositiveVec3(bodyRecord?.[key]);
+    if (vec) {
+      base = vec;
       break;
     }
   }
 
   if (!base && typeof bodyRecord?.getInvInertiaDiagLocal === 'function') {
     try {
-      const inv = (bodyRecord.getInvInertiaDiagLocal as () => unknown)();
-      if (isPositiveVec3(inv)) {
+      const inv = extractPositiveVec3((bodyRecord.getInvInertiaDiagLocal as () => unknown)());
+      if (inv) {
         const inverted: [number, number, number] = [1 / inv[0], 1 / inv[1], 1 / inv[2]];
         if (inverted.every((n) => Number.isFinite(n) && n > 0)) {
           base = inverted;
@@ -42,11 +67,13 @@ export function resolveScaledInertiaVector(
   }
 
   // Only accept definition.inertiaTensor when it is an actual 3-axis inertia tensor (never tensorFactor or [1,1,1] factors).
-  if (!base && isPositiveVec3(definition?.inertiaTensor)) {
-    const candidate = definition.inertiaTensor;
-    const looksLikeDimensionlessFactor = originalMass > 100 && Math.min(...candidate) <= 5;
-    if (!looksLikeDimensionlessFactor) {
-      base = [candidate[0], candidate[1], candidate[2]];
+  if (!base) {
+    const candidate = extractPositiveVec3(definition?.inertiaTensor);
+    if (candidate) {
+      const looksLikeDimensionlessFactor = originalMass > 100 && Math.min(...candidate) <= 5;
+      if (!looksLikeDimensionlessFactor) {
+        base = candidate;
+      }
     }
   }
 
@@ -67,10 +94,15 @@ export function fuelBurnKgHr(aircraft: GeoFSAircraftInstance, telemetry: FlightT
   const rawRated = Number(aircraft.definition?.maxThrust);
   const ratedThrust = Number.isFinite(rawRated) && rawRated > 0 ? rawRated : 0;
   const engines = aircraft.engines;
-  const thrustOf = (engine: { thrust?: number; on?: boolean }) =>
-    engine.on !== false && typeof engine.thrust === 'number' && Number.isFinite(engine.thrust)
+  const thrustOf = (engine: { currentThrust?: number; thrust?: number; on?: boolean }) => {
+    if (engine.on === false) return 0;
+    if (typeof engine.currentThrust === 'number' && Number.isFinite(engine.currentThrust)) {
+      return Math.abs(engine.currentThrust);
+    }
+    return typeof engine.thrust === 'number' && Number.isFinite(engine.thrust)
       ? Math.max(0, engine.thrust)
       : 0;
+  };
   let thrust = engines?.reduce((sum, engine) => sum + thrustOf(engine), 0) ?? 0;
 
   if (telemetry.simMajor === 4 && !engines?.length) {
@@ -170,6 +202,7 @@ export class FuelSimulatorModule implements IModule {
         body: NonNullable<GeoFSAircraftInstance['rigidBody']> | undefined;
         originalMass: number | undefined;
         originalInertia: [number, number, number] | null;
+        lastBodyMass: number | undefined;
         calledSetMassProps: boolean;
       }
     | undefined;
@@ -445,21 +478,45 @@ export class FuelSimulatorModule implements IModule {
     const changed = Math.abs((prevDefMass ?? 0) - safeMass) > 5;
 
     if (!this.massTarget) {
+      const initialBodyMass = typeof body?.mass === 'number' && Number.isFinite(body.mass) && body.mass > 0
+        ? body.mass
+        : prevDefMass;
       this.massTarget = {
         definition,
         originalDefinitionMass: prevDefMass,
         body,
-        originalMass: undefined,
+        originalMass: initialBodyMass,
         originalInertia: null,
+        lastBodyMass: initialBodyMass,
         calledSetMassProps: false
       };
     }
 
-    // Update aerodynamic definition mass only; mutating live Bullet btRigidBody mass/inertia mid-flight corrupts solver warmstarting.
     definition.mass = safeMass;
 
-    if (changed) {
-      this.ctx?.emitDiag?.('FUEL_MASS_SYNC', { massKg: Math.round(safeMass), fuelKg: Math.round(this.fuelKg) });
+    let bodySynced = false;
+    if (body && typeof body.setMassProps === 'function' && this.massTarget.originalMass !== undefined) {
+      const inertiaInfo = resolveScaledInertiaVector(body, definition, this.massTarget.originalMass, safeMass);
+      if (inertiaInfo) {
+        if (!this.massTarget.originalInertia) {
+          this.massTarget.originalInertia = inertiaInfo.base;
+        }
+        const prevBodyMass = this.massTarget.lastBodyMass ?? this.massTarget.originalMass;
+        if (!this.massTarget.calledSetMassProps || Math.abs(prevBodyMass - safeMass) > 25) {
+          body.setMassProps(safeMass, inertiaInfo.scaled);
+          this.massTarget.calledSetMassProps = true;
+          this.massTarget.lastBodyMass = safeMass;
+          bodySynced = true;
+        }
+      }
+    }
+
+    if (changed || bodySynced) {
+      this.ctx?.emitDiag?.('FUEL_MASS_SYNC', {
+        massKg: Math.round(safeMass),
+        fuelKg: Math.round(this.fuelKg),
+        rigidBodySynced: this.massTarget.calledSetMassProps
+      });
     }
   }
 
@@ -468,6 +525,16 @@ export class FuelSimulatorModule implements IModule {
     if (target) {
       if (target.originalDefinitionMass === undefined) delete target.definition.mass;
       else target.definition.mass = target.originalDefinitionMass;
+
+      if (
+        target.calledSetMassProps &&
+        target.body &&
+        typeof target.body.setMassProps === 'function' &&
+        target.originalMass !== undefined &&
+        target.originalInertia
+      ) {
+        target.body.setMassProps(target.originalMass, target.originalInertia);
+      }
     }
     this.massTarget = undefined;
   }

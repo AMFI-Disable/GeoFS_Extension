@@ -181,11 +181,20 @@ export function executeChecklistHardwareAction(
   }
 
   if (sync === 'lightsOn' && c) {
+    if (telemetry.lightsOn) return false;
     const setters = c.setters as { setLights?: { set?: () => void } } | undefined;
-    if (!telemetry.lightsOn) {
-      setters?.setLights?.set?.();
+    if (typeof setters?.setLights?.set === 'function') {
+      setters.setLights.set();
       return true;
     }
+    const toggleLights =
+      (c as { toggleLights?: () => void }).toggleLights ??
+      (window.geofs?.aircraft?.instance as { toggleLights?: () => void } | undefined)?.toggleLights;
+    if (typeof toggleLights === 'function') {
+      toggleLights();
+      return true;
+    }
+    return false;
   }
 
   return false;
@@ -542,7 +551,13 @@ export class ChecklistSystemModule implements IModule {
 
       const handleActivate = () => {
         if (entry.hardware && this.lastTelemetry && this.ctx) {
-          executeChecklistHardwareAction(entry.item.sync, this.lastTelemetry, ac, this.ctx);
+          const actuated = executeChecklistHardwareAction(entry.item.sync, this.lastTelemetry, ac, this.ctx);
+          if (!actuated && !entry.autoDone) {
+            this.ctx.anchors.showToast('Control unavailable — toggle manually in GeoFS', 'warn');
+          }
+          this.manualDone.delete(entry.id);
+          this.lastRender = '';
+          return;
         }
         if (this.manualDone.has(entry.id)) {
           this.manualDone.delete(entry.id);

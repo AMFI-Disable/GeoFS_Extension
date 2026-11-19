@@ -19,6 +19,7 @@ import { buildGForceShader, RealismPackModule } from '../src/modules/realism-pac
 import { LandingStatisticsModule, rateLanding, scoreLanding } from '../src/modules/landing-statistics';
 import { EngineCeiling, EngineThrust } from '../src/modules/overpowered-engines';
 import { drainFuelTanks, fuelBurnKgHr } from '../src/modules/fuel-simulator';
+import { executeChecklistHardwareAction } from '../src/modules/checklist-system';
 import { projectFlightPath, resolveFpvColorState, resolveGlideslopeAppearance } from '../src/modules/flight-path-vector';
 import { DEFAULT_SETTINGS } from '../src/types/settings';
 import type { GeoFSAnimationValues, GeoFSSound } from '../src/types/geofs.d';
@@ -649,6 +650,42 @@ describe('Live Verification Regression Fixes', () => {
     expect(stateDiag?.detail?.vortexStatus).toBe('V4_UNSUPPORTED');
     expect(stateDiag?.detail?.carrierStatus).toBe('V4_UNSUPPORTED');
     expect(diags.some((d) => d.code === 'REALISM_FEATURE_ERROR')).toBe(true);
+  });
+
+  it('prefers live engine.currentThrust over fixed rated thrust for idle and asymmetric fuel burn', () => {
+    const baseTelemetry = new SimAdapter().buildTelemetrySnapshot(0.1, 4);
+    const aircraft = {
+      engines: [
+        { thrust: 7700, currentThrust: 0, on: true },
+        { thrust: 7700, currentThrust: 0, on: true }
+      ],
+      definition: { maxThrust: 15_400 }
+    };
+    expect(fuelBurnKgHr(aircraft, { ...baseTelemetry, throttles: [0, 0] })).toBe(0);
+
+    aircraft.engines[0].currentThrust = 3776;
+    expect(fuelBurnKgHr(aircraft, { ...baseTelemetry, throttles: [0.5, 0] })).toBeCloseTo(3776 * 0.0095);
+
+    aircraft.engines[0].currentThrust = 7700;
+    aircraft.engines[1].currentThrust = 7700;
+    expect(fuelBurnKgHr(aircraft, { ...baseTelemetry, throttles: [1, 1] })).toBeCloseTo(15_400 * 0.0095);
+  });
+
+  it('returns false for lightsOn checklist hardware actuation when no setter or toggle exists', () => {
+    const telemetry = new SimAdapter().buildTelemetrySnapshot(0.1, 4);
+    const profile = classifyAircraft('Embraer Phenom 100', 4200, 2, 15400);
+    const ctx = { sim: new SimAdapter() } as unknown as ModuleContext;
+    const ac = { id: '5', name: 'Embraer Phenom 100', category: profile, engineCount: 2, maxFlaps: 3, hasGear: true, hasSpoilers: true, oew: 3200, mtow: 4800, maxFuel: 1272, isDynamic: false };
+
+    (globalThis as unknown as { window: Record<string, unknown> }).window = { controls: { setters: {} } };
+    expect(executeChecklistHardwareAction('lightsOn', { ...telemetry, lightsOn: false }, ac, ctx)).toBe(false);
+
+    let called = false;
+    (globalThis as unknown as { window: Record<string, unknown> }).window = {
+      controls: { setters: { setLights: { set: () => { called = true; } } } }
+    };
+    expect(executeChecklistHardwareAction('lightsOn', { ...telemetry, lightsOn: false }, ac, ctx)).toBe(true);
+    expect(called).toBe(true);
   });
 });
 

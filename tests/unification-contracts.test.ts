@@ -451,7 +451,7 @@ describe('Physics Stability & Void-Crash Prevention Regressions', () => {
     fuelMod.destroy();
     expect(aircraftInstance.definition.mass).toBe(180_000);
 
-    // Even when a real 3-axis inertiaTensor is provided, live rigidBody.setMassProps is NEVER mutated at runtime
+    // When a real 3-axis inertiaTensor is provided, live rigidBody.setMassProps is synced with scaled inertia and restored on destroy
     const validInertiaCalls: unknown[][] = [];
     const rigidAircraft = {
       id: '24',
@@ -479,11 +479,13 @@ describe('Physics Stability & Void-Crash Prevention Regressions', () => {
       updateSettings: () => {}
     });
     fuelModValid.update(sim.buildTelemetrySnapshot(0.02, 4));
-    expect(validInertiaCalls).toHaveLength(0);
+    expect(validInertiaCalls).toHaveLength(1);
+    expect(validInertiaCalls[0][0]).toBe(rigidAircraft.definition.mass);
     expect(rigidAircraft.definition.mass).toBeGreaterThan(200_000);
     fuelModValid.destroy();
     expect(rigidAircraft.definition.mass).toBe(200_000);
-    expect(validInertiaCalls).toHaveLength(0);
+    expect(validInertiaCalls).toHaveLength(2);
+    expect(validInertiaCalls[1]).toEqual([200_000, [1_000_000, 2_000_000, 3_000_000]]);
   });
 
   it('never shifts setup.parts[0].centerOfMass, never teleports via flyToCamera, and throttles/caps 777 impulses', async () => {
