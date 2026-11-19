@@ -20,3 +20,13 @@ Updated November 19, 2026. The latest Chrome check used the unpacked v0.2.1 buil
 - [Leg 3 Climb, OP-SYNC And SAS](live-leg3-2026-11-19.md)
 - [Leg 4 Failures And Recovery](live-leg4-2026-11-19.md)
 - [Five-Leg Verification Guide](live-verification-guide.md)
+
+## V4.0 Retest On Build 7bf1142
+
+- **Leg 1** — With Tampermonkey paused and the simulator reloaded, the extension HUD and A/THR appeared. Enabling Overpowered Engines added the OP ENG toggle. The A380 remained in the simulator's crashed state, so parked layout, fresh placement, and the off-edge collapsed circle remain open.
+- **Leg 2** — The fuel slider accepted keyboard input, but gross weight and tank readings stayed at the full-fuel values while the simulator reported a crash. The slider returned to 100%. Hardware actuation, the native rigid-body mass update, and matched takeoff rolls remain open.
+- **Leg 3** — Flight checks remain open.
+- **Leg 4** — Triggering Structural from the Failure Simulator opened **CONTINGENCY SOLUTION: STRUCTURAL AIRFRAME DAMAGE** immediately, with the permanent failure's recovery control disabled. **Clear All Failures** removed the contingency checklist. This closes the checklist presentation finding. Airborne failure and recovery checks remain open.
+- **Leg 5** — Approach, landing, logbook persistence, and bundle export remain open.
+
+The crash-overlay reset, native reset, and San Francisco 10R runway selection did not produce a confirmed usable aircraft state. Chrome control also timed out during the runway transition. Temporary Overpowered Engines and Failure Simulator settings were restored.
