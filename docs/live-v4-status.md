@@ -30,3 +30,9 @@ Updated November 19, 2026. The latest Chrome check used the unpacked v0.2.1 buil
 - **Leg 5** — Approach, landing, logbook persistence, and bundle export remain open.
 
 The crash-overlay reset, native reset, and San Francisco 10R runway selection did not produce a confirmed usable aircraft state. Chrome control also timed out during the runway transition. Temporary Overpowered Engines and Failure Simulator settings were restored.
+
+## V4.0 Export Retest
+
+Chrome successfully downloaded the **Verification Bundle (JSON)** from **Logbook & Verification**. The file parsed as JSON and contained extension and script configuration, live telemetry, seven diagnostics, a logbook count of 100, and 20 recent logbook entries. This verifies export of existing data. A fresh touchdown and its persisted entry remain to be verified.
+
+The GeoFS Bora Bora preset initialized a DHC-2 Beaver in flight with changing airspeed, altitude, and vertical speed. Chrome’s accessibility tree continued to expose the crash text during this flight, so that text alone is insufficient to identify a stalled simulation. A controlled runway spawn and the outstanding flight checks remain open.
