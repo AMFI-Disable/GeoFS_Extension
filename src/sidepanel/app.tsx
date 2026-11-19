@@ -339,6 +339,11 @@ export function App() {
         </div>
       </div>
 
+        </>
+      )}
+
+      {panelTab === 'realism' && (
+        <>
       <div class="panel-card">
         <div class="section-heading">Fuel &amp; Failures</div>
         <label class="switch-row">
@@ -394,12 +399,17 @@ export function App() {
       <div class="panel-card">
         <div class="section-heading">Realism &amp; Audio</div>
         <div class="field-col">
-          {REALISM_OPTION_META.filter((item) => !(isV4 && item.v4Unavailable)).map((item) => (
+          {REALISM_OPTION_META.map((item) => (
             <label class="switch-row" key={item.key}>
-              <HelpLabel label={item.label} tip={SETTING_TIPS[`realism.${item.key}`]} />
+              <HelpLabel
+                label={item.label}
+                tip={SETTING_TIPS[`realism.${item.key}`]}
+                badge={isV4 && item.v4Unavailable ? 'Unavailable on V4' : undefined}
+              />
               <input
                 type="checkbox"
                 checked={Boolean(settings.realismOptions[item.key])}
+                disabled={isV4 && item.v4Unavailable}
                 onChange={() => toggleRealism(item.key)}
               />
             </label>
