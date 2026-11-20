@@ -36,3 +36,11 @@ The crash-overlay reset, native reset, and San Francisco 10R runway selection di
 Chrome successfully downloaded the **Verification Bundle (JSON)** from **Logbook & Verification**. The file parsed as JSON and contained extension and script configuration, live telemetry, seven diagnostics, a logbook count of 100, and 20 recent logbook entries. This verifies export of existing data. A fresh touchdown and its persisted entry remain to be verified.
 
 The GeoFS Bora Bora preset initialized a DHC-2 Beaver in flight with changing airspeed, altitude, and vertical speed. Chrome’s accessibility tree continued to expose the crash text during this flight, so that text alone is insufficient to identify a stalled simulation. A controlled runway spawn and the outstanding flight checks remain open.
+
+## November 20 Runway And HUD Retest
+
+With the HUD minimized, **Location → On Runway → San Francisco International Airport - 10R** accepted the runway selection. The DHC-2 Beaver reported 30.7 KIAS, 128 ft AGL, and 2,145 ft/min vertical speed after the transition. A stable parked baseline was still open.
+
+The expanded HUD measured 250 px wide. Dragging its grip moved it from viewport coordinates (0, 0) to (386, 115). Chrome showed **Restore HUD** after minimizing at that position. The collapsed dimensions and restoration at that position still need measurement.
+
+During this run, GeoFS stopped rendering with an invalid array length error. A tab reload then failed to initialize WebGL and construct the Cesium widget. This prevented further flight checks in this session. The simulator's preference reset was left untouched.
