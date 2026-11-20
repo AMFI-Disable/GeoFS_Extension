@@ -44,3 +44,5 @@ With the HUD minimized, **Location → On Runway → San Francisco International
 The expanded HUD measured 250 px wide. Dragging its grip moved it from viewport coordinates (0, 0) to (386, 115). Chrome showed **Restore HUD** after minimizing at that position. The collapsed dimensions and restoration at that position still need measurement.
 
 During this run, GeoFS stopped rendering with an invalid array length error. A tab reload then failed to initialize WebGL and construct the Cesium widget. This prevented further flight checks in this session. The simulator's preference reset was left untouched.
+
+On the next Chrome session, GeoFS initialized with a Piper Cub near ground level. The collapsed HUD reappeared at the left edge, measured 24 × 40 CSS px, and restored the full HUD on click. The earlier off-edge position was not reproduced on startup. Chrome automation timed out during the repeat drag-and-collapse sequence and again when reconnecting through the native Chrome controls. The off-edge dimensions and remaining flight checks are still open.
