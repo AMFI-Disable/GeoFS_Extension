@@ -572,15 +572,24 @@ export class FailureSimulatorModule implements IModule {
       this.unmounts.push(context.anchors.makeDraggable(pill, 'geofs_ext_fail_pill_pos', pill));
       this.unmounts.push(() => pill.remove());
 
+      const setModalOpen = (open: boolean) => {
+        modal.style.display = open ? 'flex' : 'none';
+        try {
+          localStorage.setItem('geofs_ext_fail_modal_open', open ? '1' : '0');
+        } catch {
+          // ignore storage errors
+        }
+        if (open) {
+          this.render();
+          context.anchors.bringToFront(modal);
+          context.anchors.clampElementToViewport(modal);
+        }
+      };
+
       pill.addEventListener('click', () => {
         if (pill.dataset.justDragged === '1' || !this.modal) return;
         const willOpen = this.modal.style.display === 'none' || !this.modal.style.display;
-        this.modal.style.display = willOpen ? 'flex' : 'none';
-        if (willOpen) {
-          this.render();
-          context.anchors.bringToFront(this.modal);
-          context.anchors.clampElementToViewport(this.modal);
-        }
+        setModalOpen(willOpen);
       });
 
       const modal = document.createElement('div');
@@ -614,8 +623,15 @@ export class FailureSimulatorModule implements IModule {
       this.unmounts.push(() => modal.remove());
 
       modal.querySelector('[data-role="close"]')?.addEventListener('click', () => {
-        modal.style.display = 'none';
+        setModalOpen(false);
       });
+      try {
+        if (localStorage.getItem('geofs_ext_fail_modal_open') === '1') {
+          setModalOpen(true);
+        }
+      } catch {
+        // ignore storage errors
+      }
       modal.querySelector('[data-role="clear-all"]')?.addEventListener('click', () => this.clear());
       this.probBtn?.addEventListener('click', () => {
         context.updateSettings({ failureProbabilitiesEnabled: !context.getSettings().failureProbabilitiesEnabled });

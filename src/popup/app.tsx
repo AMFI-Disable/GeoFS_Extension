@@ -24,7 +24,20 @@ import {
 } from '../types/settings';
 
 export function App() {
-  const [tab, setTab] = useState<'modules' | 'quick'>('modules');
+  const [tab, setTab] = useState<'modules' | 'quick'>(() => {
+    try {
+      return localStorage.getItem('geofs_ext_popup_tab') === 'quick' ? 'quick' : 'modules';
+    } catch {
+      return 'modules';
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('geofs_ext_popup_tab', tab);
+    } catch {
+      // ignore storage errors
+    }
+  }, [tab]);
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
   const [logbook, setLogbook] = useState<LandingRecord[]>([]);
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);

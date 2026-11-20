@@ -468,6 +468,11 @@ export class OverpoweredEnginesModule implements IModule {
         if (!this.card) return;
         const willOpen = this.card.style.display === 'none' || !this.card.style.display;
         this.card.style.display = willOpen ? 'block' : 'none';
+        try {
+          localStorage.setItem('geofs_ext_op_card_open', willOpen ? '1' : '0');
+        } catch {
+          // ignore storage errors
+        }
         if (willOpen) {
           context.anchors.bringToFront(this.card);
           context.anchors.clampElementToViewport(this.card);
@@ -552,7 +557,21 @@ export class OverpoweredEnginesModule implements IModule {
 
       card.querySelector('[data-role="close"]')?.addEventListener('click', () => {
         card.style.display = 'none';
+        try {
+          localStorage.setItem('geofs_ext_op_card_open', '0');
+        } catch {
+          // ignore storage errors
+        }
       });
+      try {
+        if (localStorage.getItem('geofs_ext_op_card_open') === '1') {
+          card.style.display = 'block';
+          context.anchors.bringToFront(card);
+          context.anchors.clampElementToViewport(card);
+        }
+      } catch {
+        // ignore storage errors
+      }
       card.querySelector('[data-role="thrust"]')?.addEventListener('click', () => this.toggle());
       card.querySelector('[data-role="ceiling"]')?.addEventListener('click', () => {
         if (this.atEngaged) return;

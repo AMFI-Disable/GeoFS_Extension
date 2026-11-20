@@ -10,6 +10,9 @@ export interface HudTabsState {
   pinned: string[];
   detached: string[];
   dockPreset: HudDockPreset;
+  activeTabId?: string | null;
+  hudMinimized?: boolean;
+  hudHidden?: boolean;
 }
 
 export interface PromptAction {
@@ -41,6 +44,7 @@ export class AnchorManager {
   };
   private hudMenuOpen = false;
   private draggingTabId: string | null = null;
+  private savedActiveTabId: string | null = null;
   private activeTabId: string | null = null;
   private currentTheme: 'dark' | 'light' = 'dark';
   private currentPreset: CalibratorPreset = 'auto';
@@ -176,8 +180,13 @@ export class AnchorManager {
 
     if (this.hudState.detached.includes(id)) {
       this.mountDetachedPanel(id);
-    } else if (!this.hudState.closed.includes(id) && (activate || !this.activeTabId)) {
-      this.selectTab(id);
+    } else if (!this.hudState.closed.includes(id)) {
+      if (this.savedActiveTabId === id) {
+        this.savedActiveTabId = null;
+        this.selectTab(id);
+      } else if ((activate && !this.savedActiveTabId) || !this.activeTabId) {
+        this.selectTab(id);
+      }
     }
     this.renderTabs();
     this.renderHudMenu();
@@ -381,6 +390,7 @@ export class AnchorManager {
     }
     this.hudHidden = true;
     this.syncEdgeHandle();
+    this.saveHudState();
     return false;
   }
 
@@ -755,6 +765,7 @@ export class AnchorManager {
     this.applyHudMinimizedState(minimized);
     this.syncEdgeHandle();
     this.clampElementToViewport(this.hudRoot);
+    this.saveHudState();
   }
 
   private syncEdgeHandle(): void {
@@ -1057,6 +1068,9 @@ export class AnchorManager {
     this.setupEdgeTabInteraction(edgeTab);
     this.dragCleanups.add(this.bindHudTip(grip));
     this.dragCleanups.add(this.bindHudTip(minBtn));
+    if (this.hudMinimized) {
+      this.applyHudMinimizedState(true);
+    }
     this.clampElementToViewport(root);
     this.syncEdgeHandle();
   }
@@ -1075,6 +1089,9 @@ export class AnchorManager {
         detached: Array.isArray(parsed.detached) ? parsed.detached.filter((x): x is string => typeof x === 'string') : [],
         dockPreset: validPreset(parsed.dockPreset) ? parsed.dockPreset : 'top-right'
       };
+      this.savedActiveTabId = typeof parsed.activeTabId === 'string' ? parsed.activeTabId : null;
+      this.hudMinimized = Boolean(parsed.hudMinimized);
+      this.hudHidden = Boolean(parsed.hudHidden);
     } catch {
       // ignore invalid saved tab state
     }
@@ -1082,7 +1099,13 @@ export class AnchorManager {
 
   private saveHudState(): void {
     try {
-      localStorage.setItem(HUD_TABS_STATE_KEY, JSON.stringify(this.hudState));
+      const payload: HudTabsState = {
+        ...this.hudState,
+        activeTabId: this.activeTabId,
+        hudMinimized: this.hudMinimized,
+        hudHidden: this.hudHidden
+      };
+      localStorage.setItem(HUD_TABS_STATE_KEY, JSON.stringify(payload));
     } catch {
       // ignore storage quota errors
     }
@@ -1400,6 +1423,7 @@ export class AnchorManager {
     this.hudBodyEl.innerHTML = '';
     this.hudBodyEl.appendChild(entry.el);
     this.renderTabs();
+    this.saveHudState();
     if (this.hudRoot) this.clampElementToViewport(this.hudRoot);
   }
 

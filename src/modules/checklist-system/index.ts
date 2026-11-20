@@ -224,6 +224,20 @@ export class ChecklistSystemModule implements IModule {
   public init(context: ModuleContext): void {
     this.ctx = context;
     this.autoAdvance = Boolean(context.getSettings().checklistAutoAdvance);
+    try {
+      const saved = localStorage.getItem('geofs_ext_checklist_state');
+      if (saved) {
+        const parsed = JSON.parse(saved) as { activePhase?: number; showGuide?: boolean };
+        if (typeof parsed.activePhase === 'number' && Number.isFinite(parsed.activePhase)) {
+          this.activePhase = Math.max(0, Math.min(3, Math.floor(parsed.activePhase)));
+        }
+        if (typeof parsed.showGuide === 'boolean') {
+          this.showGuide = parsed.showGuide;
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
 
     if (typeof document !== 'undefined') {
       const style = document.createElement('style');
@@ -242,6 +256,11 @@ export class ChecklistSystemModule implements IModule {
       if (!this.phaseTitles.length) return;
       this.activePhase = (this.activePhase + 1) % this.phaseTitles.length;
       this.lastRender = '';
+      try {
+        localStorage.setItem('geofs_ext_checklist_state', JSON.stringify({ activePhase: Math.min(3, this.activePhase), showGuide: this.showGuide }));
+      } catch {
+        // ignore storage errors
+      }
       context.anchors.openHudTab('checks');
       context.anchors.showToast(`Checklist Phase: ${this.phaseTitles[this.activePhase]}`);
     };
@@ -410,6 +429,11 @@ export class ChecklistSystemModule implements IModule {
     guideBtn.addEventListener('click', () => {
       this.showGuide = !this.showGuide;
       this.lastRender = '';
+      try {
+        localStorage.setItem('geofs_ext_checklist_state', JSON.stringify({ activePhase: Math.min(3, this.activePhase), showGuide: this.showGuide }));
+      } catch {
+        // ignore storage errors
+      }
     });
 
     const rstBtn = document.createElement('button');
@@ -440,6 +464,11 @@ export class ChecklistSystemModule implements IModule {
         this.showGuide = false;
         this.activePhase = idx;
         this.lastRender = '';
+        try {
+          localStorage.setItem('geofs_ext_checklist_state', JSON.stringify({ activePhase: Math.min(3, this.activePhase), showGuide: false }));
+        } catch {
+          // ignore storage errors
+        }
       });
       phaseBar.appendChild(btn);
     });

@@ -38,7 +38,21 @@ export function App() {
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);
   const [diags, setDiags] = useState<DiagEntry[]>([]);
-  const [panelTab, setActiveTab] = useState<'ap-pp' | 'realism' | 'diag'>('ap-pp');
+  const [panelTab, setActiveTab] = useState<'ap-pp' | 'realism' | 'diag'>(() => {
+    try {
+      const saved = localStorage.getItem('geofs_ext_sidepanel_tab');
+      return saved === 'realism' || saved === 'diag' ? saved : 'ap-pp';
+    } catch {
+      return 'ap-pp';
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('geofs_ext_sidepanel_tab', panelTab);
+    } catch {
+      // ignore storage errors
+    }
+  }, [panelTab]);
   const [geofsTabs, setGeofsTabs] = useState<GeoFSTabInfo[]>([]);
   const [selectedTabId, setSelectedTabId] = useState<number | undefined>(undefined);
 

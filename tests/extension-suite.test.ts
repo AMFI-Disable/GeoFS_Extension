@@ -907,7 +907,18 @@ describe('Live Verification Regression Fixes', () => {
     expect(state.detached).toEqual([]);
     expect(state.closed).toEqual(['realism']);
 
+    // Verify activeTabId and minimized state persist across a fresh AnchorManager instance
+    anchors.openHudTab('fuel');
     anchors.destroy();
+
+    const restored = new AnchorManager();
+    restored.init();
+    restored.registerHudTab('info', 'INFO', makeEl() as unknown as HTMLElement, true);
+    restored.registerHudTab('checks', 'CHECKS', makeEl() as unknown as HTMLElement);
+    restored.registerHudTab('fuel', 'FUEL', makeEl() as unknown as HTMLElement);
+    restored.registerHudTab('land', 'LAND', makeEl() as unknown as HTMLElement);
+    expect(restored.getHudTabsState().activeTabId).toBe('fuel');
+    restored.destroy();
   });
 });
 
