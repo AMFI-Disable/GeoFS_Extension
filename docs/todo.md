@@ -45,8 +45,8 @@
 
 ### Browser-Style Modular HUD Tabs
 
-- [ ] Upgrade `#flightDataDisplay` into a browser-style modular tab workspace supporting `+` Open Tab, `×` Close Tab, drag-to-reorder tabs, and custom dock presets.
-- [ ] Allow any installed module (`Info`, `Checks`, `Fuel`, `Land`, `Realism`, `Failures`, `OP ENG`, `FPV`) to be opened, pinned, or detached as live HUD tabs directly inside GeoFS.
+- [x] Upgrade `#flightDataDisplay` into a browser-style modular tab workspace supporting `+` Open Tab, `×` Close Tab, drag-to-reorder tabs, and custom dock presets.
+- [x] Allow any installed module (`Info`, `Checks`, `Fuel`, `Land`, `Realism`, `Failures`, `OP ENG`, `FPV`) to be opened, pinned, or detached as live HUD tabs directly inside GeoFS.
 
 ### Flightradar-Integrated Flight Tracking And Star Rating Evaluation
 

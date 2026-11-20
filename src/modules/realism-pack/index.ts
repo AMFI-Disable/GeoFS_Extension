@@ -128,6 +128,8 @@ export class RealismPackModule implements IModule {
   private wind?: HTMLAudioElement;
   private aircraftSounds?: ReturnType<typeof installAircraftSounds>;
   private checkedAircraftSounds = false;
+  private unmountTab: (() => void) | null = null;
+  private syncHudTab: (() => void) | null = null;
 
   private onKeyDown = (event: KeyboardEvent) => {
     if (!isEnabled(this.ctx?.getSettings().realismOptions, 'spoilerArming') || event.key !== 'Shift' || event.repeat || event.defaultPrevented ||
@@ -145,11 +147,54 @@ export class RealismPackModule implements IModule {
     this.onSettingsChange(context.getSettings());
     if (typeof document !== 'undefined') {
       document.addEventListener('keydown', this.onKeyDown);
+      if (typeof context.anchors?.registerHudTab === 'function') {
+        const hudTab = document.createElement('div');
+        hudTab.style.cssText = 'display:flex;flex-direction:column;gap:5px;font-size:10px;color:#e5e7eb;';
+        const keys: Array<[keyof RealismOptions, string]> = [
+          ['gBreath', 'G-Breath'],
+          ['blackout', 'Blackout'],
+          ['windAudio', 'Wind SFX'],
+          ['cameraShake', 'Shake'],
+          ['soundExpansion', '737/777 SFX'],
+          ['spoilerArming', 'Spoilers']
+        ];
+        const statusLine = document.createElement('div');
+        statusLine.style.cssText = 'font-size:9px;color:#a1a1aa;display:flex;justify-content:space-between;';
+        statusLine.innerHTML = `<span>REALISM PACK</span><span>${this.lastSimMajor === 4 ? 'V4 (Vortex/Carrier N/A)' : 'V3 FULL'}</span>`;
+        const grid = document.createElement('div');
+        grid.style.cssText = 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;';
+        const btns = new Map<keyof RealismOptions, HTMLButtonElement>();
+        for (const [key, label] of keys) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = label;
+          btn.style.cssText = 'background:rgba(255,255,255,0.06);color:#e5e7eb;border:1px solid rgba(255,255,255,0.16);border-radius:4px;padding:4px 5px;font-size:9.5px;font-weight:700;cursor:pointer;';
+          btn.addEventListener('click', () => {
+            const current = context.getSettings().realismOptions ?? {};
+            context.updateSettings({ realismOptions: { ...current, [key]: !isEnabled(current, key) } });
+          });
+          btns.set(key, btn);
+          grid.appendChild(btn);
+        }
+        const sync = () => {
+          const opts = context.getSettings().realismOptions;
+          for (const [key, btn] of btns) {
+            const active = isEnabled(opts, key);
+            btn.style.borderColor = active ? '#10b981' : 'rgba(255,255,255,0.16)';
+            btn.style.color = active ? '#10b981' : '#a1a1aa';
+          }
+        };
+        this.syncHudTab = sync;
+        sync();
+        hudTab.append(statusLine, grid);
+        this.unmountTab = context.anchors.registerHudTab('realism', 'REALISM', hudTab, false, { defaultClosed: true });
+      }
     }
   }
 
   public onSettingsChange(settings: ExtensionSettings): void {
     const options = settings.realismOptions;
+    this.syncHudTab?.();
     const optionKey = JSON.stringify(options ?? {});
     if (optionKey === this.optionKey) return;
     this.optionKey = optionKey;
@@ -526,6 +571,9 @@ export class RealismPackModule implements IModule {
   }
 
   public destroy(): void {
+    this.unmountTab?.();
+    this.unmountTab = null;
+    this.syncHudTab = null;
     if (typeof document !== 'undefined') {
       document.removeEventListener('keydown', this.onKeyDown);
     }

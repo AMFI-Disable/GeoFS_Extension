@@ -784,5 +784,130 @@ describe('Live Verification Regression Fixes', () => {
       expect.objectContaining({ recoverable: false, contingency: true })
     );
   });
+
+  it('supports browser-style modular HUD tabs: open, close, pin, reorder, detach/redock, dock presets & reset', () => {
+    const store = new Map<string, string>();
+    const elementsById = new Map<string, unknown>();
+    const makeEl = (tag = 'div'): Record<string, unknown> => {
+      const children: Array<Record<string, unknown>> = [];
+      const el: Record<string, unknown> = {
+        tagName: tag.toUpperCase(),
+        _id: '',
+        className: '',
+        textContent: '',
+        innerHTML: '',
+        title: '',
+        draggable: false,
+        style: {} as Record<string, string>,
+        dataset: {} as Record<string, string>,
+        children,
+        classList: {
+          add: () => {},
+          remove: () => {},
+          toggle: () => {},
+          contains: () => false
+        },
+        setAttribute: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        closest: () => null,
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 250, height: 180, right: 250, bottom: 180 }),
+        appendChild: (c: Record<string, unknown>) => {
+          children.push(c);
+          if (typeof c._id === 'string' && c._id) elementsById.set(c._id, c);
+          return c;
+        },
+        append: (...args: Array<Record<string, unknown>>) => {
+          for (const c of args) {
+            children.push(c);
+            if (typeof c._id === 'string' && c._id) elementsById.set(c._id, c);
+          }
+        },
+        remove: () => {
+          if (typeof el._id === 'string') elementsById.delete(el._id);
+        }
+      };
+      Object.defineProperty(el, 'id', {
+        get: () => el._id,
+        set: (val: string) => {
+          el._id = val;
+          if (val) elementsById.set(val, el);
+        }
+      });
+      return el;
+    };
+
+    const body = makeEl('body');
+    (globalThis as unknown as { document: Record<string, unknown> }).document = {
+      documentElement: { setAttribute: () => {}, style: { setProperty: () => {} }, classList: { add: () => {}, remove: () => {} } },
+      head: makeEl('head'),
+      body,
+      getElementById: (id: string) => elementsById.get(id) ?? null,
+      createElement: (tag: string) => makeEl(tag),
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+    (globalThis as unknown as { window: Record<string, unknown> }).window = {
+      innerWidth: 1280,
+      innerHeight: 720,
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+    (globalThis as unknown as { localStorage: Record<string, unknown> }).localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => store.set(k, v),
+      removeItem: (k: string) => store.delete(k)
+    };
+
+    const anchors = new AnchorManager();
+    anchors.init();
+    anchors.registerHudTab('info', 'INFO', makeEl() as unknown as HTMLElement, true);
+    anchors.registerHudTab('checks', 'CHECKS', makeEl() as unknown as HTMLElement);
+    anchors.registerHudTab('fuel', 'FUEL', makeEl() as unknown as HTMLElement);
+    anchors.registerHudTab('land', 'LAND', makeEl() as unknown as HTMLElement);
+    anchors.registerHudTab('realism', 'REALISM', makeEl() as unknown as HTMLElement, false, { defaultClosed: true });
+
+    let state = anchors.getHudTabsState();
+    expect(state.closed).toContain('realism');
+    expect(state.activeTabId).toBe('info');
+
+    // Open optional module tab, pin it, and reorder
+    anchors.openHudTab('realism');
+    state = anchors.getHudTabsState();
+    expect(state.closed).not.toContain('realism');
+    expect(state.activeTabId).toBe('realism');
+
+    anchors.pinHudTab('fuel', true);
+    anchors.closeHudTab('fuel'); // Pinned tab cannot be closed
+    expect(anchors.getHudTabsState().closed).not.toContain('fuel');
+
+    anchors.reorderHudTab('land', 'checks');
+    const order = anchors.getHudTabsState().order;
+    expect(order.indexOf('land')).toBeLessThan(order.indexOf('checks'));
+
+    // Detach & re-dock
+    anchors.detachHudTab('realism');
+    expect(anchors.getHudTabsState().detached).toContain('realism');
+    expect(elementsById.has('geofs-ext-detached-realism')).toBe(true);
+    anchors.redockHudTab('realism');
+    expect(anchors.getHudTabsState().detached).not.toContain('realism');
+    expect(elementsById.has('geofs-ext-detached-realism')).toBe(false);
+
+    // Dock presets & reset
+    anchors.setHudDockPreset('bottom-left');
+    expect(anchors.getHudTabsState().dockPreset).toBe('bottom-left');
+    const hudEl = elementsById.get('flightDataDisplay') as { style: Record<string, string> };
+    expect(hudEl.style.left).toBe('20px');
+    expect(hudEl.style.bottom).toBe('20px');
+
+    anchors.resetHudLayout();
+    state = anchors.getHudTabsState();
+    expect(state.dockPreset).toBe('top-right');
+    expect(state.pinned).toEqual([]);
+    expect(state.detached).toEqual([]);
+    expect(state.closed).toEqual(['realism']);
+
+    anchors.destroy();
+  });
 });
 

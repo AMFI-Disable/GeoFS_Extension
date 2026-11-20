@@ -2,6 +2,15 @@ import type { CalibratorPreset } from '../types/settings';
 import { resolveCalibratorScale } from '../shared/display-calibrator';
 
 export type AnchorZone = 'top' | 'bottom' | 'right' | 'corner' | 'autopilot';
+export type HudDockPreset = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+
+export interface HudTabsState {
+  order: string[];
+  closed: string[];
+  pinned: string[];
+  detached: string[];
+  dockPreset: HudDockPreset;
+}
 
 export interface PromptAction {
   id: string;
@@ -11,15 +20,27 @@ export interface PromptAction {
 }
 
 const TAB_ORDER = ['info', 'checks', 'fuel', 'land'] as const;
+const HUD_TABS_STATE_KEY = 'geofs_ext_hud_tabs_state';
 
 export class AnchorManager {
   private styleEl: HTMLStyleElement | null = null;
   private hudRoot: HTMLDivElement | null = null;
   private hudTabsEl: HTMLDivElement | null = null;
   private hudBodyEl: HTMLDivElement | null = null;
+  private hudMenuEl: HTMLDivElement | null = null;
   private edgeHandleEl: HTMLButtonElement | null = null;
   private minBtnEl: HTMLButtonElement | null = null;
-  private tabPanels = new Map<string, { label: string; el: HTMLElement }>();
+  private tabPanels = new Map<string, { label: string; el: HTMLElement; defaultClosed: boolean }>();
+  private detachedPanels = new Map<string, { el: HTMLDivElement; cleanupDrag: () => void }>();
+  private hudState: HudTabsState = {
+    order: [...TAB_ORDER],
+    closed: [],
+    pinned: [],
+    detached: [],
+    dockPreset: 'top-right'
+  };
+  private hudMenuOpen = false;
+  private draggingTabId: string | null = null;
   private activeTabId: string | null = null;
   private currentTheme: 'dark' | 'light' = 'dark';
   private currentPreset: CalibratorPreset = 'auto';
@@ -43,6 +64,7 @@ export class AnchorManager {
 
   public init(): void {
     if (typeof document === 'undefined') return;
+    this.loadHudState();
     this.injectStyles();
     this.setupViewportGuards();
     this.ensureHud();
@@ -135,21 +157,40 @@ export class AnchorManager {
     }
   }
 
-  public registerHudTab(id: string, label: string, contentEl: HTMLElement, activate = false): () => void {
+  public registerHudTab(
+    id: string,
+    label: string,
+    contentEl: HTMLElement,
+    activate = false,
+    options?: { defaultClosed?: boolean }
+  ): () => void {
     this.ensureHud();
-    this.tabPanels.set(id, { label, el: contentEl });
-    this.renderTabs();
-    if (activate || !this.activeTabId) {
+    const defaultClosed = Boolean(options?.defaultClosed);
+    this.tabPanels.set(id, { label, el: contentEl, defaultClosed });
+    if (!this.hudState.order.includes(id)) {
+      this.hudState.order.push(id);
+      if (defaultClosed && !this.hudState.closed.includes(id) && !this.hudState.detached.includes(id)) {
+        this.hudState.closed.push(id);
+      }
+    }
+
+    if (this.hudState.detached.includes(id)) {
+      this.mountDetachedPanel(id);
+    } else if (!this.hudState.closed.includes(id) && (activate || !this.activeTabId)) {
       this.selectTab(id);
     }
+    this.renderTabs();
+    this.renderHudMenu();
     this.clampAll();
     return () => {
+      this.unmountDetachedPanel(id);
       this.tabPanels.delete(id);
       if (this.activeTabId === id) {
-        const ordered = this.orderedTabEntries();
-        this.activeTabId = ordered[0]?.[0] ?? null;
+        const visible = this.visibleDockedEntries();
+        this.activeTabId = visible[0]?.[0] ?? null;
       }
       this.renderTabs();
+      this.renderHudMenu();
       if (this.activeTabId) this.selectTab(this.activeTabId);
       else if (this.hudBodyEl) this.hudBodyEl.innerHTML = '';
     };
@@ -158,6 +199,18 @@ export class AnchorManager {
   public openHudTab(id: string): void {
     this.ensureHud();
     if (!this.hudRoot || !this.tabPanels.has(id)) return;
+    if (this.hudState.detached.includes(id)) {
+      const panel = this.detachedPanels.get(id)?.el;
+      if (panel) {
+        panel.style.display = 'flex';
+        this.bringToFront(panel);
+        this.clampElementToViewport(panel);
+        return;
+      }
+      this.hudState.detached = this.hudState.detached.filter((item) => item !== id);
+    }
+    this.hudState.closed = this.hudState.closed.filter((item) => item !== id);
+    this.saveHudState();
     this.hudHidden = false;
     this.hudRoot.style.display = 'flex';
     if (this.hudMinimized) {
@@ -167,6 +220,150 @@ export class AnchorManager {
     this.bringToFront(this.hudRoot);
     this.syncEdgeHandle();
     this.clampElementToViewport(this.hudRoot);
+    this.renderHudMenu();
+  }
+
+  public closeHudTab(id: string): void {
+    if (!this.tabPanels.has(id) || this.hudState.pinned.includes(id)) return;
+    if (this.hudState.detached.includes(id)) {
+      this.unmountDetachedPanel(id);
+      this.hudState.detached = this.hudState.detached.filter((item) => item !== id);
+      if (!this.hudState.closed.includes(id)) this.hudState.closed.push(id);
+      this.saveHudState();
+      this.renderTabs();
+      this.renderHudMenu();
+      return;
+    }
+    const visible = this.visibleDockedEntries();
+    if (visible.length <= 1 && visible[0]?.[0] === id) return;
+    if (!this.hudState.closed.includes(id)) {
+      this.hudState.closed.push(id);
+    }
+    if (this.activeTabId === id) {
+      const next = this.visibleDockedEntries()[0]?.[0] ?? null;
+      this.activeTabId = next;
+    }
+    this.saveHudState();
+    this.renderTabs();
+    if (this.activeTabId) this.selectTab(this.activeTabId);
+    else if (this.hudBodyEl) this.hudBodyEl.innerHTML = '';
+    this.renderHudMenu();
+  }
+
+  public pinHudTab(id: string, pinned?: boolean): void {
+    if (!this.tabPanels.has(id)) return;
+    const currentlyPinned = this.hudState.pinned.includes(id);
+    const nextPinned = pinned ?? !currentlyPinned;
+    if (nextPinned && !currentlyPinned) {
+      this.hudState.pinned.push(id);
+      this.hudState.closed = this.hudState.closed.filter((item) => item !== id);
+    } else if (!nextPinned && currentlyPinned) {
+      this.hudState.pinned = this.hudState.pinned.filter((item) => item !== id);
+    }
+    this.saveHudState();
+    this.renderTabs();
+    this.renderHudMenu();
+  }
+
+  public detachHudTab(id: string): void {
+    if (!this.tabPanels.has(id)) return;
+    this.hudState.closed = this.hudState.closed.filter((item) => item !== id);
+    if (!this.hudState.detached.includes(id)) {
+      this.hudState.detached.push(id);
+    }
+    if (this.activeTabId === id) {
+      const next = this.visibleDockedEntries().find(([tabId]) => tabId !== id)?.[0] ?? null;
+      this.activeTabId = next;
+    }
+    this.saveHudState();
+    this.mountDetachedPanel(id);
+    this.renderTabs();
+    if (this.activeTabId) this.selectTab(this.activeTabId);
+    else if (this.hudBodyEl) this.hudBodyEl.innerHTML = '';
+    this.renderHudMenu();
+  }
+
+  public redockHudTab(id: string): void {
+    if (!this.tabPanels.has(id)) return;
+    this.unmountDetachedPanel(id);
+    this.hudState.detached = this.hudState.detached.filter((item) => item !== id);
+    this.hudState.closed = this.hudState.closed.filter((item) => item !== id);
+    this.saveHudState();
+    this.openHudTab(id);
+  }
+
+  public reorderHudTab(sourceId: string, targetId: string): void {
+    if (sourceId === targetId || !this.tabPanels.has(sourceId) || !this.tabPanels.has(targetId)) return;
+    const order = [...this.hudState.order];
+    if (!order.includes(sourceId)) order.push(sourceId);
+    if (!order.includes(targetId)) order.push(targetId);
+    const fromIdx = order.indexOf(sourceId);
+    const toIdx = order.indexOf(targetId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, sourceId);
+    this.hudState.order = order;
+    this.saveHudState();
+    this.renderTabs();
+    this.renderHudMenu();
+  }
+
+  public setHudDockPreset(preset: HudDockPreset): void {
+    this.hudState.dockPreset = preset;
+    this.saveHudState();
+    try {
+      localStorage.removeItem('geofs_ext_hud_pos');
+    } catch {
+      // ignore storage errors
+    }
+    if (this.hudRoot) {
+      this.applyDockPresetStyles(this.hudRoot, preset);
+      this.syncEdgeHandle();
+      this.clampElementToViewport(this.hudRoot);
+    }
+    this.renderHudMenu();
+  }
+
+  public resetHudLayout(): void {
+    for (const id of Array.from(this.detachedPanels.keys())) {
+      this.unmountDetachedPanel(id);
+    }
+    const defaultClosed: string[] = [];
+    for (const [id, meta] of this.tabPanels.entries()) {
+      if (meta.defaultClosed) defaultClosed.push(id);
+    }
+    this.hudState = {
+      order: [...TAB_ORDER, ...Array.from(this.tabPanels.keys()).filter((id) => !TAB_ORDER.includes(id as (typeof TAB_ORDER)[number]))],
+      closed: defaultClosed,
+      pinned: [],
+      detached: [],
+      dockPreset: 'top-right'
+    };
+    this.saveHudState();
+    try {
+      localStorage.removeItem('geofs_ext_hud_pos');
+    } catch {
+      // ignore storage errors
+    }
+    if (this.hudRoot) {
+      this.applyDockPresetStyles(this.hudRoot, 'top-right');
+    }
+    const first = this.visibleDockedEntries()[0]?.[0] ?? null;
+    this.activeTabId = first;
+    this.renderTabs();
+    if (first) this.selectTab(first);
+    this.renderHudMenu();
+  }
+
+  public getHudTabsState(): HudTabsState & { activeTabId: string | null } {
+    return {
+      order: [...this.hudState.order],
+      closed: [...this.hudState.closed],
+      pinned: [...this.hudState.pinned],
+      detached: [...this.hudState.detached],
+      dockPreset: this.hudState.dockPreset,
+      activeTabId: this.activeTabId
+    };
   }
 
   public toggleHudVisibility(): boolean {
@@ -417,7 +614,8 @@ export class AnchorManager {
       if (e.button !== 0) return;
       delete card.dataset.justDragged;
       const target = e.target as HTMLElement | null;
-      if (target?.closest('input, a, select, textarea, label')) return;
+      if (target?.closest('input, a, select, textarea, label, .geofs-ext-hud-menu, .geofs-ext-hud-add, .geofs-ext-tab-close')) return;
+      if (target?.closest('.unified-tab')) return;
       if (target?.closest('button')) {
         const inHudHeader = Boolean(target.closest('.geofs-ext-hud-header'));
         if (!card.classList.contains('is-minimized') && !isSelfButton && !inHudHeader) {
@@ -822,7 +1020,11 @@ export class AnchorManager {
     const body = document.createElement('div');
     body.className = 'geofs-ext-hud-body';
 
-    root.append(header, body);
+    const menu = document.createElement('div');
+    menu.className = 'geofs-ext-hud-menu';
+    menu.style.display = 'none';
+
+    root.append(header, menu, body);
     document.body.appendChild(root);
 
     const edgeTab = document.createElement('button');
@@ -846,9 +1048,11 @@ export class AnchorManager {
     this.hudRoot = root;
     this.hudTabsEl = tabs;
     this.hudBodyEl = body;
+    this.hudMenuEl = menu;
     this.minBtnEl = minBtn;
     this.edgeHandleEl = edgeTab;
 
+    this.applyDockPresetStyles(root, this.hudState.dockPreset);
     this.makeDraggable(root, 'geofs_ext_hud_pos');
     this.setupEdgeTabInteraction(edgeTab);
     this.dragCleanups.add(this.bindHudTip(grip));
@@ -857,41 +1061,341 @@ export class AnchorManager {
     this.syncEdgeHandle();
   }
 
-  private orderedTabEntries(): Array<[string, { label: string; el: HTMLElement }]> {
+  private loadHudState(): void {
+    try {
+      const raw = localStorage.getItem(HUD_TABS_STATE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<HudTabsState>;
+      const validPreset = (p: unknown): p is HudDockPreset =>
+        p === 'top-right' || p === 'top-left' || p === 'bottom-right' || p === 'bottom-left';
+      this.hudState = {
+        order: Array.isArray(parsed.order) ? parsed.order.filter((x): x is string => typeof x === 'string') : [...TAB_ORDER],
+        closed: Array.isArray(parsed.closed) ? parsed.closed.filter((x): x is string => typeof x === 'string') : [],
+        pinned: Array.isArray(parsed.pinned) ? parsed.pinned.filter((x): x is string => typeof x === 'string') : [],
+        detached: Array.isArray(parsed.detached) ? parsed.detached.filter((x): x is string => typeof x === 'string') : [],
+        dockPreset: validPreset(parsed.dockPreset) ? parsed.dockPreset : 'top-right'
+      };
+    } catch {
+      // ignore invalid saved tab state
+    }
+  }
+
+  private saveHudState(): void {
+    try {
+      localStorage.setItem(HUD_TABS_STATE_KEY, JSON.stringify(this.hudState));
+    } catch {
+      // ignore storage quota errors
+    }
+  }
+
+  private applyDockPresetStyles(root: HTMLElement, preset: HudDockPreset): void {
+    root.style.top = 'auto';
+    root.style.right = 'auto';
+    root.style.bottom = 'auto';
+    root.style.left = 'auto';
+    if (preset === 'top-right') {
+      root.style.top = '70px';
+      root.style.right = '20px';
+      root.style.transformOrigin = 'top right';
+    } else if (preset === 'top-left') {
+      root.style.top = '70px';
+      root.style.left = '20px';
+      root.style.transformOrigin = 'top left';
+    } else if (preset === 'bottom-right') {
+      root.style.bottom = '20px';
+      root.style.right = '20px';
+      root.style.transformOrigin = 'bottom right';
+    } else {
+      root.style.bottom = '20px';
+      root.style.left = '20px';
+      root.style.transformOrigin = 'bottom left';
+    }
+  }
+
+  private orderedTabEntries(): Array<[string, { label: string; el: HTMLElement; defaultClosed: boolean }]> {
     const entries = Array.from(this.tabPanels.entries());
+    const pinnedSet = new Set(this.hudState.pinned);
     entries.sort(([a], [b]) => {
-      const idxA = TAB_ORDER.indexOf(a as (typeof TAB_ORDER)[number]);
-      const idxB = TAB_ORDER.indexOf(b as (typeof TAB_ORDER)[number]);
-      const rankA = idxA >= 0 ? idxA : TAB_ORDER.length;
-      const rankB = idxB >= 0 ? idxB : TAB_ORDER.length;
+      const pinA = pinnedSet.has(a) ? 0 : 1;
+      const pinB = pinnedSet.has(b) ? 0 : 1;
+      if (pinA !== pinB) return pinA - pinB;
+      const idxA = this.hudState.order.indexOf(a);
+      const idxB = this.hudState.order.indexOf(b);
+      const rankA = idxA >= 0 ? idxA : this.hudState.order.length + TAB_ORDER.length;
+      const rankB = idxB >= 0 ? idxB : this.hudState.order.length + TAB_ORDER.length;
       return rankA - rankB;
     });
     return entries;
   }
 
+  private visibleDockedEntries(): Array<[string, { label: string; el: HTMLElement; defaultClosed: boolean }]> {
+    const closedSet = new Set(this.hudState.closed);
+    const detachedSet = new Set(this.hudState.detached);
+    return this.orderedTabEntries().filter(([id]) => !closedSet.has(id) && !detachedSet.has(id));
+  }
+
+  private mountDetachedPanel(id: string): void {
+    if (typeof document === 'undefined' || !document.body) return;
+    const entry = this.tabPanels.get(id);
+    if (!entry) return;
+    this.unmountDetachedPanel(id);
+
+    const panel = document.createElement('div');
+    panel.id = `geofs-ext-detached-${id}`;
+    panel.className = 'geofs-ext-detached-panel';
+
+    const header = document.createElement('div');
+    header.className = 'geofs-ext-detached-header';
+
+    const title = document.createElement('span');
+    title.className = 'geofs-ext-detached-title';
+    title.textContent = entry.label;
+
+    const actions = document.createElement('span');
+    actions.className = 'geofs-ext-detached-actions';
+
+    const dockBtn = document.createElement('button');
+    dockBtn.type = 'button';
+    dockBtn.className = 'geofs-ext-detached-btn';
+    dockBtn.textContent = '↙';
+    dockBtn.title = 'Re-dock to HUD';
+    dockBtn.setAttribute('aria-label', `Re-dock ${entry.label}`);
+    dockBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.redockHudTab(id);
+    });
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'geofs-ext-detached-btn';
+    closeBtn.textContent = '×';
+    closeBtn.title = 'Close detached panel';
+    closeBtn.setAttribute('aria-label', `Close ${entry.label}`);
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.closeHudTab(id);
+    });
+
+    actions.append(dockBtn, closeBtn);
+    header.append(title, actions);
+
+    const body = document.createElement('div');
+    body.className = 'geofs-ext-detached-body';
+    body.appendChild(entry.el);
+
+    panel.append(header, body);
+    document.body.appendChild(panel);
+    this.bringToFront(panel);
+    const cleanupDrag = this.makeDraggable(panel, `geofs_ext_hud_detached_${id}`, header);
+    this.detachedPanels.set(id, { el: panel, cleanupDrag });
+    this.clampElementToViewport(panel);
+  }
+
+  private unmountDetachedPanel(id: string): void {
+    const existing = this.detachedPanels.get(id);
+    if (!existing) return;
+    existing.cleanupDrag();
+    existing.el.remove();
+    this.detachedPanels.delete(id);
+  }
+
   private renderTabs(): void {
     if (!this.hudTabsEl) return;
     this.hudTabsEl.innerHTML = '';
-    const entries = this.orderedTabEntries();
+    const entries = this.visibleDockedEntries();
+    const pinnedSet = new Set(this.hudState.pinned);
 
     for (const [id, { label }] of entries) {
+      const isPinned = pinnedSet.has(id);
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.id = `tab-btn-${id}`;
-      btn.className = `unified-tab ${this.activeTabId === id ? 'active is-active' : ''}`;
-      btn.textContent = label;
+      btn.className = `unified-tab ${this.activeTabId === id ? 'active is-active' : ''} ${isPinned ? 'is-pinned' : ''}`;
+      btn.draggable = true;
       btn.setAttribute('aria-label', label);
+      btn.title = isPinned ? `${label} (Pinned — drag to reorder)` : `${label} (Drag to reorder)`;
+
+      const labelEl = document.createElement('span');
+      labelEl.className = 'geofs-ext-tab-label';
+      labelEl.textContent = isPinned ? `• ${label}` : label;
+      btn.appendChild(labelEl);
+
+      if (!isPinned && entries.length > 1) {
+        const closeEl = document.createElement('span');
+        closeEl.className = 'geofs-ext-tab-close';
+        closeEl.setAttribute('role', 'button');
+        closeEl.setAttribute('aria-label', `Close ${label} tab`);
+        closeEl.title = `Close ${label}`;
+        closeEl.textContent = '×';
+        closeEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          this.closeHudTab(id);
+        });
+        btn.appendChild(closeEl);
+      }
+
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
+        this.hudMenuOpen = false;
+        if (this.hudMenuEl) this.hudMenuEl.style.display = 'none';
         this.selectTab(id);
       });
+
+      btn.addEventListener('dragstart', (e) => {
+        this.draggingTabId = id;
+        btn.classList.add('is-tab-dragging');
+        e.dataTransfer?.setData('text/plain', id);
+        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+      });
+      btn.addEventListener('dragover', (e) => {
+        if (!this.draggingTabId || this.draggingTabId === id) return;
+        e.preventDefault();
+        btn.classList.add('is-drag-over');
+      });
+      btn.addEventListener('dragleave', () => {
+        btn.classList.remove('is-drag-over');
+      });
+      btn.addEventListener('drop', (e) => {
+        e.preventDefault();
+        btn.classList.remove('is-drag-over');
+        const sourceId = this.draggingTabId || e.dataTransfer?.getData('text/plain');
+        if (sourceId && sourceId !== id) {
+          this.reorderHudTab(sourceId, id);
+        }
+      });
+      btn.addEventListener('dragend', () => {
+        this.draggingTabId = null;
+        btn.classList.remove('is-tab-dragging', 'is-drag-over');
+      });
+
       this.hudTabsEl.appendChild(btn);
     }
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.id = 'hud-tab-add-btn';
+    addBtn.className = `geofs-ext-hud-add ${this.hudMenuOpen ? 'is-open' : ''}`;
+    addBtn.textContent = '+';
+    addBtn.title = 'Open tabs, pin/detach modules & dock presets';
+    addBtn.setAttribute('aria-label', 'Open tab or dock preset');
+    addBtn.setAttribute('aria-expanded', String(this.hudMenuOpen));
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.hudMenuOpen = !this.hudMenuOpen;
+      this.renderTabs();
+      this.renderHudMenu();
+    });
+    this.hudTabsEl.appendChild(addBtn);
+  }
+
+  private renderHudMenu(): void {
+    if (!this.hudMenuEl) return;
+    if (!this.hudMenuOpen) {
+      this.hudMenuEl.style.display = 'none';
+      return;
+    }
+
+    this.hudMenuEl.style.display = 'flex';
+    this.hudMenuEl.innerHTML = '';
+
+    const tabsTitle = document.createElement('div');
+    tabsTitle.className = 'geofs-ext-hud-menu-title';
+    tabsTitle.textContent = 'HUD Modules & Tabs';
+    this.hudMenuEl.appendChild(tabsTitle);
+
+    const closedSet = new Set(this.hudState.closed);
+    const pinnedSet = new Set(this.hudState.pinned);
+    const detachedSet = new Set(this.hudState.detached);
+
+    for (const [id, { label }] of this.orderedTabEntries()) {
+      const row = document.createElement('div');
+      row.className = 'geofs-ext-hud-menu-row';
+
+      const nameBtn = document.createElement('button');
+      nameBtn.type = 'button';
+      nameBtn.className = 'geofs-ext-hud-menu-name';
+      const isClosed = closedSet.has(id);
+      const isDetached = detachedSet.has(id);
+      const isPinned = pinnedSet.has(id);
+      nameBtn.textContent = `${label}${isDetached ? ' (Detached)' : isClosed ? ' (Closed)' : ''}`;
+      nameBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.hudMenuOpen = false;
+        this.openHudTab(id);
+        this.renderTabs();
+      });
+
+      const actions = document.createElement('span');
+      actions.className = 'geofs-ext-hud-menu-actions';
+
+      const pinBtn = document.createElement('button');
+      pinBtn.type = 'button';
+      pinBtn.className = `geofs-ext-hud-menu-chip ${isPinned ? 'is-active' : ''}`;
+      pinBtn.textContent = isPinned ? 'Unpin' : 'Pin';
+      pinBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.pinHudTab(id);
+      });
+
+      const detachBtn = document.createElement('button');
+      detachBtn.type = 'button';
+      detachBtn.className = `geofs-ext-hud-menu-chip ${isDetached ? 'is-active' : ''}`;
+      detachBtn.textContent = isDetached ? 'Dock' : 'Detach';
+      detachBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isDetached) this.redockHudTab(id);
+        else this.detachHudTab(id);
+      });
+
+      actions.append(pinBtn, detachBtn);
+      row.append(nameBtn, actions);
+      this.hudMenuEl.appendChild(row);
+    }
+
+    const dockTitle = document.createElement('div');
+    dockTitle.className = 'geofs-ext-hud-menu-title';
+    dockTitle.textContent = 'Dock Presets';
+    this.hudMenuEl.appendChild(dockTitle);
+
+    const presetGrid = document.createElement('div');
+    presetGrid.className = 'geofs-ext-hud-preset-grid';
+    const presets: Array<[HudDockPreset, string]> = [
+      ['top-left', 'Top-Left'],
+      ['top-right', 'Top-Right'],
+      ['bottom-left', 'Bot-Left'],
+      ['bottom-right', 'Bot-Right']
+    ];
+    for (const [preset, text] of presets) {
+      const pBtn = document.createElement('button');
+      pBtn.type = 'button';
+      pBtn.className = `geofs-ext-hud-menu-chip ${this.hudState.dockPreset === preset ? 'is-active' : ''}`;
+      pBtn.textContent = text;
+      pBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.setHudDockPreset(preset);
+      });
+      presetGrid.appendChild(pBtn);
+    }
+    this.hudMenuEl.appendChild(presetGrid);
+
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.className = 'geofs-ext-hud-menu-reset';
+    resetBtn.textContent = 'Reset Default Layout';
+    resetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.hudMenuOpen = false;
+      this.resetHudLayout();
+    });
+    this.hudMenuEl.appendChild(resetBtn);
   }
 
   private selectTab(id: string): void {
     const entry = this.tabPanels.get(id);
     if (!entry || !this.hudBodyEl) return;
+    if (this.hudState.detached.includes(id)) return;
+    this.hudState.closed = this.hudState.closed.filter((item) => item !== id);
     this.activeTabId = id;
     this.hudBodyEl.innerHTML = '';
     this.hudBodyEl.appendChild(entry.el);
@@ -1002,12 +1506,22 @@ export class AnchorManager {
       #flightDataDisplay.geofs-ext-hud #hud-unified-tabs.unified-tabs {
         display: flex;
         align-items: stretch;
-        gap: 3px;
+        gap: 2px;
         flex: 1;
         min-width: 0;
         margin: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      #flightDataDisplay.geofs-ext-hud #hud-unified-tabs.unified-tabs::-webkit-scrollbar {
+        display: none;
       }
       #flightDataDisplay.geofs-ext-hud .unified-tab {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
         flex: 1 1 auto;
         min-width: 0;
         white-space: nowrap;
@@ -1019,12 +1533,44 @@ export class AnchorManager {
         border-radius: 15px;
         padding: 4px 3px;
         font-family: Helvetica, Arial, sans-serif;
-        font-size: 9.5px;
+        font-size: 9px;
         font-weight: 700;
         text-transform: uppercase;
-        cursor: grab;
+        cursor: pointer !important;
         text-align: center;
         line-height: 1.2;
+      }
+      #flightDataDisplay.geofs-ext-hud .unified-tab * {
+        cursor: pointer !important;
+      }
+      #flightDataDisplay.geofs-ext-hud .geofs-ext-tab-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+      #flightDataDisplay.geofs-ext-hud .geofs-ext-tab-close {
+        display: none;
+        flex-shrink: 0;
+        font-size: 10px;
+        line-height: 1;
+        opacity: 0.75;
+        padding: 0 1px;
+        border-radius: 50%;
+      }
+      #flightDataDisplay.geofs-ext-hud .unified-tab:hover .geofs-ext-tab-close,
+      #flightDataDisplay.geofs-ext-hud .unified-tab.is-active .geofs-ext-tab-close {
+        display: inline-flex;
+      }
+      #flightDataDisplay.geofs-ext-hud .geofs-ext-tab-close:hover {
+        opacity: 1;
+        color: #ff6b6b;
+      }
+      #flightDataDisplay.geofs-ext-hud .unified-tab.is-drag-over {
+        border-color: #22d3ee;
+        box-shadow: 0 0 6px rgba(34, 211, 238, 0.45);
+      }
+      #flightDataDisplay.geofs-ext-hud .unified-tab.is-tab-dragging {
+        opacity: 0.5;
       }
       #flightDataDisplay.geofs-ext-hud .unified-tab:hover {
         border-color: var(--geofs-ext-fg);
@@ -1036,6 +1582,171 @@ export class AnchorManager {
         border-color: var(--geofs-ext-accent);
         border-radius: 15px;
         color: #ffffff;
+      }
+      #flightDataDisplay.geofs-ext-hud .geofs-ext-hud-add {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 22px;
+        padding: 0;
+        background: transparent;
+        color: var(--geofs-ext-muted);
+        border: 1px solid var(--geofs-ext-border);
+        border-radius: 15px;
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer !important;
+      }
+      #flightDataDisplay.geofs-ext-hud .geofs-ext-hud-add:hover,
+      #flightDataDisplay.geofs-ext-hud .geofs-ext-hud-add.is-open {
+        border-color: var(--geofs-ext-fg);
+        color: var(--geofs-ext-fg);
+      }
+      #flightDataDisplay.geofs-ext-hud.is-minimized .geofs-ext-hud-menu {
+        display: none !important;
+      }
+      #flightDataDisplay.geofs-ext-hud .geofs-ext-hud-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 6px;
+        padding: 6px;
+        border: 1px solid var(--geofs-ext-border);
+        border-radius: 8px;
+        background: rgba(17, 19, 24, 0.96);
+        cursor: default !important;
+      }
+      #flightDataDisplay.geofs-ext-hud .geofs-ext-hud-menu * {
+        cursor: default !important;
+      }
+      #flightDataDisplay.geofs-ext-hud .geofs-ext-hud-menu button {
+        cursor: pointer !important;
+      }
+      .geofs-ext-hud-menu-title {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--geofs-ext-muted);
+      }
+      .geofs-ext-hud-menu-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+      }
+      .geofs-ext-hud-menu-name {
+        flex: 1;
+        min-width: 0;
+        text-align: left;
+        background: transparent;
+        border: none;
+        padding: 2px 0;
+        color: var(--geofs-ext-fg);
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .geofs-ext-hud-menu-name:hover {
+        color: #22d3ee;
+      }
+      .geofs-ext-hud-menu-actions {
+        display: inline-flex;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+      .geofs-ext-hud-preset-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px;
+      }
+      .geofs-ext-hud-menu-chip {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--geofs-ext-fg);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 4px;
+        padding: 2px 5px;
+        font-size: 9px;
+        font-weight: 700;
+      }
+      .geofs-ext-hud-menu-chip.is-active {
+        border-color: #10b981;
+        color: #10b981;
+      }
+      .geofs-ext-hud-menu-reset {
+        background: transparent;
+        color: var(--geofs-ext-muted);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 4px;
+        padding: 3px 6px;
+        font-size: 9.5px;
+        font-weight: 700;
+      }
+      .geofs-ext-hud-menu-reset:hover {
+        color: var(--geofs-ext-fg);
+        border-color: var(--geofs-ext-fg);
+      }
+      .geofs-ext-detached-panel {
+        box-sizing: border-box;
+        position: fixed;
+        top: 110px;
+        right: 280px;
+        width: 250px;
+        min-width: 240px;
+        max-width: 260px;
+        background: var(--geofs-ext-bg);
+        color: var(--geofs-ext-fg);
+        border: 1px solid var(--geofs-ext-border);
+        border-radius: 12px;
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 12px;
+        padding: 8px;
+        z-index: 2147483002;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        transform: scale(var(--geofs-ext-scale));
+        transform-origin: top left;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+      }
+      .geofs-ext-detached-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        cursor: grab;
+        user-select: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        padding-bottom: 4px;
+      }
+      .geofs-ext-detached-title {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+      }
+      .geofs-ext-detached-actions {
+        display: inline-flex;
+        gap: 4px;
+      }
+      .geofs-ext-detached-btn {
+        background: #000000;
+        color: #ffffff;
+        border: 1px solid var(--geofs-ext-border);
+        border-radius: 4px;
+        width: 18px;
+        height: 18px;
+        padding: 0;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
       }
       .geofs-ext-hud-min {
         position: relative;
@@ -1290,6 +2001,10 @@ export class AnchorManager {
       window.removeEventListener('resize', this.resizeListener);
       this.resizeListener = null;
     }
+    for (const id of Array.from(this.detachedPanels.keys())) {
+      this.unmountDetachedPanel(id);
+    }
+    this.hudMenuEl = null;
     this.hudRoot?.remove();
     this.hudRoot = null;
     this.edgeHandleEl?.remove();
