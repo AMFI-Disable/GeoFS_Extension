@@ -655,55 +655,6 @@ export class OverpoweredEnginesModule implements IModule {
       card.querySelector('#opCeilingLockOverlay')?.addEventListener('click', () => {
         context.anchors.showToast('OP Engines ceiling is managed while A/THR is active.', 'warn');
       });
-
-      if (typeof context.anchors.registerHudTab === 'function') {
-        const hudTab = document.createElement('div');
-        hudTab.style.cssText = 'display:flex;flex-direction:column;gap:6px;font-size:11px;color:#e5e7eb;';
-        hudTab.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:10px;color:#a1a1aa;text-transform:uppercase;">OP Thrust / SAS</span>
-            <strong data-role="hud-op-mult" style="color:#22d3ee;">1x</strong>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;">
-            <button type="button" data-role="hud-op-toggle" class="op-pill" style="padding:4px 3px;">THRUST</button>
-            <button type="button" data-role="hud-sas-toggle" class="op-pill" style="padding:4px 3px;">SAS</button>
-            <button type="button" data-role="hud-op-card" class="op-pill" style="padding:4px 3px;">CARD</button>
-          </div>
-        `;
-        const multEl = hudTab.querySelector<HTMLElement>('[data-role="hud-op-mult"]');
-        const thrustBtn = hudTab.querySelector<HTMLButtonElement>('[data-role="hud-op-toggle"]');
-        const sasBtn = hudTab.querySelector<HTMLButtonElement>('[data-role="hud-sas-toggle"]');
-        const syncHud = () => {
-          const s = context.getSettings();
-          const mult = this.automaticMultiplier ?? (this.thrustEnabled ? (s.opThrustMultiplier ?? 1) : 1);
-          if (multEl) multEl.textContent = `${formatNumberCompact(mult)}x`;
-          thrustBtn?.classList.toggle('is-active', this.thrustEnabled || this.opSyncActive);
-          sasBtn?.classList.toggle('is-active', Boolean(s.opStability));
-        };
-        thrustBtn?.addEventListener('click', () => {
-          this.toggle();
-          syncHud();
-        });
-        sasBtn?.addEventListener('click', () => {
-          const nextSas = !context.getSettings().opStability;
-          this.sas.reset();
-          context.updateSettings({ opStability: nextSas });
-          context.emitEvent('overpowered:sas-state', { active: nextSas });
-          context.emitDiag?.(nextSas ? 'SAS_ACTIVE' : 'SAS_DISENGAGED');
-          syncHud();
-        });
-        hudTab.querySelector('[data-role="hud-op-card"]')?.addEventListener('click', () => {
-          if (!this.card) return;
-          this.card.style.display = 'block';
-          this.render();
-          context.anchors.bringToFront(this.card);
-          context.anchors.clampElementToViewport(this.card);
-        });
-        this.unmounts.push(context.onEvent('autothrottle:opsync-state', syncHud));
-        this.unmounts.push(context.onEvent('overpowered:sas-state', syncHud));
-        syncHud();
-        this.unmounts.push(context.anchors.registerHudTab('op', 'OP ENG', hudTab, false, { defaultClosed: true }));
-      }
     }
 
     this.render();

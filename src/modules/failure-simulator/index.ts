@@ -636,39 +636,6 @@ export class FailureSimulatorModule implements IModule {
       this.probBtn?.addEventListener('click', () => {
         context.updateSettings({ failureProbabilitiesEnabled: !context.getSettings().failureProbabilitiesEnabled });
       });
-
-      if (typeof context.anchors.registerHudTab === 'function') {
-        const hudTab = document.createElement('div');
-        hudTab.style.cssText = 'display:flex;flex-direction:column;gap:6px;font-size:11px;color:#e5e7eb;';
-        hudTab.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:10px;color:#a1a1aa;text-transform:uppercase;">Failure Status</span>
-            <strong data-role="hud-fail-count" style="color:#10b981;">0 ACTIVE</strong>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;">
-            <button type="button" data-role="hud-open-menu" class="geofs-ext-fail-btn" style="padding:5px 6px;font-size:10px;">OPEN MENU</button>
-            <button type="button" data-role="hud-clear-all" class="geofs-ext-fail-btn geofs-ext-fail-btn--danger" style="padding:5px 6px;font-size:10px;">CLEAR ALL</button>
-          </div>
-        `;
-        const countEl = hudTab.querySelector<HTMLElement>('[data-role="hud-fail-count"]');
-        hudTab.querySelector('[data-role="hud-open-menu"]')?.addEventListener('click', () => {
-          if (!this.modal) return;
-          this.modal.style.display = 'flex';
-          this.render();
-          context.anchors.bringToFront(this.modal);
-          context.anchors.clampElementToViewport(this.modal);
-        });
-        hudTab.querySelector('[data-role="hud-clear-all"]')?.addEventListener('click', () => this.clear());
-        const syncCount = () => {
-          if (!countEl) return;
-          const count = this.active.size;
-          countEl.textContent = `${count} ACTIVE`;
-          countEl.style.color = count > 0 ? '#ef4444' : '#10b981';
-        };
-        this.unmounts.push(context.onEvent('failure:triggered', syncCount));
-        this.unmounts.push(context.onEvent('failure:cleared', syncCount));
-        this.unmounts.push(context.anchors.registerHudTab('failures', 'FAILS', hudTab, false, { defaultClosed: true }));
-      }
     }
 
     this.aircraft = window.geofs?.aircraft?.instance;

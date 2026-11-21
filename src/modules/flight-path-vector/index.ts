@@ -188,28 +188,6 @@ export class FlightPathVectorModule implements IModule {
 
     if (typeof document !== 'undefined') {
       this.ensureGlideslopeWidget();
-      if (typeof context.anchors?.registerHudTab === 'function') {
-        const hudTab = document.createElement('div');
-        hudTab.style.cssText = 'display:flex;flex-direction:column;gap:6px;font-size:11px;color:#e5e7eb;';
-        hudTab.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:10px;color:#a1a1aa;text-transform:uppercase;">Flight Path Vector</span>
-            <strong data-role="hud-fpv-state" style="color:#10b981;">ACTIVE</strong>
-          </div>
-          <button type="button" data-role="hud-fpv-toggle" style="background:rgba(255,255,255,0.06);color:#e5e7eb;border:1px solid rgba(255,255,255,0.18);border-radius:4px;padding:5px 8px;font-size:10px;font-weight:700;cursor:pointer;">TOGGLE FPV</button>
-        `;
-        const stateEl = hudTab.querySelector<HTMLElement>('[data-role="hud-fpv-state"]');
-        const syncFpv = () => {
-          if (!stateEl) return;
-          stateEl.textContent = this.visible ? 'ACTIVE' : 'HIDDEN';
-          stateEl.style.color = this.visible ? '#10b981' : '#a1a1aa';
-        };
-        hudTab.querySelector('[data-role="hud-fpv-toggle"]')?.addEventListener('click', () => {
-          this.toggle();
-          syncFpv();
-        });
-        this.unmounts.push(context.anchors.registerHudTab('fpv', 'FPV', hudTab, false, { defaultClosed: true }));
-      }
     }
 
     const combo = context.getSettings().keybindings.toggleFpv;
