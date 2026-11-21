@@ -5,7 +5,7 @@
 **All-In-One Flight Deck Companion For GeoFS V3.9 And V4.0**
 
 [![Website: Live](https://img.shields.io/badge/Website-Live-66BB6A.svg?style=flat-square)](https://amfi-disable.github.io/GeoFS_Extension/)
-![Version](https://img.shields.io/badge/Version-v0.2.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v0.3.0-blue?style=flat-square)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-brightgreen?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-GeoFS%20V3%20%26%20V4-informational?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
@@ -23,7 +23,7 @@
 
 **GeoFS Extension** combines all standalone GeoFS flight addons into a single lightweight Chrome extension designed to feel right at home inside both **GeoFS V3.9** (`www.geo-fs.com`) and **GeoFS V4.0** (`beta.geo-fs.com`).
 
-- **One Install, Zero Script Conflicts**: Replace a dozen separate userscripts with one coordinated package managed from your browser toolbar.
+- **One Install, Zero Script Conflicts**: Replace a dozen separate userscripts with one coordinated package managed from your browser toolbar across **5 categories** (*Flight Control & Avionics*, *Flight Deck & Operations*, *Environment & Visuals*, *Immersion & Failures*, and *Utilities & QoL*).
 - **Built-In Cockpit Style**: Matches GeoFS's native dark glass HUD panels and autopilot bar buttons with Day/Night automatic theming.
 - **Fly Any Aircraft**: Includes aircraft-aware speed profiles, fuel weights, and step-by-step checklists for light props, airliners, fighters, supersonic jets, and helicopters.
 - **Turn Features On Or Off Live**: Enable only the addons you want during a flight without reloading your browser.
@@ -47,27 +47,31 @@
 
 Once loaded into GeoFS, you control the suite from four clean places:
 
-1. **In-Game Floating HUD (Top Right)**: Holds four compact tabs — **INFO**, **CHECKS**, **FUEL**, and **LAND** — with no clutter or scrollbars. Drag it anywhere on screen, click `−` to shrink it into a movable circular **HUD** button, or drag it to the left edge of the screen to dock it as a slim pull-out tab.
-2. **Autopilot Bar Addons (Bottom Bar)**: Adds **A/THR** (Autothrottle + **LANDING** arm button) and **OP ENG** (Overpowered Engines + **SAS** stability hold) alongside your plane's built-in Autopilot buttons.
-3. **Toolbar Popup & Chrome Side Panel**: Click the extension icon in your Chrome toolbar to toggle modules on/off, pick a **Screen Calibrator** size (`1080p`, `1440p`, `4K`, `Ultrawide`, `Laptop`), or open the docked **Side Panel** for live status logs and Realism Pack switches.
+1. **In-Game Floating HUD (Top Right)**: Holds four core tabs — **INFO** (with collapsible **METAR** & **MINI-MAP** radar), **CHECKS**, **FUEL**, and **LAND** — plus on-demand tabs (**REALISM**, **LIGHTS**, **GATES**, **AP++**) via the `+` menu. Drag it anywhere on screen, click `−` to shrink it into a movable circular **HUD** button, or drag it to the left edge to dock it.
+2. **Autopilot Bar Addons (Bottom Bar)**: Adds **A/THR** (Autothrottle + **LANDING** arm button), **AP++** (unified VNAV/Holds/Autoland/Hover), and **OP ENG** (Overpowered Engines + **SAS** stability hold) alongside your plane's built-in Autopilot buttons.
+3. **Toolbar Popup & Chrome Side Panel**: Click the extension icon in your Chrome toolbar to toggle categorized modules on/off, apply presets (**All On**, **Airliner IFR**, **VFR / Glider**, **Minimal**, **All Off**), pick a **Screen Calibrator** size, or open the docked **Side Panel** for AP++ controls and grouped Realism/Visual toggles.
 4. **Full Settings Page**: Open from the popup to customize script behavior, manage keyboard shortcuts, edit aircraft V-speeds and specs, or inspect and export your saved **Landing Logbook** (JSON / CSV).
 
 ---
 
 ## Features At A Glance
 
-| Feature | What It Does In Flight |
-| :--- | :--- |
-| **Autothrottle (`A/THR`)** | Holds your target airspeed (`KTS`) or Mach (`M.`) using aircraft-tuned throttle response. Arm **LANDING** on approach to automatically cut thrust to idle by `27 ft` radar altitude and deploy spoilers on touchdown. |
-| **Overpowered Engines (`OP ENG`)** | Multiplies thrust (`1x` up to `1,000,000,000x`), bypasses altitude ceilings, and includes active **SAS** stability assist to hold pitch and bank steady at extreme speeds. Includes configurable **OP-SYNC** prompts when A/THR requests large speed changes. |
-| **Information Display (`INFO`)** | Shows live per-engine throttle percentages, `[REV]` reverse thrust cues, airspeed, altitude, vertical speed, and clean flight telemetry inside the shared HUD. |
-| **Checklists & Guide (`CHECKS`)** | Guides you through four mandatory flight gates (**PRE-T/O**, **PRE-CRZ**, **PRE-LDG**, **CHOCKS**) tailored to your aircraft. Click interactive rows to operate gear, flaps, brakes, or lights; telemetry checks complete automatically; open **GUIDE** for situational reference steps. |
-| **Fuel & Weight (`FUEL`)** | Adjust fuel percentage on the fly, monitor fuel flow and gross weight impact on takeoff and climb, enable **ALTITUDE BURN** for throttle- and altitude-realistic consumption, or use **REAL TANKS** for center/wing tank balance and flameout protection. |
-| **Landing Scorecard (`LAND`)** | Evaluates every landing (`Butter`, `Silky`, `Great`, `Smooth`, `Firm`, `Hard`, `Bone Shaker`, or `Crash`), slides in a scorecard with sink rate, G-force, bounces, and touchdown zone feedback, and saves replays to your local Chrome Logbook. |
-| **Flight Path Vector (`FPV`)** | Projects a 3D velocity marker ahead of your aircraft showing your true flight path, paired with a bottom-right **Glideslope** indicator for smooth visual approaches. |
-| **Failure Simulator (`FAILURES`)** | Open from the bottom-right `FAILURES` pill to trigger realistic faults (landing gear, controls, engines, hydraulics, electrical, pitot-static, MCAS) or timed random probabilities. Active faults automatically switch your Checklist to an **Emergency QRH** procedure with recovery attempts. |
-| **Realism Pack & Audio** | Adds G-force breathing, blackout/redout effects, cockpit wind and shake, engine inertia, spoiler arming, and airliner cockpit/GPWS/TCAS sound cues *(controlled in the Side Panel and Full Settings; unsupported V4 effects are clearly labeled)*. |
-| **Satellite Map Imagery** | Switch GeoFS ground imagery between Native, Esri, Bing, OpenStreetMap, or a custom tile provider from Settings. |
+| Category | Feature | What It Does In Flight |
+| :--- | :--- | :--- |
+| **Flight Control** | **Autothrottle (`A/THR`)** | Holds target airspeed (`KTS`) or Mach (`M.`) with **LANDING** auto-retard (`27 ft RA`) and spoiler deployment. |
+| **Flight Control** | **AP++** | Unified FCU with VNAV/FLCH, Mach crossover, ICAO Direct/Parallel/Teardrop holds with WCA, LAT/LON steering, Autoland flare, Rotorcraft Auto-Hover, and Envelope Protection. |
+| **Flight Control** | **Overpowered Engines (`OP ENG`)** | Multiplies thrust (`1x`–`1,000,000,000x`), bypasses altitude ceilings, and includes closed-loop **SAS** + **OP-SYNC**. |
+| **Flight Control** | **Flight Path Vector (`FPV`)** | Projects a 3D velocity marker ahead of your aircraft paired with a bottom-right **Glideslope** indicator. |
+| **Flight Deck** | **Information Display (`INFO`)** | Live telemetry, multi-engine `% THR` / `[REV]`, nearest-airport **METAR**, and SVG runway/heading **MINI-MAP**. |
+| **Flight Deck** | **Checklists & Guide (`CHECKS`)** | Four mandatory flight gates (**PRE-T/O**, **PRE-CRZ**, **PRE-LDG**, **CHOCKS**) with interactive controls and situational **GUIDE**. |
+| **Flight Deck** | **Fuel & Weight (`FUEL`)** | Fuel slider, **ALTITUDE BURN**, **REAL TANKS** wing imbalance, and flameout protection. |
+| **Flight Deck** | **Landing Scorecard (`LAND`)** | Evaluates every landing (`Butter`–`Crash`) with **1–5 Star Ratings**, **Authentic vs. Practice** session tracking, phase-by-phase critique, and Chrome Logbook CSV/JSON export. |
+| **Environment** | **Visuals & Lighting (`LIGHTS`)** | Ground headlights/nav/strobe/beacon shaders, runway light glow, opt-in OSM taxiway lights, opt-in **Night VFR LiDAR**, and **Wind & Thermals** glider visualizer. |
+| **Environment** | **Satellite Imagery** | Switch GeoFS ground imagery between Native, Esri, Bing, OpenStreetMap, or custom tile providers. |
+| **Immersion** | **Realism Pack (`REALISM`)** | G-force breathing, cockpit blackout, shake, engine inertia, spoiler arming, 737/777/A320 SFX, and **Generic GPWS + V-Speed Takeoff Callouts**. |
+| **Immersion** | **Failure Simulator (`FAILURES`)** | Draggable `FAILURES` pill & modal for system faults, random probabilities, and Emergency QRH recovery. |
+| **Utilities** | **Gate Spawner (`GATES`)** | Search airports by ICAO, filter stands by aircraft size (`Heavy`, `Code F`, `GA`, `Cargo`), and spawn parked at the gate. |
+| **Utilities** | **Sim Utilities** | FSX-style **Slew Mode** (`Shift + Y`) and **Middle-Click Camera Reset** (double-click middle mouse button). |
 
 ---
 
@@ -80,6 +84,9 @@ Once loaded into GeoFS, you control the suite from four clean places:
 | Toggle Shared HUD | `Shift + H` | `⇧ + H` |
 | Toggle Flight Path Vector | `Shift + F` | `⇧ + F` |
 | Open Checklists Tab / Advance Gate | `Shift + C` | `⇧ + C` |
+| Toggle Landing & Taxi Lights | `Shift + L` | `⇧ + L` |
+| Toggle FSX Slew Mode | `Shift + Y` | `⇧ + Y` |
+| Reset Camera | Double-click Middle Mouse | Double-click Middle Mouse |
 
 All shortcuts can be rebound in **Full Settings**, which automatically warns you if a shortcut conflicts with GeoFS's built-in flight keys. Shortcuts never fire while you are typing inside text inputs.
 

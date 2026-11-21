@@ -160,11 +160,13 @@ export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
     'overpowered-engines': false,
     'checklist-system': true,
     'realism-pack': true,
+    'visuals-lighting': true,
     'failure-simulator': false,
     'flight-path-vector': true,
     'landing-statistics': true,
     'satellite-imagery': false,
-    'gate-spawner': true
+    'gate-spawner': true,
+    'sim-utilities': true
   },
   themeMode: 'auto',
   calibratorPreset: 'auto',

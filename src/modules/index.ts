@@ -11,6 +11,8 @@ import { FlightPathVectorModule } from './flight-path-vector';
 import { LandingStatisticsModule } from './landing-statistics';
 import { SatelliteImageryModule } from './satellite-imagery';
 import { GateSpawnerModule } from './gate-spawner';
+import { VisualsLightingModule } from './visuals-lighting';
+import { SimUtilitiesModule } from './sim-utilities';
 
 export function createBuiltinModules(): IModule[] {
   return [
@@ -21,10 +23,12 @@ export function createBuiltinModules(): IModule[] {
     new OverpoweredEnginesModule(),
     new ChecklistSystemModule(),
     new RealismPackModule(),
+    new VisualsLightingModule(),
     new FailureSimulatorModule(),
     new FlightPathVectorModule(),
     new LandingStatisticsModule(),
     new SatelliteImageryModule(),
-    new GateSpawnerModule()
+    new GateSpawnerModule(),
+    new SimUtilitiesModule()
   ];
 }

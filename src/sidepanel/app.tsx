@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { resolveEffectiveOs } from '../core/keyboard-translator';
-import { REALISM_OPTION_META } from '../modules/realism-pack';
+import { REALISM_OPTION_GROUPS, REALISM_OPTION_META } from '../modules/realism-pack';
 import { HelpLabel, SETTING_TIPS } from '../shared/help-tip';
 import {
   focusGeoFSTab,
@@ -412,23 +412,34 @@ export function App() {
       </div>
 
       <div class="panel-card">
-        <div class="section-heading">Realism &amp; Audio</div>
+        <div class="section-heading">Realism, Lighting &amp; Utilities</div>
         <div class="field-col">
-          {REALISM_OPTION_META.map((item) => (
-            <label class="switch-row" key={item.key}>
-              <HelpLabel
-                label={item.label}
-                tip={SETTING_TIPS[`realism.${item.key}`]}
-                badge={isV4 && item.v4Unavailable ? 'Unavailable on V4' : undefined}
-              />
-              <input
-                type="checkbox"
-                checked={Boolean(settings.realismOptions[item.key])}
-                disabled={isV4 && item.v4Unavailable}
-                onChange={() => toggleRealism(item.key)}
-              />
-            </label>
-          ))}
+          {REALISM_OPTION_GROUPS.map((grp) => {
+            const items = REALISM_OPTION_META.filter((item) => item.group === grp.id);
+            if (!items.length) return null;
+            return (
+              <div key={grp.id} class="field-col" style="gap:4px;margin-top:4px">
+                <div style="font-size:9px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--muted);padding-bottom:2px;border-bottom:1px solid var(--border)">
+                  {grp.label}
+                </div>
+                {items.map((item) => (
+                  <label class="switch-row" key={item.key}>
+                    <HelpLabel
+                      label={item.label}
+                      tip={SETTING_TIPS[`realism.${item.key}`]}
+                      badge={isV4 && item.v4Unavailable ? 'Unavailable on V4' : undefined}
+                    />
+                    <input
+                      type="checkbox"
+                      checked={Boolean(settings.realismOptions[item.key])}
+                      disabled={isV4 && item.v4Unavailable}
+                      onChange={() => toggleRealism(item.key)}
+                    />
+                  </label>
+                ))}
+              </div>
+            );
+          })}
           <div class="field-row" style="margin-top:6px;">
             <HelpLabel label="Headlight Mode" tip={SETTING_TIPS['realism.headlightMode']} />
             <select

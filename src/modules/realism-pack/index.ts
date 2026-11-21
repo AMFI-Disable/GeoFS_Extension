@@ -1,20 +1,5 @@
 import { AIRBUS_IDS, BOEING_737_IDS, BOEING_777_IDS, installAircraftSounds } from './aircraft-sounds';
-import { CameraResetController } from './camera-reset';
 import { GenericGpwsController } from './generic-gpws';
-import { NightVfrLidarController } from './lidar/lidar';
-import {
-  DEFAULT_LIGHT_SWITCHES,
-  computeAircraftLighting,
-  getAircraftFrame,
-  presetToSwitches,
-  type LightPreset,
-  type LightSwitches
-} from './lighting/aircraft-lights';
-import { LightingShaderController } from './lighting/light-shader';
-import { RunwayGlowController } from './lighting/runway-glow';
-import { TaxiwayLightsController } from './lighting/taxiway-lights';
-import { SlewModeController } from './slew-mode';
-import { WindThermalsController } from './wind-thermals';
 import type { ExtensionSettings, RealismOptions } from '../../types/settings';
 import type { GeoFSAircraftInstance } from '../../types/geofs.d';
 import type { FlightTelemetry, IModule, ModuleContext, SimMajorVersion } from '../../types/module';
@@ -63,10 +48,20 @@ const PROPWASH_IDS = new Set(['21', '2', '2808', '1', '8', '12', '13', '40', '10
 const SPIN_IDS = new Set(['2948', '2581', '2808', '3460', '2988']);
 const ROTOR_IDS = new Set(['9', '52', '2840', '4090']);
 
+export type RealismOptionGroup = 'physics' | 'systems' | 'lighting' | 'utilities' | 'performance';
+
+export const REALISM_OPTION_GROUPS: ReadonlyArray<{ id: RealismOptionGroup; label: string }> = [
+  { id: 'physics', label: 'Physics & G-Force' },
+  { id: 'systems', label: 'Systems & Audio' },
+  { id: 'lighting', label: 'Visuals, Lighting & VFR' },
+  { id: 'utilities', label: 'Utilities & QoL' },
+  { id: 'performance', label: 'Performance' }
+];
+
 export interface RealismOptionMeta {
   key: keyof RealismOptions;
   label: string;
-  group: 'physics' | 'systems' | 'lighting' | 'performance';
+  group: RealismOptionGroup;
   v4Unavailable?: boolean;
 }
 
@@ -88,9 +83,9 @@ export const REALISM_OPTION_META: readonly RealismOptionMeta[] = [
   { key: 'runwayGlow', label: 'Runway Light Glow', group: 'lighting' },
   { key: 'taxiwayLights', label: 'OSM Taxiway Lights', group: 'lighting' },
   { key: 'nightVfrLidar', label: 'Night VFR LiDAR', group: 'lighting' },
-  { key: 'windThermals', label: 'Wind & Thermals', group: 'physics' },
-  { key: 'cameraReset', label: 'Middle-Click Cam Reset', group: 'systems' },
-  { key: 'slewMode', label: 'FSX Slew Mode', group: 'systems' },
+  { key: 'windThermals', label: 'Wind & Thermals', group: 'lighting' },
+  { key: 'cameraReset', label: 'Middle-Click Cam Reset', group: 'utilities' },
+  { key: 'slewMode', label: 'FSX Slew Mode', group: 'utilities' },
   { key: 'performanceMode', label: 'Perf Mode', group: 'performance' }
 ] as const;
 
@@ -170,31 +165,11 @@ export class RealismPackModule implements IModule {
   private checkedAircraftSounds = false;
   private unmountTab: (() => void) | null = null;
   private syncHudTab: (() => void) | null = null;
-  private lightShader = new LightingShaderController();
-  private runwayGlow = new RunwayGlowController();
-  private taxiwayLights = new TaxiwayLightsController();
-  private lidar = new NightVfrLidarController();
-  private windThermals = new WindThermalsController();
-  private slewMode = new SlewModeController();
-  private cameraReset = new CameraResetController(() => {
-    this.ctx?.anchors.showToast('Camera Reset');
-  });
   private genericGpws = new GenericGpwsController((alert) => {
     if (alert.kind === 'warning') {
       this.ctx?.anchors.showToast(`GPWS: ${alert.text}`, 'warn');
     }
   });
-  private lightSwitches: LightSwitches = { ...DEFAULT_LIGHT_SWITCHES };
-  private nextTaxiwayUpdate = 0;
-  private unbindLightsKey: (() => void) | null = null;
-  private unbindSlewKey: (() => void) | null = null;
-
-  private applyLightPreset(preset: LightPreset): void {
-    this.lightSwitches = presetToSwitches(preset);
-    this.syncHudTab?.();
-    const label = preset === 'coldAndDark' ? 'Cold & Dark' : preset === 'takeoff' ? 'Takeoff' : preset;
-    this.ctx?.anchors.showToast(`Lights: ${label}`);
-  }
 
   private onKeyDown = (event: KeyboardEvent) => {
     if (!isEnabled(this.ctx?.getSettings().realismOptions, 'spoilerArming') || event.key !== 'Shift' || event.repeat || event.defaultPrevented ||
@@ -209,39 +184,7 @@ export class RealismPackModule implements IModule {
   public init(context: ModuleContext): void {
     this.ctx = context;
     this.lastSimMajor = context.simMajor ?? null;
-    this.cameraReset.attach();
     this.onSettingsChange(context.getSettings());
-    this.unbindLightsKey = context.keybinds?.register?.(
-      'realism-lights-toggle',
-      context.getSettings().keybindings?.toggleLandingLights ?? 'Shift+L',
-      () => {
-        const nextOn = !(this.lightSwitches.landing || this.lightSwitches.taxi);
-        this.lightSwitches = {
-          ...this.lightSwitches,
-          landing: nextOn,
-          taxi: nextOn,
-          turnoff: nextOn
-        };
-        this.syncHudTab?.();
-        this.ctx?.anchors.showToast(nextOn ? 'Landing & Taxi Lights ON' : 'Landing & Taxi Lights OFF');
-      }
-    ) ?? null;
-    this.unbindSlewKey = context.keybinds?.register?.(
-      'realism-slew-toggle',
-      context.getSettings().keybindings?.toggleSlewMode ?? 'Shift+Y',
-      () => {
-        const current = context.getSettings().realismOptions ?? {};
-        if (!isEnabled(current, 'slewMode')) {
-          context.updateSettings({ realismOptions: { ...current, slewMode: true } });
-        }
-        const active = this.slewMode.toggle((isOn) => {
-          this.ctx?.anchors.showToast(isOn ? 'Slew Mode ON' : 'Slew Mode OFF');
-        });
-        if (!active && isEnabled(current, 'slewMode')) {
-          context.updateSettings({ realismOptions: { ...current, slewMode: false } });
-        }
-      }
-    ) ?? null;
     if (typeof document !== 'undefined') {
       document.addEventListener('keydown', this.onKeyDown);
       if (typeof context.anchors?.registerHudTab === 'function') {
@@ -253,13 +196,10 @@ export class RealismPackModule implements IModule {
           ['windAudio', 'Wind SFX'],
           ['cameraShake', 'Shake'],
           ['soundExpansion', '737/777 SFX'],
+          ['genericGpws', 'GPWS'],
           ['spoilerArming', 'Spoilers'],
-          ['aircraftLights', 'Acft Lights'],
-          ['runwayGlow', 'RWY Glow'],
-          ['taxiwayLights', 'TWY Lights'],
-          ['nightVfrLidar', 'LiDAR'],
-          ['windThermals', 'Thermals'],
-          ['slewMode', 'Slew']
+          ['engineInertia', 'Inertia'],
+          ['performanceMode', 'Perf Mode']
         ];
         const statusLine = document.createElement('div');
         statusLine.style.cssText = 'font-size:9px;color:#a1a1aa;display:flex;justify-content:space-between;';
@@ -280,22 +220,6 @@ export class RealismPackModule implements IModule {
           grid.appendChild(btn);
         }
 
-        const presetRow = document.createElement('div');
-        presetRow.style.cssText = 'display:flex;gap:4px;';
-        const makePresetBtn = (label: string, preset: LightPreset) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.textContent = label;
-          b.style.cssText = 'flex:1;background:rgba(255,255,255,0.04);color:#cbd5e1;border:1px solid rgba(255,255,255,0.14);border-radius:4px;padding:3px 4px;font-size:8.5px;font-weight:700;cursor:pointer;';
-          b.addEventListener('click', () => this.applyLightPreset(preset));
-          return b;
-        };
-        presetRow.append(
-          makePresetBtn('Cold & Dark', 'coldAndDark'),
-          makePresetBtn('Takeoff', 'takeoff'),
-          makePresetBtn('All On', 'allOn')
-        );
-
         const sync = () => {
           const opts = context.getSettings().realismOptions;
           for (const [key, btn] of btns) {
@@ -306,7 +230,7 @@ export class RealismPackModule implements IModule {
         };
         this.syncHudTab = sync;
         sync();
-        hudTab.append(statusLine, grid, presetRow);
+        hudTab.append(statusLine, grid);
         this.unmountTab = context.anchors.registerHudTab('realism', 'REALISM', hudTab, false, { defaultClosed: true });
       }
     }
@@ -314,12 +238,9 @@ export class RealismPackModule implements IModule {
 
   public onSettingsChange(settings: ExtensionSettings): void {
     const options = settings.realismOptions;
-    this.ctx?.keybinds?.updateCombo?.('realism-lights-toggle', settings.keybindings?.toggleLandingLights ?? 'Shift+L');
     this.syncHudTab?.();
     const optionKey = JSON.stringify({
-      options: options ?? {},
-      lightIntensity: settings.lightIntensity,
-      headlightMode: settings.headlightMode
+      options: options ?? {}
     });
     if (optionKey === this.optionKey) return;
     this.optionKey = optionKey;
@@ -332,15 +253,6 @@ export class RealismPackModule implements IModule {
       this.overGSeconds = 0;
       this.blackoutActive = false;
       if (this.stage) this.stage.enabled = false;
-    }
-    if (!isEnabled(options, 'aircraftLights') && !isEnabled(options, 'runwayGlow')) {
-      this.lightShader.setEnabled(false);
-    }
-    if (!isEnabled(options, 'runwayGlow')) {
-      this.runwayGlow.reset();
-    }
-    if (!isEnabled(options, 'taxiwayLights')) {
-      this.taxiwayLights.dispose();
     }
     this.emitRealismDiag(options);
   }
@@ -415,10 +327,8 @@ export class RealismPackModule implements IModule {
     }
     if (!aircraft || !values || telemetry.paused || telemetry.crashed) {
       if (this.stage) this.stage.enabled = false;
-      this.lightShader.setEnabled(false);
       return;
     }
-    this.updateLighting(telemetry, aircraft);
     const now = telemetry.timestamp;
     const g = telemetry.gForce;
     const cockpit = isCockpitView();
@@ -693,64 +603,6 @@ export class RealismPackModule implements IModule {
     }
   }
 
-  private updateLighting(telemetry: FlightTelemetry, aircraft: GeoFSAircraftInstance): void {
-    const settings = this.ctx?.getSettings();
-    const options = settings?.realismOptions;
-    const acLightsOn = isEnabled(options, 'aircraftLights');
-    const rwGlowOn = isEnabled(options, 'runwayGlow');
-    const twyLightsOn = isEnabled(options, 'taxiwayLights');
-    const sim = window.geofs;
-
-    if (acLightsOn || rwGlowOn) {
-      this.lightShader.ensureStage(telemetry.simMajor);
-      const viewMatrix = sim?.api?.viewer?.scene?.camera?.viewMatrix;
-      const isNight = Boolean(this.ctx?.sim.isNight());
-      const headlightMode = settings?.headlightMode ?? 'auto';
-      const gearDown = telemetry.aircraft?.hasGear === false ? true : telemetry.gearDown;
-      const acResult = acLightsOn
-        ? computeAircraftLighting({
-            inst: aircraft,
-            viewMatrix,
-            switches: this.lightSwitches,
-            headlightMode,
-            isNight,
-            gearDown,
-            nowMs: telemetry.timestamp
-          })
-        : { points: [], spots: [] };
-
-      const frame = rwGlowOn ? getAircraftFrame(aircraft) : null;
-      const rwLights = rwGlowOn
-        ? this.runwayGlow.update(sim?.fx?.litRunways, frame?.pos ?? null, viewMatrix, telemetry.timestamp)
-        : [];
-
-      const intensity = Number.isFinite(settings?.lightIntensity) ? Number(settings?.lightIntensity) : 1.5;
-      const dayFactor = headlightMode === 'on' ? 0.55 : 0.08;
-      this.lightShader.setData(acResult.points, rwLights, acResult.spots, intensity, dayFactor);
-      this.lightShader.setEnabled(acResult.points.length > 0 || rwLights.length > 0 || acResult.spots.length > 0);
-    } else {
-      this.lightShader.setEnabled(false);
-    }
-
-    if (twyLightsOn && telemetry.timestamp >= this.nextTaxiwayUpdate) {
-      this.nextTaxiwayUpdate = telemetry.timestamp + 3000;
-      void this.taxiwayLights.update(telemetry.lat, telemetry.lon, sim?.runways?.nearRunways);
-    }
-
-    const isNight = Boolean(this.ctx?.sim.isNight());
-    this.lidar.update(isEnabled(options, 'nightVfrLidar'), isNight, telemetry.lat, telemetry.lon, telemetry.timestamp);
-    this.windThermals.update(
-      isEnabled(options, 'windThermals'),
-      telemetry.lat,
-      telemetry.lon,
-      telemetry.altitude,
-      telemetry.timestamp
-    );
-    if (isEnabled(options, 'slewMode')) {
-      this.slewMode.update(telemetry);
-    }
-  }
-
   private resetAircraftSounds(): void {
     this.aircraftSounds?.restore();
     this.aircraftSounds = undefined;
@@ -767,10 +619,6 @@ export class RealismPackModule implements IModule {
   }
 
   public destroy(): void {
-    this.unbindLightsKey?.();
-    this.unbindLightsKey = null;
-    this.unbindSlewKey?.();
-    this.unbindSlewKey = null;
     this.unmountTab?.();
     this.unmountTab = null;
     this.syncHudTab = null;
@@ -780,15 +628,7 @@ export class RealismPackModule implements IModule {
     this.optionKey = '';
     this.lastSimMajor = null;
     this.resetAircraftSounds();
-    this.lightShader.dispose();
-    this.runwayGlow.reset();
-    this.taxiwayLights.dispose();
-    this.lidar.dispose();
-    this.windThermals.dispose();
-    this.slewMode.dispose();
-    this.cameraReset.dispose();
     this.genericGpws.dispose();
-    this.nextTaxiwayUpdate = 0;
     this.removeStage?.();
     this.stage = null;
     this.removeStage = undefined;

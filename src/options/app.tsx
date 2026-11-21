@@ -16,7 +16,7 @@ import { landingReplayCsv } from '../core/landing-replay';
 import { formatLogbookCsv, triggerDownload } from '../core/logbook-export';
 import { getAllCatalogAircraft, type StaticAircraftSpec } from '../core/sim-adapter';
 import { MANDATORY_PHASE_LABELS, SITUATIONAL_GUIDES, getMandatoryProcedures } from '../modules/checklist-system/procedures';
-import { REALISM_OPTION_META } from '../modules/realism-pack';
+import { REALISM_OPTION_GROUPS, REALISM_OPTION_META } from '../modules/realism-pack';
 import { AircraftEditor } from '../shared/aircraft-editor';
 import { detectDisplayProfile } from '../shared/display-calibrator';
 import { HelpLabel, SETTING_TIPS } from '../shared/help-tip';
@@ -929,29 +929,42 @@ export function App() {
           </div>
 
           <div class="panel-card" style="grid-column: 1 / -1">
-            <div class="section-heading">Realism &amp; Audio Effects</div>
-            <div class="surface-grid-2">
-              {REALISM_OPTION_META.filter((item) => !(isV4 && item.v4Unavailable)).map((item) => (
-                <label class="switch-row" key={item.key}>
-                  <HelpLabel
-                    label={item.label}
-                    tip={SETTING_TIPS[`realism.${item.key}`]}
-                    badge={item.v4Unavailable ? 'V3 Only' : undefined}
-                  />
-                  <input
-                    type="checkbox"
-                    checked={Boolean(settings.realismOptions[item.key])}
-                    onChange={() =>
-                      patchScr({
-                        realismOptions: {
-                          ...settings.realismOptions,
-                          [item.key]: !settings.realismOptions[item.key]
-                        }
-                      })
-                    }
-                  />
-                </label>
-              ))}
+            <div class="section-heading">Realism, Lighting &amp; Utilities</div>
+            <div class="field-col" style="gap:10px">
+              {REALISM_OPTION_GROUPS.map((grp) => {
+                const items = REALISM_OPTION_META.filter((item) => item.group === grp.id && !(isV4 && item.v4Unavailable));
+                if (!items.length) return null;
+                return (
+                  <div key={grp.id}>
+                    <div style="font-size:10px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;padding-bottom:2px;border-bottom:1px solid var(--border)">
+                      {grp.label}
+                    </div>
+                    <div class="surface-grid-2">
+                      {items.map((item) => (
+                        <label class="switch-row" key={item.key}>
+                          <HelpLabel
+                            label={item.label}
+                            tip={SETTING_TIPS[`realism.${item.key}`]}
+                            badge={item.v4Unavailable ? 'V3 Only' : undefined}
+                          />
+                          <input
+                            type="checkbox"
+                            checked={Boolean(settings.realismOptions[item.key])}
+                            onChange={() =>
+                              patchScr({
+                                realismOptions: {
+                                  ...settings.realismOptions,
+                                  [item.key]: !settings.realismOptions[item.key]
+                                }
+                              })
+                            }
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <div class="surface-grid-2" style="margin-top:12px;">
               <div class="field-row">

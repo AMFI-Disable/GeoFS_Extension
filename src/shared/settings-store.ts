@@ -70,9 +70,11 @@ export const MODULE_META: ReadonlyArray<{
   { id: 'fuel-simulator', name: 'Fuel Simulator', desc: 'Multi-throttle altitude burn, tank balance & flameout', category: 'flight-deck' },
   { id: 'landing-statistics', name: 'Landing Statistics', desc: '1–5 star Authentic Flight debrief, scorecard & logbook', category: 'flight-deck' },
   { id: 'satellite-imagery', name: 'Satellite Imagery', desc: 'Configurable Esri, Bing, OSM & custom map tiles', category: 'environment' },
-  { id: 'realism-pack', name: 'Realism Pack', desc: 'Lighting shaders, Night VFR LiDAR, Thermals, GPWS, SFX & Slew', category: 'immersion' },
+  { id: 'visuals-lighting', name: 'Visuals & Lighting', desc: 'Ground headlights, runway glow, taxiways, LiDAR & thermals', category: 'environment' },
+  { id: 'realism-pack', name: 'Realism Pack', desc: 'G-force shaders, camera shake, 737/777/A320 SFX & GPWS', category: 'immersion' },
   { id: 'failure-simulator', name: 'Failure Simulator', desc: 'Modal failure probabilities, QRH override & recovery', category: 'immersion' },
-  { id: 'gate-spawner', name: 'Gate Spawner', desc: 'Airport ICAO & stand search with instant gate parking', category: 'utilities' }
+  { id: 'gate-spawner', name: 'Gate Spawner', desc: 'Airport ICAO & stand search with instant gate parking', category: 'utilities' },
+  { id: 'sim-utilities', name: 'Sim Utilities', desc: 'FSX-style Slew Mode (Shift+Y) & middle-click camera reset', category: 'utilities' }
 ];
 
 export function mergeExtensionPatch(
