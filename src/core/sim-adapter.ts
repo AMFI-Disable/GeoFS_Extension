@@ -171,6 +171,9 @@ export class SimAdapter {
   }
 
   public isNight(): boolean {
+    const animNight = window.geofs?.animation?.values?.night;
+    if (typeof animNight === 'boolean') return animNight;
+    if (typeof animNight === 'number' && Number.isFinite(animNight)) return animNight > 0;
     const simHour = window.weather?.localTime;
     if (typeof simHour === 'number' && Number.isFinite(simHour)) {
       const hour = ((simHour % 24) + 24) % 24;
@@ -185,6 +188,18 @@ export class SimAdapter {
       return hour < 6 || hour >= 19;
     }
     return false;
+  }
+
+  public getLitRunways() {
+    return window.geofs?.fx?.litRunways ?? null;
+  }
+
+  public getNearRunways() {
+    return window.geofs?.runways?.nearRunways ?? null;
+  }
+
+  public getCesiumScene() {
+    return window.geofs?.api?.viewer?.scene ?? null;
   }
 
   public getAircraftProfile(): AircraftProfile | null {

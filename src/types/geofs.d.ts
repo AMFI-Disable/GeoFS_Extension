@@ -21,6 +21,7 @@ export interface GeoFSAnimationValues {
   NAVGlideAngleDeviation?: number;
   NAVVNAV?: boolean;
   airbrakesPosition?: number;
+  night?: number | boolean;
   [key: string]: unknown;
 }
 
@@ -95,8 +96,18 @@ export interface GeoFSAircraftInstance {
   trueAirSpeed?: number;
   collisionPoints?: Array<{ worldPosition?: [number, number, number] }>;
   cockpitSetup?: { parts?: Array<{ object3d?: { _scale?: [number, number, number] } }> };
-  object3d?: { worldRotation?: Array<[number, number, number]> };
+  object3d?: {
+    worldRotation?: Array<[number, number, number]>;
+    model?: {
+      modelMatrix?: unknown;
+      _model?: { modelMatrix?: unknown };
+      [key: string]: unknown;
+    };
+  };
   llaLocation?: [number, number, number];
+  htr?: [number, number, number];
+  boundingSphereRadius?: number;
+  lights?: unknown;
   engines?: GeoFSEngine[];
   engine?: GeoFSEngine;
   parts?: Record<string, GeoFSEnginePart>;
@@ -227,9 +238,20 @@ export interface GeoFSGlobal {
       setColor?: (color: unknown) => void;
       destroy: () => void;
     }>;
+    litRunways?: Record<string, {
+      lights?: Array<{
+        _billboard?: {
+          _billboard?: {
+            _actualPosition?: GeoFSCartesian;
+            _imageId?: string;
+            position?: GeoFSCartesian;
+          };
+        };
+      }>;
+    }>;
   };
   runways?: {
-    nearRunways?: Record<string, { icao?: string }>;
+    nearRunways?: Record<string, { icao?: string; threshold1?: [number, number]; threshold2?: [number, number] }>;
     modelVisibility?: number | boolean;
     setRunwayModelVisibility?: (visible: number | boolean) => void;
     getNearestRunway?: (location: [number, number, number]) => {
@@ -254,11 +276,20 @@ export interface GeoFSGlobal {
     viewer?: {
       scene?: {
         canvas?: HTMLCanvasElement;
+        frameState?: { frameNumber?: number };
+        preRender?: { addEventListener?: (cb: () => void) => () => void };
+        primitives?: {
+          add?: (prim: unknown) => unknown;
+          remove?: (prim: unknown) => boolean;
+        };
         postProcessStages?: {
           add?: (stage: unknown) => unknown;
           remove?: (stage: unknown) => void;
         };
-        camera?: unknown;
+        camera?: {
+          viewMatrix?: unknown;
+          frustum?: { fov?: number; fovy?: number };
+        };
       };
       entities?: {
         add?: (spec: Record<string, unknown>) => GeoFSCesiumEntity;

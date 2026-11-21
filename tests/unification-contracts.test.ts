@@ -374,8 +374,8 @@ describe('FPV Asset Resolution & Realism V4 Gating Metadata', () => {
     expect(resolveFpvImageUrl(null, { fpvResolutionMode: 'hires' }, 1.0).url).toContain('data:image/svg+xml');
   });
 
-  it('exposes all 13 Realism Pack toggles with explicit V4 unavailability flags', () => {
-    expect(REALISM_OPTION_META).toHaveLength(13);
+  it('exposes all 16 Realism Pack toggles with explicit V4 unavailability flags', () => {
+    expect(REALISM_OPTION_META).toHaveLength(16);
     const v4OnlyDisabled = REALISM_OPTION_META.filter((m) => m.v4Unavailable).map((m) => m.key);
     expect(v4OnlyDisabled).toEqual(['vortexEffects', 'carrierOps']);
   });
@@ -782,7 +782,10 @@ describe('Physics Stability & Void-Crash Prevention Regressions', () => {
       getAudioUrl: (f: string) => `chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/audio/${f}`,
       emitEvent: () => {},
       onEvent: () => () => {},
-      getSettings: () => DEFAULT_SETTINGS,
+      getSettings: () => ({
+        ...DEFAULT_SETTINGS,
+        realismOptions: { ...DEFAULT_SETTINGS.realismOptions, aircraftLights: false, runwayGlow: false }
+      }),
       updateSettings: () => {}
     });
 

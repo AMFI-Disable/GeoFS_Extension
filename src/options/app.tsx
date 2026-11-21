@@ -68,7 +68,8 @@ const KEYBIND_LABELS: Record<keyof KeybindConfig, string> = {
   toggleOpEngines: 'Toggle OP Engines',
   toggleHud: 'Toggle Shared HUD',
   toggleFpv: 'Toggle Flight Path Vector',
-  toggleChecklist: 'Open / Advance Checklists'
+  toggleChecklist: 'Open / Advance Checklists',
+  toggleLandingLights: 'Toggle Landing & Taxi Lights'
 };
 
 function catalogSpecToProfile(spec: StaticAircraftSpec & { id: string }): AircraftProfile {
@@ -911,6 +912,30 @@ export function App() {
                   />
                 </label>
               ))}
+            </div>
+            <div class="surface-grid-2" style="margin-top:12px;">
+              <div class="field-row">
+                <HelpLabel label="Headlight Mode" tip={SETTING_TIPS['realism.headlightMode']} />
+                <select
+                  value={settings.headlightMode}
+                  onChange={(e) => patchScr({ headlightMode: (e.target as HTMLSelectElement).value as 'auto' | 'on' | 'off' })}
+                >
+                  <option value="auto">Auto (Night Only)</option>
+                  <option value="on">Always On</option>
+                  <option value="off">Off</option>
+                </select>
+              </div>
+              <div class="field-row">
+                <HelpLabel label={`Light Intensity (${settings.lightIntensity.toFixed(1)}×)`} tip={SETTING_TIPS['realism.lightIntensity']} />
+                <input
+                  type="range"
+                  min={0.5}
+                  max={3.0}
+                  step={0.1}
+                  value={settings.lightIntensity}
+                  onInput={(e) => patchScr({ lightIntensity: Number((e.target as HTMLInputElement).value) })}
+                />
+              </div>
             </div>
           </div>
         </div>

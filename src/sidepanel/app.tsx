@@ -428,6 +428,28 @@ export function App() {
               />
             </label>
           ))}
+          <div class="field-row" style="margin-top:6px;">
+            <HelpLabel label="Headlight Mode" tip={SETTING_TIPS['realism.headlightMode']} />
+            <select
+              value={settings.headlightMode}
+              onChange={(e) => patchScript({ headlightMode: (e.target as HTMLSelectElement).value as 'auto' | 'on' | 'off' })}
+            >
+              <option value="auto">Auto (Night)</option>
+              <option value="on">Always On</option>
+              <option value="off">Off</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <HelpLabel label={`Light Intensity (${settings.lightIntensity.toFixed(1)}×)`} tip={SETTING_TIPS['realism.lightIntensity']} />
+            <input
+              type="range"
+              min={0.5}
+              max={3.0}
+              step={0.1}
+              value={settings.lightIntensity}
+              onInput={(e) => patchScript({ lightIntensity: Number((e.target as HTMLInputElement).value) })}
+            />
+          </div>
         </div>
       </div>
         </>

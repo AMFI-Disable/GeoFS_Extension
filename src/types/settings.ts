@@ -13,6 +13,7 @@ export type OpSyncPolicy = 'ask' | 'allow' | 'never';
 export type FpvResolutionMode = 'auto' | 'hires' | 'lowres';
 export type KeyboardOsProfile = 'auto' | 'mac' | 'windows' | 'linux';
 export type MacKeyboardType = 'macbook' | 'magic';
+export type HeadlightMode = 'auto' | 'on' | 'off';
 
 export interface KeybindConfig {
   toggleAutothrottle: string;
@@ -20,6 +21,7 @@ export interface KeybindConfig {
   toggleHud: string;
   toggleFpv: string;
   toggleChecklist: string;
+  toggleLandingLights: string;
 }
 
 export interface LandingRecord {
@@ -60,6 +62,9 @@ export interface RealismOptions {
   spoilerArming: boolean;
   carrierOps: boolean;
   performanceMode: boolean;
+  aircraftLights: boolean;
+  runwayGlow: boolean;
+  taxiwayLights: boolean;
 }
 
 export const DEFAULT_REALISM_OPTIONS: RealismOptions = {
@@ -75,7 +80,10 @@ export const DEFAULT_REALISM_OPTIONS: RealismOptions = {
   engineInertia: true,
   spoilerArming: true,
   carrierOps: true,
-  performanceMode: false
+  performanceMode: false,
+  aircraftLights: true,
+  runwayGlow: true,
+  taxiwayLights: false
 };
 
 export interface ExtensionConfig {
@@ -117,6 +125,8 @@ export interface ScriptConfig {
   landingReportSeconds: number;
   fpvProjectionFactor: number;
   fpvResolutionMode: FpvResolutionMode;
+  lightIntensity: number;
+  headlightMode: HeadlightMode;
   realismOptions: RealismOptions;
 }
 
@@ -143,7 +153,8 @@ export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
     toggleOpEngines: 'Shift+O',
     toggleHud: 'Shift+H',
     toggleFpv: 'Shift+F',
-    toggleChecklist: 'Shift+C'
+    toggleChecklist: 'Shift+C',
+    toggleLandingLights: 'Shift+L'
   },
   imageryProvider: 'native',
   customImageryUrl: '',
@@ -179,6 +190,8 @@ export const DEFAULT_SCRIPT_CONFIG: ScriptConfig = {
   landingReportSeconds: 15,
   fpvProjectionFactor: 15,
   fpvResolutionMode: 'auto',
+  lightIntensity: 1.5,
+  headlightMode: 'auto',
   realismOptions: { ...DEFAULT_REALISM_OPTIONS }
 };
 
@@ -230,6 +243,8 @@ export function splitSettings(settings: ExtensionSettings): {
       landingReportSeconds: settings.landingReportSeconds,
       fpvProjectionFactor: settings.fpvProjectionFactor,
       fpvResolutionMode: settings.fpvResolutionMode,
+      lightIntensity: settings.lightIntensity,
+      headlightMode: settings.headlightMode,
       realismOptions: { ...DEFAULT_REALISM_OPTIONS, ...settings.realismOptions }
     }
   };
