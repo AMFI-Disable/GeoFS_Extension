@@ -10,6 +10,7 @@ import { FailureSimulatorModule } from './failure-simulator';
 import { FlightPathVectorModule } from './flight-path-vector';
 import { LandingStatisticsModule } from './landing-statistics';
 import { SatelliteImageryModule } from './satellite-imagery';
+import { GateSpawnerModule } from './gate-spawner';
 
 export function createBuiltinModules(): IModule[] {
   return [
@@ -23,6 +24,7 @@ export function createBuiltinModules(): IModule[] {
     new FailureSimulatorModule(),
     new FlightPathVectorModule(),
     new LandingStatisticsModule(),
-    new SatelliteImageryModule()
+    new SatelliteImageryModule(),
+    new GateSpawnerModule()
   ];
 }

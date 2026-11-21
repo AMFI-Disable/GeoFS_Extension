@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenericGpwsController } from '../src/modules/realism-pack/generic-gpws';
+import {
+  destinationPoint,
+  filterGates,
+  spawnAtGate,
+  type GateEntry
+} from '../src/modules/gate-spawner';
 import type { FlightTelemetry } from '../src/types/module';
 
 function makeTelemetry(overrides: Partial<FlightTelemetry> = {}): FlightTelemetry {
@@ -109,5 +115,54 @@ describe('Phase 2 Features: Generic GPWS', () => {
     expect(gpws.update(makeTelemetry({ aglFeet: 550, timestamp: 1000 }), true)).toBeNull();
     expect(gpws.update(makeTelemetry({ aglFeet: 490, timestamp: 1500 }), true)).toBeNull();
     gpws.dispose();
+  });
+});
+
+describe('Phase 2 Features: Gate Spawner', () => {
+  beforeEach(() => {
+    vi.stubGlobal('window', {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('filters gates by search query and aircraft category chips', () => {
+    const gates: GateEntry[] = [
+      { ref: 'A10', lat: 51.47, lon: -0.45, heading: 90, width_code: 'E', airplane_types: ['heavy'] },
+      { ref: 'B22', lat: 51.47, lon: -0.46, heading: 180, width_code: 'F', airplane_types: ['heavy'], operation_type: 'cargo' },
+      { ref: 'GA1', lat: 51.48, lon: -0.47, heading: 0, operation_type: 'general_aviation' }
+    ];
+
+    expect(filterGates(gates, 'b22', new Set())).toHaveLength(1);
+    expect(filterGates(gates, '', new Set(['codeF']))).toHaveLength(1);
+    expect(filterGates(gates, '', new Set(['heavy']))).toHaveLength(2);
+    expect(filterGates(gates, '', new Set(['ga']))[0].ref).toBe('GA1');
+  });
+
+  it('computes back-offset spawn coordinates and places aircraft parked at gate', () => {
+    const pt = destinationPoint(51.47, -0.45, 180, 6);
+    expect(pt.lat).toBeLessThan(51.47);
+    expect(pt.lon).toBeCloseTo(-0.45, 5);
+
+    const placeSpy = vi.fn();
+    const brakeSpy = vi.fn();
+    const rigidBody: Record<string, unknown> = { v_linearVelocity: [10, 0, 0] };
+    (window as unknown as Record<string, unknown>).geofs = {
+      getGroundAltitude: () => ({ location: [51.47, -0.45, 25] }),
+      animation: { values: { parkingBrake: 0 } },
+      aircraft: { instance: { place: placeSpy, rigidBody, groundContact: false } }
+    };
+    (window as unknown as Record<string, unknown>).controls = {
+      setters: { setParkingBrake: { set: brakeSpy } }
+    };
+
+    const ok = spawnAtGate({ ref: 'T5', lat: 51.47, lon: -0.45, heading: 0 });
+    expect(ok).toBe(true);
+    expect(placeSpy).toHaveBeenCalledTimes(1);
+    expect(placeSpy.mock.calls[0][0][2]).toBe(25);
+    expect(placeSpy.mock.calls[0][1]).toEqual([0, 0, 0]);
+    expect(rigidBody.v_linearVelocity).toEqual([0, 0, 0]);
+    expect(brakeSpy).toHaveBeenCalledTimes(1);
   });
 });

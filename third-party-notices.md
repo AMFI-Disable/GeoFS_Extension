@@ -33,6 +33,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+### GeoFS Gate Spawner (`machpoint82/geofs-gate-spawner`)
+- Source: https://github.com/machpoint82/geofs-gate-spawner
+- License: MIT License (Copyright (c) 2026 machpoint82)
+- Used in: [`src/modules/gate-spawner/index.ts`](src/modules/gate-spawner/index.ts) (gate coordinate offset math, category filters, and no-reload `ac.place` gate placement).
+
 ## Open Data Attribution
 
 ### OpenStreetMap (`aeroway=taxiway`)

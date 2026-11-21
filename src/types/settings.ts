@@ -146,7 +146,8 @@ export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
     'failure-simulator': false,
     'flight-path-vector': true,
     'landing-statistics': true,
-    'satellite-imagery': false
+    'satellite-imagery': false,
+    'gate-spawner': true
   },
   themeMode: 'auto',
   calibratorPreset: 'auto',
