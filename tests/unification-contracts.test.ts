@@ -374,8 +374,8 @@ describe('FPV Asset Resolution & Realism V4 Gating Metadata', () => {
     expect(resolveFpvImageUrl(null, { fpvResolutionMode: 'hires' }, 1.0).url).toContain('data:image/svg+xml');
   });
 
-  it('exposes all 16 Realism Pack toggles with explicit V4 unavailability flags', () => {
-    expect(REALISM_OPTION_META).toHaveLength(16);
+  it('exposes all 17 Realism Pack toggles with explicit V4 unavailability flags', () => {
+    expect(REALISM_OPTION_META).toHaveLength(17);
     const v4OnlyDisabled = REALISM_OPTION_META.filter((m) => m.v4Unavailable).map((m) => m.key);
     expect(v4OnlyDisabled).toEqual(['vortexEffects', 'carrierOps']);
   });

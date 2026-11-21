@@ -1,4 +1,5 @@
 import { AIRBUS_IDS, BOEING_737_IDS, BOEING_777_IDS, installAircraftSounds } from './aircraft-sounds';
+import { GenericGpwsController } from './generic-gpws';
 import {
   DEFAULT_LIGHT_SWITCHES,
   computeAircraftLighting,
@@ -78,6 +79,7 @@ export const REALISM_OPTION_META: readonly RealismOptionMeta[] = [
   { key: 'spoilerArming', label: 'Spoiler Arming', group: 'systems' },
   { key: 'carrierOps', label: 'Carrier Ops', group: 'systems', v4Unavailable: true },
   { key: 'soundExpansion', label: 'Aircraft Sounds', group: 'systems' },
+  { key: 'genericGpws', label: 'Generic GPWS', group: 'systems' },
   { key: 'aircraftLights', label: 'Aircraft Ground Lights', group: 'lighting' },
   { key: 'runwayGlow', label: 'Runway Light Glow', group: 'lighting' },
   { key: 'taxiwayLights', label: 'OSM Taxiway Lights', group: 'lighting' },
@@ -88,6 +90,7 @@ export const OPTION_LABELS: Record<keyof RealismOptions, string> = {
   gBreath: 'G Breathing',
   windAudio: 'Wind Audio',
   soundExpansion: 'Aircraft Sounds',
+  genericGpws: 'Generic GPWS',
   blackout: 'Blackout',
   cameraShake: 'Camera Shake',
   propwash: 'Propwash',
@@ -150,6 +153,11 @@ export class RealismPackModule implements IModule {
   private lightShader = new LightingShaderController();
   private runwayGlow = new RunwayGlowController();
   private taxiwayLights = new TaxiwayLightsController();
+  private genericGpws = new GenericGpwsController((alert) => {
+    if (alert.kind === 'warning') {
+      this.ctx?.anchors.showToast(`GPWS: ${alert.text}`, 'warn');
+    }
+  });
   private lightSwitches: LightSwitches = { ...DEFAULT_LIGHT_SWITCHES };
   private nextTaxiwayUpdate = 0;
   private unbindLightsKey: (() => void) | null = null;
@@ -354,6 +362,7 @@ export class RealismPackModule implements IModule {
     }
     if (this.aircraft !== aircraft) {
       this.resetAircraftSounds();
+      this.genericGpws.reset();
       this.restoreAircraft();
       this.aircraft = aircraft;
     }
@@ -407,6 +416,7 @@ export class RealismPackModule implements IModule {
       if (cockpit && Number(values.accZ) >= 50 && isEnabled(options, 'windAudio')) void this.wind?.play().catch(() => {});
     }
     this.aircraftSounds?.update(telemetry, values);
+    this.genericGpws.update(telemetry, isEnabled(options, 'genericGpws'));
     const safeDt = Number.isFinite(telemetry.dt) && telemetry.dt > 0 ? Math.min(telemetry.dt, 0.25) : 0.016;
     const steps = safeDt / 0.01;
     const safeG = Number.isFinite(g) ? g : 1;
@@ -711,6 +721,7 @@ export class RealismPackModule implements IModule {
     this.lightShader.dispose();
     this.runwayGlow.reset();
     this.taxiwayLights.dispose();
+    this.genericGpws.dispose();
     this.nextTaxiwayUpdate = 0;
     this.removeStage?.();
     this.stage = null;

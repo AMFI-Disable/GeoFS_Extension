@@ -65,6 +65,7 @@ export interface RealismOptions {
   aircraftLights: boolean;
   runwayGlow: boolean;
   taxiwayLights: boolean;
+  genericGpws: boolean;
 }
 
 export const DEFAULT_REALISM_OPTIONS: RealismOptions = {
@@ -83,7 +84,8 @@ export const DEFAULT_REALISM_OPTIONS: RealismOptions = {
   performanceMode: false,
   aircraftLights: true,
   runwayGlow: true,
-  taxiwayLights: false
+  taxiwayLights: false,
+  genericGpws: true
 };
 
 export interface ExtensionConfig {

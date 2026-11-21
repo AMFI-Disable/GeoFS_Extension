@@ -64,6 +64,7 @@ export const SETTING_TIPS: Record<string, string> = {
   'realism.spoilerArming': 'Lets you arm speedbrakes before landing so they pop open automatically on touchdown.',
   'realism.carrierOps': 'Enables aircraft carrier catapult launches and arresting hook landings (GeoFS V3 only).',
   'realism.soundExpansion': 'Adds authentic Boeing 737/777 and Airbus cockpit callouts, GPWS warnings, and flap sounds.',
+  'realism.genericGpws': 'Provides GPWS altitude callouts (500–10 ft) and sink-rate/pull-up/bank-angle/gear warnings for all aircraft without built-in callouts.',
   'realism.aircraftLights': 'Projects landing, taxi, and turnoff light beams onto the ground plus nav, strobe, and beacon glow.',
   'realism.runwayGlow': 'Adds warm pavement glow around GeoFS runway edge, threshold, and centerline lights.',
   'realism.taxiwayLights': 'Opt-in: downloads OpenStreetMap taxiway geometry near your aircraft to render green/yellow centerline and blue edge lights.',

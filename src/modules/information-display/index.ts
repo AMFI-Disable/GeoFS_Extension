@@ -83,11 +83,37 @@ export class InformationDisplayModule implements IModule {
       </div>
       <div data-field="rotor-torque" hidden style="font-size:9px;color:#38bdf8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
       <div data-field="v-speeds" style="font-size:9px;color:#aaaaaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+      <div style="display:flex;gap:4px;padding-top:2px;border-top:1px solid rgba(136,136,136,0.25);">
+        <button type="button" data-toggle="metar" style="flex:1;background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(136,136,136,0.3);border-radius:4px;padding:2px 4px;font-size:8.5px;font-weight:700;cursor:pointer;">METAR</button>
+        <button type="button" data-toggle="minimap" style="flex:1;background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(136,136,136,0.3);border-radius:4px;padding:2px 4px;font-size:8.5px;font-weight:700;cursor:pointer;">MINI-MAP</button>
+      </div>
+      <div data-panel="metar" hidden style="font-size:8.5px;line-height:1.35;color:#cbd5e1;background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.22);border-radius:6px;padding:4px 5px;word-break:break-word;">--</div>
+      <div data-panel="minimap" hidden style="background:rgba(2,6,23,0.75);border:1px solid rgba(136,136,136,0.25);border-radius:6px;padding:3px;">
+        <svg data-field="minimap-svg" viewBox="-90 -48 180 96" style="width:100%;height:90px;display:block;"></svg>
+        <div data-field="minimap-info" style="font-size:8px;color:#94a3b8;text-align:center;margin-top:2px;">No runway nearby</div>
+      </div>
     `;
 
     root.querySelectorAll<HTMLElement>('[data-field]').forEach((el) => {
       const key = el.dataset.field;
       if (key) this.cells.set(key, el);
+    });
+
+    const metarBtn = root.querySelector<HTMLButtonElement>('[data-toggle="metar"]');
+    const mapBtn = root.querySelector<HTMLButtonElement>('[data-toggle="minimap"]');
+    const metarPanel = root.querySelector<HTMLDivElement>('[data-panel="metar"]');
+    const mapPanel = root.querySelector<HTMLDivElement>('[data-panel="minimap"]');
+    metarBtn?.addEventListener('click', () => {
+      if (!metarPanel) return;
+      metarPanel.hidden = !metarPanel.hidden;
+      metarBtn.style.color = metarPanel.hidden ? '#9ca3af' : '#10b981';
+      metarBtn.style.borderColor = metarPanel.hidden ? 'rgba(136,136,136,0.3)' : '#10b981';
+    });
+    mapBtn?.addEventListener('click', () => {
+      if (!mapPanel) return;
+      mapPanel.hidden = !mapPanel.hidden;
+      mapBtn.style.color = mapPanel.hidden ? '#9ca3af' : '#10b981';
+      mapBtn.style.borderColor = mapPanel.hidden ? 'rgba(136,136,136,0.3)' : '#10b981';
     });
 
     this.rootEl = root;
@@ -186,6 +212,78 @@ export class InformationDisplayModule implements IModule {
     const rev = telemetry.reverserActive ? '[REV] ' : '';
     const thrText = telemetry.throttles.map((t) => `${Math.round(t * 100)}%`).join('/');
     this.setText('thr', `${rev}${thrText}`, telemetry.reverserActive ? '#f97316' : '#ffffff');
+    this.updateMetarAndMinimap(telemetry);
+  }
+
+  private updateMetarAndMinimap(telemetry: FlightTelemetry): void {
+    const metarPanel = this.rootEl?.querySelector<HTMLDivElement>('[data-panel="metar"]');
+    const nearRunways = window.geofs?.runways?.nearRunways;
+
+    let nearestIcao = '';
+    let nearestDistNm = Infinity;
+    const runwayLines: Array<{ x1: number; y1: number; x2: number; y2: number; icao: string }> = [];
+
+    if (nearRunways && Number.isFinite(telemetry.lat) && Number.isFinite(telemetry.lon)) {
+      const cosLat = Math.max(0.1, Math.cos((telemetry.lat * Math.PI) / 180));
+      const nmPerDegLat = 60;
+      const nmPerDegLon = 60 * cosLat;
+      const scale = 6; // px per NM (~15 NM radius across 180px width)
+
+      for (const rw of Object.values(nearRunways)) {
+        const t1 = rw?.threshold1;
+        const t2 = rw?.threshold2;
+        if (!Array.isArray(t1) || !Array.isArray(t2) || t1.length < 2 || t2.length < 2) continue;
+        const x1 = (t1[1] - telemetry.lon) * nmPerDegLon * scale;
+        const y1 = -(t1[0] - telemetry.lat) * nmPerDegLat * scale;
+        const x2 = (t2[1] - telemetry.lon) * nmPerDegLon * scale;
+        const y2 = -(t2[0] - telemetry.lat) * nmPerDegLat * scale;
+        const midNm = Math.hypot((x1 + x2) / 2, (y1 + y2) / 2) / scale;
+        if (midNm < nearestDistNm) {
+          nearestDistNm = midNm;
+          nearestIcao = rw.icao ?? 'RWY';
+        }
+        if (midNm <= 20) {
+          runwayLines.push({ x1, y1, x2, y2, icao: rw.icao ?? '' });
+        }
+      }
+    }
+
+    if (metarPanel && !metarPanel.hidden) {
+      const metar = window.geofs?.environment?.metar;
+      const windKts = window.weather?.currentWindSpeed;
+      if (metar?.raw) {
+        metarPanel.textContent = `${nearestIcao ? `[${nearestIcao}] ` : ''}${metar.raw}`;
+      } else {
+        const parts: string[] = [];
+        if (nearestIcao) parts.push(`NEAR: ${nearestIcao} (${nearestDistNm.toFixed(1)} NM)`);
+        if (typeof metar?.temp === 'number') parts.push(`${Math.round(metar.temp)}°C`);
+        if (typeof windKts === 'number') parts.push(`WIND ${Math.round(windKts)}KT`);
+        if (typeof metar?.visibility === 'number') parts.push(`VIS ${Math.round(metar.visibility)}M`);
+        if (typeof metar?.clouds === 'number') parts.push(`CLD ${Math.round(metar.clouds)}%`);
+        metarPanel.textContent = parts.length > 0 ? parts.join(' · ') : 'METAR unavailable';
+      }
+    }
+
+    const mapPanel = this.rootEl?.querySelector<HTMLDivElement>('[data-panel="minimap"]');
+    const svg = this.cells.get('minimap-svg');
+    if (mapPanel && !mapPanel.hidden && svg) {
+      const linesHtml = runwayLines
+        .map((r) => `<line x1="${r.x1.toFixed(1)}" y1="${r.y1.toFixed(1)}" x2="${r.x2.toFixed(1)}" y2="${r.y2.toFixed(1)}" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>`)
+        .join('');
+      const hdg = Number.isFinite(telemetry.heading) ? telemetry.heading : 0;
+      svg.innerHTML = `
+        <circle cx="0" cy="0" r="30" fill="none" stroke="rgba(148,163,184,0.22)" stroke-width="0.8" stroke-dasharray="2,2"/>
+        <circle cx="0" cy="0" r="60" fill="none" stroke="rgba(148,163,184,0.14)" stroke-width="0.8"/>
+        ${linesHtml}
+        <g transform="rotate(${hdg.toFixed(1)})">
+          <polygon points="0,-6 4,5 0,2 -4,5" fill="#10b981"/>
+        </g>
+      `;
+      this.setText(
+        'minimap-info',
+        nearestIcao ? `${nearestIcao} · ${nearestDistNm.toFixed(1)} NM` : 'No runway within 20 NM'
+      );
+    }
   }
 
   private setText(field: string, value: string, color = ''): void {
