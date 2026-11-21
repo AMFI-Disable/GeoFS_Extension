@@ -16,7 +16,7 @@ export const siteConfig = {
   "features": [
     {
       "title": "Unified Flight Deck",
-      "desc": "Consolidates Flight Path Vector HUD, Autothrottle, Realism Pack, Fuel Simulator, and Landing Stats into one extension."
+      "desc": "Consolidates Flight Path Vector HUD, Autothrottle, AP++ (VNAV, Holds, Autoland, Hover), Gate Spawner, Realism Lighting & LiDAR, Fuel Simulator, and 1–5 Star Landing Evaluation."
     },
     {
       "title": "Zero Script Conflicts",

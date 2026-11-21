@@ -1,5 +1,6 @@
 import { hasAircraftCallouts } from '../realism-pack/aircraft-sounds';
 import { landingFeedback } from './feedback';
+import { FlightSessionEvaluator } from './session-evaluator';
 import { LandingReplay } from '../../core/landing-replay';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 import type { LandingRecord } from '../../types/settings';
@@ -69,6 +70,7 @@ export class LandingStatisticsModule implements IModule {
   private lastLandingTime = 0;
   private aircraftId: string | null = null;
   private replay = new LandingReplay();
+  private evaluator = new FlightSessionEvaluator();
   private reportTimer: ReturnType<typeof setTimeout> | undefined;
   private report: HTMLElement | null = null;
   private reportDragCleanup: (() => void) | null = null;
@@ -329,8 +331,10 @@ export class LandingStatisticsModule implements IModule {
       this.lastApproach = null;
       this.gpwsFired.clear();
       this.replay.reset();
+      this.evaluator.reset();
     }
     if (!aircraftId) return;
+    this.evaluator.sample(telemetry, Boolean(this.ctx.getSettings().realismOptions?.slewMode));
 
     const aircraft = window.geofs?.aircraft?.instance;
     const values = window.geofs?.animation?.values;
@@ -423,6 +427,17 @@ export class LandingStatisticsModule implements IModule {
       const gForce = typeof values?.accZ === 'number' && Number.isFinite(values.accZ)
         ? values.accZ / 9.80665 : telemetry.gForce;
       const rating = telemetry.crashed ? 'Crash' : rateLanding(approach.vs);
+      const computedScore = scoreLanding(approach.vs, gForce, approach.roll, this.bounces, this.inTouchdownZone);
+      const evaluation = this.evaluator.evaluate({
+        rating,
+        score: computedScore,
+        vsFpm: Math.round(approach.vs),
+        bounces: this.bounces,
+        inTouchdownZone: this.inTouchdownZone
+      });
+      if (!isBounce) {
+        this.evaluator.reset();
+      }
       const record: LandingRecord = {
         id: `${telemetry.timestamp}-${Math.random().toString(36).slice(2, 7)}`,
         timestamp: new Date(telemetry.timestamp).toISOString(),
@@ -440,7 +455,10 @@ export class LandingStatisticsModule implements IModule {
         ...landingFeedback(rating, approach.vs, this.bounces),
         bounces: this.bounces,
         inTouchdownZone: this.inTouchdownZone,
-        score: scoreLanding(approach.vs, gForce, approach.roll, this.bounces, this.inTouchdownZone),
+        score: computedScore,
+        authenticFlight: evaluation.authenticFlight,
+        stars: evaluation.stars,
+        phaseCritique: evaluation.phaseCritique,
         lat: Number(telemetry.lat.toFixed(4)),
         lon: Number(telemetry.lon.toFixed(4)),
         replay: this.replay.finish(telemetry)
@@ -528,9 +546,10 @@ export class LandingStatisticsModule implements IModule {
     scoreLbl.textContent = '/ 10';
     circle.append(scoreVal, scoreLbl);
 
+    const starsText = record.stars ? '★'.repeat(record.stars) + '☆'.repeat(5 - record.stars) : '';
     const badge = document.createElement('div');
     badge.className = `addonpack-badge ${badgeClassFor(record.rating)}`;
-    badge.textContent = `${record.rating.toUpperCase()}${bounce ? ' (BOUNCE)' : ''}`;
+    badge.textContent = `${record.rating.toUpperCase()}${bounce ? ' (BOUNCE)' : ''}${starsText ? ` · ${starsText}` : ''}`;
 
     mainRow.append(circle, badge);
 
@@ -546,7 +565,7 @@ export class LandingStatisticsModule implements IModule {
       ['Roll', `${record.rollDeg.toFixed(1)}°`],
       ['Pitch', record.pitchDeg === undefined ? '—' : `${record.pitchDeg.toFixed(1)}°`],
       ['Touchdown Zone', record.inTouchdownZone ? 'On Target' : 'Off Target'],
-      ['Bounces', String(record.bounces ?? 0)]
+      ['Flight Session', record.authenticFlight ? 'Authentic' : 'Practice']
     ];
     for (const [label, value] of entries) {
       const item = document.createElement('div');
@@ -571,6 +590,12 @@ export class LandingStatisticsModule implements IModule {
     pLine.style.marginTop = '2px';
     pLine.textContent = record.passengerFeedback ?? '';
     feedback.append(qLine, pLine);
+    if (record.phaseCritique) {
+      const cLine = document.createElement('div');
+      cLine.style.cssText = 'margin-top:4px;font-size:10px;color:#cbd5e1;line-height:1.35;';
+      cLine.textContent = `${record.phaseCritique.departure} • ${record.phaseCritique.approach}`;
+      feedback.appendChild(cLine);
+    }
 
     content.append(mainRow, grid, feedback);
     card.append(header, content);
@@ -624,7 +649,9 @@ export class LandingStatisticsModule implements IModule {
     for (const r of this.sessionRecords.slice(0, 5)) {
       const row = document.createElement('div');
       row.style.cssText = 'border-bottom:1px solid rgba(136,136,136,0.3);padding-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-      row.textContent = `${r.rating} • ${r.vsFpm} fpm • ${r.gForce}G • ${r.groundSpeedKts} kt • ${r.score?.toFixed(1) ?? '—'}/10`;
+      const stars = r.stars ? `${'★'.repeat(r.stars)} ` : '';
+      const tag = r.authenticFlight ? 'AUTH' : 'PRAC';
+      row.textContent = `${stars}[${tag}] ${r.rating} • ${r.vsFpm} fpm • ${r.gForce}G • ${r.score?.toFixed(1) ?? '—'}/10`;
       row.title = row.textContent;
       this.listEl.appendChild(row);
     }

@@ -2,7 +2,14 @@ export type ApPpLateralMode = 'off' | 'hdg' | 'latlon' | 'wpt' | 'hold' | 'loc';
 export type ApPpVerticalMode = 'off' | 'alt' | 'vs' | 'flch' | 'vnav' | 'gs' | 'flare';
 export type ApPpSpeedMode = 'off' | 'kts' | 'mach';
 export type ApPpHoldTurnDir = 'R' | 'L';
-export type ApPpHoldLegPhase = 'inbound' | 'turn-outbound' | 'outbound' | 'turn-inbound';
+export type ApPpHoldEntryType = 'direct' | 'parallel' | 'teardrop';
+export type ApPpHoldLegPhase =
+  | 'entry-teardrop'
+  | 'entry-parallel'
+  | 'inbound'
+  | 'turn-outbound'
+  | 'outbound'
+  | 'turn-inbound';
 
 export interface ApPpHoldConfig {
   fixLat: number;
@@ -12,6 +19,8 @@ export interface ApPpHoldConfig {
   turnDir: ApPpHoldTurnDir;
   phase: ApPpHoldLegPhase;
   legElapsedSec: number;
+  entryType?: ApPpHoldEntryType;
+  wcaDeg?: number;
 }
 
 export interface ApPpFmaState {
@@ -39,6 +48,8 @@ export interface ApPpSnapshot {
   landingArmed: boolean;
   landingRetarded: boolean;
   envelopeProtection: boolean;
+  hoverMode: boolean;
+  isRotorcraft: boolean;
   ktas: number;
   crossoverAltFt: number;
   distanceToFixNm: number | null;
@@ -64,4 +75,5 @@ export type ApPpCommand =
   | { type: 'setHoldConfig'; legMinutes?: number; turnDir?: ApPpHoldTurnDir }
   | { type: 'holdPresent'; axis: 'alt' | 'hdg' | 'spd' | 'all' }
   | { type: 'setLandingArm'; armed: boolean }
-  | { type: 'setEnvelopeProtection'; enabled: boolean };
+  | { type: 'setEnvelopeProtection'; enabled: boolean }
+  | { type: 'setHoverMode'; enabled: boolean };

@@ -43,6 +43,11 @@ SOFTWARE.
 - License: MIT License (Copyright (c) 2026 Tokke_1111)
 - Used in: [`src/modules/realism-pack/wind-thermals.ts`](src/modules/realism-pack/wind-thermals.ts) (glider thermal & ridge-lift visualization).
 
+### GeoFS Holding Pattern (`nafeesnazzim/geofs-holding-pattern`)
+- Source: https://github.com/nafeesnazzim/geofs-holding-pattern
+- License: MIT License (Copyright (c) 2026 nafeesnazzim)
+- Used in: [`src/modules/autopilot-pp/math.ts`](src/modules/autopilot-pp/math.ts) (ICAO direct/parallel/teardrop holding entry classification and wind correction angles).
+
 ## Open Data Attribution
 
 ### OpenStreetMap (`aeroway=taxiway`)

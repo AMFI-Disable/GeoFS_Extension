@@ -44,6 +44,14 @@ export interface LandingRecord {
   passengerFeedback?: string;
   bounces?: number;
   inTouchdownZone?: boolean;
+  authenticFlight?: boolean;
+  stars?: 1 | 2 | 3 | 4 | 5;
+  phaseCritique?: {
+    departure: string;
+    cruise: string;
+    approach: string;
+    touchdown: string;
+  };
   lat: number;
   lon: number;
   replay?: LandingSample[];

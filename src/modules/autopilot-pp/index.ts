@@ -4,6 +4,7 @@ import type { ExtensionSettings } from '../../types/settings';
 import {
   PidController,
   clamp,
+  classifyHoldEntry,
   crossoverAltitudeFt,
   greatCircleBearingDeg,
   greatCircleDistanceNm,
@@ -81,6 +82,8 @@ export class AutopilotPlusModule implements IModule {
   private barEl: HTMLElement | null = null;
   private padEl: HTMLElement | null = null;
   private fmaLineEl: HTMLElement | null = null;
+  private hudFmaEl: HTMLElement | null = null;
+  private syncHudTab: (() => void) | null = null;
   private unmounts: Array<() => void> = [];
 
   private engaged = false;
@@ -100,6 +103,7 @@ export class AutopilotPlusModule implements IModule {
   private landingArmed = false;
   private landingRetarded = false;
   private envelopeProtection = true;
+  private hoverMode = false;
 
   private holdConfig: ApPpHoldConfig = {
     fixLat: 0,
@@ -168,6 +172,51 @@ export class AutopilotPlusModule implements IModule {
       this.padEl = pad;
       this.unmounts.push(context.anchors.mountControl('autopilot-pp-pad', 'autopilot', bar));
       context.anchors.syncAutopilotPad(pad, bar, true);
+
+      if (typeof context.anchors?.registerHudTab === 'function') {
+        const hudTab = document.createElement('div');
+        hudTab.style.cssText = 'display:flex;flex-direction:column;gap:5px;font-size:10px;color:#e5e7eb;';
+        const fmaRow = document.createElement('div');
+        fmaRow.style.cssText = 'font-family:monospace;font-size:10px;font-weight:700;color:#fbbf24;display:flex;justify-content:space-between;';
+        fmaRow.textContent = 'AP++ STBY';
+        this.hudFmaEl = fmaRow;
+
+        const btnGrid = document.createElement('div');
+        btnGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;';
+        const makeBtn = (label: string, onClick: () => void) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.textContent = label;
+          b.style.cssText = 'background:rgba(255,255,255,0.06);color:#e5e7eb;border:1px solid rgba(255,255,255,0.16);border-radius:4px;padding:4px 4px;font-size:9px;font-weight:700;cursor:pointer;';
+          b.addEventListener('click', onClick);
+          return b;
+        };
+
+        const masterBtn = makeBtn('AP++', () => this.handleCommand({ type: 'toggle' }));
+        const holdAllBtn = makeBtn('HOLD ALL', () => this.handleCommand({ type: 'holdPresent', axis: 'all' }));
+        const raceBtn = makeBtn('RACETRACK', () => this.handleCommand({ type: 'holdHere' }));
+        const ldgBtn = makeBtn('LDG ARM', () => this.handleCommand({ type: 'setLandingArm', armed: !this.landingArmed }));
+        const hoverBtn = makeBtn('HOVER', () => this.handleCommand({ type: 'setHoverMode', enabled: !this.hoverMode }));
+        const protBtn = makeBtn('PROT', () => this.handleCommand({ type: 'setEnvelopeProtection', enabled: !this.envelopeProtection }));
+        btnGrid.append(masterBtn, holdAllBtn, raceBtn, ldgBtn, hoverBtn, protBtn);
+
+        this.syncHudTab = () => {
+          fmaRow.textContent = this.engaged
+            ? `${this.fma.thr} · ${this.fma.vert} · ${this.fma.lat}${this.fma.protection ? ` [${this.fma.protection}]` : ''}`
+            : 'AP++ STBY';
+          const mark = (b: HTMLButtonElement, active: boolean) => {
+            b.style.borderColor = active ? '#10b981' : 'rgba(255,255,255,0.16)';
+            b.style.color = active ? '#10b981' : '#a1a1aa';
+          };
+          mark(masterBtn, this.engaged);
+          mark(raceBtn, this.engaged && this.lateralMode === 'hold');
+          mark(ldgBtn, this.landingArmed);
+          mark(hoverBtn, this.engaged && this.hoverMode);
+          mark(protBtn, this.envelopeProtection);
+        };
+        hudTab.append(fmaRow, btnGrid);
+        this.unmounts.push(context.anchors.registerHudTab('ap-pp', 'AP++', hudTab, false, { defaultClosed: true }));
+      }
     }
 
     if (typeof window !== 'undefined') {
@@ -386,6 +435,12 @@ export class AutopilotPlusModule implements IModule {
         this.envelopeProtection = cmd.enabled;
         if (!cmd.enabled) this.fma.protection = null;
         break;
+      case 'setHoverMode':
+        this.hoverMode = cmd.enabled;
+        if (cmd.enabled && !this.engaged) {
+          this.engage();
+        }
+        break;
     }
 
     this.updateFmaLabels();
@@ -451,13 +506,24 @@ export class AutopilotPlusModule implements IModule {
   }
 
   private initHoldAtCurrent(t: FlightTelemetry, legMinutes?: number, turnDir?: 'L' | 'R'): void {
+    const inboundCourseDeg = Math.round(normalizeHeading(t.heading));
+    const resolvedTurnDir = turnDir ?? this.holdConfig.turnDir;
+    const entryType = classifyHoldEntry(t.heading, inboundCourseDeg, resolvedTurnDir);
+    const phase =
+      entryType === 'teardrop'
+        ? 'entry-teardrop'
+        : entryType === 'parallel'
+          ? 'entry-parallel'
+          : 'outbound';
     this.holdConfig = {
       fixLat: t.lat,
       fixLon: t.lon,
-      inboundCourseDeg: Math.round(normalizeHeading(t.heading)),
+      inboundCourseDeg,
       legMinutes: legMinutes ? clamp(legMinutes, 0.5, 5) : this.holdConfig.legMinutes,
-      turnDir: turnDir ?? this.holdConfig.turnDir,
-      phase: 'outbound',
+      turnDir: resolvedTurnDir,
+      entryType,
+      wcaDeg: 0,
+      phase,
       legElapsedSec: 0
     };
   }
@@ -479,7 +545,7 @@ export class AutopilotPlusModule implements IModule {
     if (t.groundContact) return null;
     const vne = t.aircraft?.vSpeeds?.Vne ?? 380;
     const mmo = t.aircraft?.machSpeeds?.Vne ?? 0.92;
-    if (t.aoa > 14.5 || (t.aglFeet > 100 && t.kias < 85 && t.aircraft?.category !== 'rotorcraft')) {
+    if (t.aoa > 14.5 || (t.aglFeet > 100 && t.kias < 85 && t.aircraft?.category !== 'rotorcraft' && !this.hoverMode)) {
       return 'ALPHA FLOOR';
     }
     if (t.kias > vne * 0.98 || t.mach > mmo * 0.99) {
@@ -493,6 +559,15 @@ export class AutopilotPlusModule implements IModule {
 
   private stepThrottleChannel(t: FlightTelemetry, dt: number, protection: ApPpFmaState['protection']): void {
     if (this.activeFailures.has('pitot')) return;
+
+    if (this.hoverMode) {
+      const altErr = this.targetAltFt - t.altitude;
+      const desiredVs = clamp(altErr * 1.5, -600, 600);
+      const vsErr = desiredVs - t.vs;
+      const collCmd = clamp(0.54 + vsErr * 0.00045, 0.05, 0.98);
+      this.ctx?.sim.setThrottle(collCmd);
+      return;
+    }
 
     if (protection === 'ALPHA FLOOR') {
       this.ctx?.sim.setThrottle(1.0);
@@ -544,7 +619,25 @@ export class AutopilotPlusModule implements IModule {
     const hydFail = this.activeFailures.has('hydraulics') || this.activeFailures.has('controls');
     const maxBank = this.lateralMode === 'hold' && t.kias < 180 ? 15 : hydFail ? 15 : 25;
 
+    if (this.hoverMode) {
+      // Self-leveling rotorcraft SAS roll damping
+      const rollCmd = this.rollPid.step(0 - t.roll, dt);
+      if (window.controls) {
+        window.controls.roll = clamp(rollCmd, -0.5, 0.5);
+      }
+      return;
+    }
+
     if (this.lateralMode === 'off') return;
+
+    if (this.landingArmed && t.groundContact) {
+      // Wing-level rollout on runway
+      const rollCmd = this.rollPid.step(0 - t.roll, dt);
+      if (window.controls) {
+        window.controls.roll = clamp(rollCmd, -0.4, 0.4);
+      }
+      return;
+    }
 
     // Hybrid Override: delegate basic HDG to native GeoFS autopilot if available and no bank limit hit
     if (this.lateralMode === 'hdg' && window.geofs?.autopilot && Math.abs(t.roll) <= 30) {
@@ -558,7 +651,13 @@ export class AutopilotPlusModule implements IModule {
     // Custom PID roll guidance for HOLD, LAT/LON, WPT, LOC
     let desiredHeading = this.targetHdgDeg;
     if (this.lateralMode === 'hold') {
-      const res = stepHoldPattern(this.holdConfig, t.lat, t.lon, t.heading, dt);
+      const windSpeedKts = Number(window.weather?.currentWindSpeed ?? 0);
+      const windDirFromDeg = Number((window.weather as { currentWindDirection?: number } | undefined)?.currentWindDirection ?? 0);
+      const res = stepHoldPattern(this.holdConfig, t.lat, t.lon, t.heading, dt, {
+        tasKts: kiasToKtas(t.kias, t.altitude),
+        windSpeedKts: Number.isFinite(windSpeedKts) ? windSpeedKts : 0,
+        windDirFromDeg: Number.isFinite(windDirFromDeg) ? windDirFromDeg : 0
+      });
       desiredHeading = res.targetHeadingDeg;
     } else if (this.lateralMode === 'latlon' || this.lateralMode === 'wpt') {
       desiredHeading = greatCircleBearingDeg(t.lat, t.lon, this.targetLat, this.targetLon);
@@ -578,6 +677,13 @@ export class AutopilotPlusModule implements IModule {
     const controls = window.controls;
     if (!controls) return;
 
+    if (this.hoverMode) {
+      // Arrest forward drift into a steady hover
+      const desiredPitch = clamp(-t.groundSpeed * 0.12, -8, 8);
+      controls.pitch = clamp(this.pitchPid.step(desiredPitch - t.pitch, dt), -0.5, 0.5);
+      return;
+    }
+
     if (protection === 'ALPHA FLOOR') {
       const pitchCmd = this.pitchPid.step(-2 - t.pitch, dt);
       controls.pitch = clamp(pitchCmd, -0.6, 0.6);
@@ -591,8 +697,13 @@ export class AutopilotPlusModule implements IModule {
 
     if (this.verticalMode === 'off') return;
 
+    if (this.landingArmed && t.aglFeet <= 50 && !t.groundContact && this.verticalMode !== 'flare') {
+      this.verticalMode = 'flare';
+    }
+
     if (this.verticalMode === 'flare') {
-      const targetPitch = t.groundContact ? 0 : 3.5;
+      const flareProgress = clamp((50 - t.aglFeet) / 50, 0, 1);
+      const targetPitch = t.groundContact ? 0 : 1.5 + flareProgress * 3.0;
       controls.pitch = clamp(this.pitchPid.step(targetPitch - t.pitch, dt), -0.4, 0.5);
       return;
     }
@@ -633,6 +744,10 @@ export class AutopilotPlusModule implements IModule {
   private updateFmaLabels(): void {
     if (!this.engaged) {
       this.fma = { thr: 'OFF', vert: 'OFF', lat: 'OFF', protection: this.fma.protection };
+      return;
+    }
+    if (this.hoverMode) {
+      this.fma = { thr: 'HOV', vert: 'ALT HOV', lat: 'LVL', protection: this.fma.protection };
       return;
     }
     const thr =
@@ -731,6 +846,8 @@ export class AutopilotPlusModule implements IModule {
       landingArmed: this.landingArmed,
       landingRetarded: this.landingRetarded,
       envelopeProtection: this.envelopeProtection,
+      hoverMode: this.hoverMode,
+      isRotorcraft: t?.aircraft?.category === 'rotorcraft' || t?.collective !== null && t?.collective !== undefined,
       ktas,
       crossoverAltFt: cross,
       distanceToFixNm: dist,

@@ -41,19 +41,19 @@
 
 ### AP++ Unified Flight Management Script
 
-- [ ] Synthesize **Autothrottle**, **Overpowered Engines + Effective SAS**, and enhanced native GeoFS Autopilot into a unified **AP++** flight management system inside `.geofs-autopilot-bar`.
-- [ ] Provide seamless VNAV / Mach / overspeed envelope protection, unified mode annunciators, smooth thrust-to-pitch coupling, and single-bar GeoFS Native controls across all V3.x and V4.x aircraft.
+- [x] Synthesize **Autothrottle**, **Overpowered Engines + Effective SAS**, and enhanced native GeoFS Autopilot into a unified **AP++** flight management system inside `.geofs-autopilot-bar` and the `AP++` HUD tab.
+- [x] Provide seamless VNAV / Mach / overspeed envelope protection, ICAO direct/parallel/teardrop holds with wind correction, precision autoland flare, rotorcraft Auto-Hover, and unified mode annunciators across V3.x and V4.x aircraft.
 
 ### Browser-Style Modular HUD Tabs
 
 - [x] Upgrade `#flightDataDisplay` into a browser-style modular tab workspace supporting `+` Open Tab, `×` Close Tab, drag-to-reorder tabs, and custom dock presets.
-- [x] Allow any installed module (`Info`, `Checks`, `Fuel`, `Land`, `Realism`, `Failures`, `OP ENG`, `FPV`) to be opened, pinned, or detached as live HUD tabs directly inside GeoFS.
+- [x] Allow any installed module (`Info`, `Checks`, `Fuel`, `Land`, `Realism`, `Failures`, `OP ENG`, `FPV`, `GATES`, `AP++`) to be opened, pinned, or detached as live HUD tabs directly inside GeoFS.
 
 ### Flightradar-Integrated Flight Tracking And Star Rating Evaluation
 
-- [ ] Integrate continuous takeoff-to-landing flight session tracking (`Authentic Flights` verified via Flightradar-style telemetry continuity vs `Normal Untracked Flights` from mid-air or quick runway spawns).
-- [ ] Implement a calibrated **1–5-Star Rating System** alongside structured **Phase-By-Phase Critique Comments** covering departure configuration, cruise discipline, approach stabilization, centerline/touchdown zone accuracy, flare sink rate, and rollout execution.
-- [ ] Extend Chrome Logbook storage, Side Panel live session readout, and Options Logbook exporter with Authentic Flight badges, star ratings, and debrief notes.
+- [x] Integrate continuous takeoff-to-landing flight session tracking (`Authentic Flights` verified via departure-to-touchdown telemetry continuity vs `Practice Flights` from mid-air spawns or slew).
+- [x] Implement a calibrated **1–5-Star Rating System** alongside structured **Phase-By-Phase Critique Comments** covering departure configuration, cruise discipline, approach stabilization, and touchdown execution in [`FlightSessionEvaluator`](../src/modules/landing-statistics/session-evaluator.ts).
+- [x] Surface star ratings, Authentic/Practice badges, and phase critique notes in `#statsCard` and the `LAND` HUD tab.
 
 ## Parity Boundaries
 

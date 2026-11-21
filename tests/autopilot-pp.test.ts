@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AutopilotPlusModule } from '../src/modules/autopilot-pp';
 import {
+  classifyHoldEntry,
+  computeWcaDeg,
   crossoverAltitudeFt,
   greatCircleBearingDeg,
   greatCircleDistanceNm,
@@ -179,6 +181,77 @@ describe('AutopilotPlusModule (Beta)', () => {
     }
     expect(snapshots[snapshots.length - 1].engaged).toBe(false);
     expect(snapshots[snapshots.length - 1].degradedReason).toBe('Electrical Failure');
+
+    mod.destroy();
+    g.window = prevWindow;
+  });
+
+  it('classifies ICAO hold entries, computes WCA, and runs rotorcraft hover + autoland flare', () => {
+    expect(classifyHoldEntry(90, 90, 'R')).toBe('direct');
+    expect(classifyHoldEntry(210, 90, 'R')).toBe('teardrop');
+    expect(classifyHoldEntry(320, 90, 'R')).toBe('parallel');
+    expect(computeWcaDeg(90, 150, 30, 180)).toBeGreaterThan(0);
+
+    const sim = new SimAdapter();
+    const setThrottlesSpy = vi.spyOn(sim, 'setThrottle').mockImplementation(() => {});
+    const anchors = new AnchorManager();
+    anchors.init();
+    const snapshots: ApPpSnapshot[] = [];
+
+    const ctx: ModuleContext = {
+      sim,
+      audio: new AudioEngine(),
+      anchors,
+      keybinds: new KeybindManager(),
+      getSettings: () => DEFAULT_SETTINGS,
+      updateSettings: () => {},
+      emitEvent: (ev, detail) => {
+        if (ev === 'autopilot-pp:state' && detail) snapshots.push(detail as unknown as ApPpSnapshot);
+      },
+      onEvent: () => () => {}
+    };
+
+    const g = globalThis as unknown as { window?: Record<string, unknown>; controls?: Record<string, unknown> };
+    const prevWindow = g.window;
+    g.window = {
+      controls: { rawRoll: 0, rawPitch: 0, roll: 0, pitch: 0 },
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+    g.controls = g.window.controls as Record<string, unknown>;
+
+    const mod = new AutopilotPlusModule();
+    mod.init(ctx);
+
+    // Rotorcraft hover mode
+    mod.handleCommand({ type: 'setHoverMode', enabled: true });
+    mod.update(
+      makeTelemetry({
+        timestamp: 2000,
+        altitude: 500,
+        aglFeet: 450,
+        kias: 12,
+        groundSpeed: 10,
+        roll: 8,
+        pitch: 2,
+        aircraft: { ...makeTelemetry().aircraft!, id: '9', name: 'EC-135', category: 'rotorcraft' }
+      })
+    );
+    const hovSnap = snapshots[snapshots.length - 1];
+    expect(hovSnap.fma.thr).toBe('HOV');
+    expect(hovSnap.fma.vert).toBe('ALT HOV');
+    expect(hovSnap.fma.lat).toBe('LVL');
+    expect(setThrottlesSpy).toHaveBeenCalled();
+
+    // Autoland flare & 27 ft RA retard
+    mod.handleCommand({ type: 'setHoverMode', enabled: false });
+    mod.handleCommand({ type: 'setLandingArm', armed: true });
+    mod.update(makeTelemetry({ timestamp: 2500, aglFeet: 24, kias: 135, groundContact: false }));
+    const ldgSnap = snapshots[snapshots.length - 1];
+    expect(ldgSnap.landingRetarded).toBe(true);
+    expect(ldgSnap.verticalMode).toBe('flare');
+    expect(ldgSnap.fma.thr).toBe('IDLE');
+    expect(ldgSnap.fma.vert).toBe('FLARE');
 
     mod.destroy();
     g.window = prevWindow;

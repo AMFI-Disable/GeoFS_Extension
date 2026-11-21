@@ -1,4 +1,4 @@
-import type { ApPpHoldConfig } from './types';
+import type { ApPpHoldConfig, ApPpHoldEntryType, ApPpHoldTurnDir } from './types';
 
 const EARTH_RADIUS_NM = 3440.065;
 const DEG_TO_RAD = Math.PI / 180;
@@ -135,31 +135,95 @@ export class PidController {
 }
 
 /**
- * Advances the racetrack holding state machine and returns the desired heading.
+ * ICAO standard holding entry classification (MIT-adapted from nafeesnazzim/geofs-holding-pattern).
+ * For right turns: teardrop [110, 180), parallel [180, 290), direct [290, 110).
+ * For left turns: mirrored across inbound course.
+ */
+export function classifyHoldEntry(
+  headingDeg: number,
+  inboundCourseDeg: number,
+  turnDir: ApPpHoldTurnDir
+): ApPpHoldEntryType {
+  const rel = normalizeHeading(headingDeg - inboundCourseDeg);
+  const sector = turnDir === 'L' ? normalizeHeading(360 - rel) : rel;
+  if (sector >= 110 && sector < 180) return 'teardrop';
+  if (sector >= 180 && sector < 290) return 'parallel';
+  return 'direct';
+}
+
+/**
+ * Computes wind correction angle (WCA) in degrees for a desired ground track.
+ */
+export function computeWcaDeg(
+  trackDeg: number,
+  tasKts: number,
+  windSpeedKts: number,
+  windDirFromDeg: number
+): number {
+  if (!Number.isFinite(windSpeedKts) || windSpeedKts <= 0.5 || !Number.isFinite(windDirFromDeg)) {
+    return 0;
+  }
+  const safeTas = Math.max(45, Number.isFinite(tasKts) ? tasKts : 120);
+  const angleRad = (windDirFromDeg - trackDeg) * DEG_TO_RAD;
+  const cross = windSpeedKts * Math.sin(angleRad);
+  const wca = Math.asin(clamp(cross / safeTas, -0.44, 0.44)) * RAD_TO_DEG;
+  return Math.round(clamp(wca, -26, 26));
+}
+
+/**
+ * Advances the ICAO racetrack holding state machine and returns the desired wind-corrected heading.
  */
 export function stepHoldPattern(
   hold: ApPpHoldConfig,
   lat: number,
   lon: number,
   headingDeg: number,
-  dt: number
+  dt: number,
+  wind?: { tasKts: number; windSpeedKts: number; windDirFromDeg: number }
 ): { targetHeadingDeg: number; distToFixNm: number; bearingToFixDeg: number } {
   const distToFixNm = greatCircleDistanceNm(lat, lon, hold.fixLat, hold.fixLon);
   const bearingToFixDeg = greatCircleBearingDeg(lat, lon, hold.fixLat, hold.fixLon);
   const inbound = normalizeHeading(hold.inboundCourseDeg);
   const outbound = normalizeHeading(inbound + 180);
   const legSec = clamp(hold.legMinutes, 0.5, 5) * 60;
+  const wcaForTrack = (track: number) =>
+    wind ? computeWcaDeg(track, wind.tasKts, wind.windSpeedKts, wind.windDirFromDeg) : 0;
+
+  if (hold.phase === 'entry-teardrop') {
+    hold.legElapsedSec += dt;
+    // Fly 30 deg into the holding side on outbound leg
+    const tdTrack = normalizeHeading(outbound + (hold.turnDir === 'R' ? -30 : 30));
+    const wca = wcaForTrack(tdTrack);
+    hold.wcaDeg = wca;
+    if (hold.legElapsedSec >= legSec) {
+      hold.phase = 'turn-inbound';
+      hold.legElapsedSec = 0;
+    }
+    return { targetHeadingDeg: normalizeHeading(tdTrack + wca), distToFixNm, bearingToFixDeg };
+  }
+
+  if (hold.phase === 'entry-parallel') {
+    hold.legElapsedSec += dt;
+    const wca = wcaForTrack(outbound);
+    hold.wcaDeg = wca;
+    if (hold.legElapsedSec >= legSec) {
+      hold.phase = 'inbound';
+      hold.legElapsedSec = 0;
+    }
+    return { targetHeadingDeg: normalizeHeading(outbound + wca), distToFixNm, bearingToFixDeg };
+  }
 
   if (hold.phase === 'inbound') {
     hold.legElapsedSec += dt;
+    const wca = wcaForTrack(inbound);
+    hold.wcaDeg = wca;
     if (distToFixNm < 0.6 && hold.legElapsedSec > 10) {
       hold.phase = 'turn-outbound';
       hold.legElapsedSec = 0;
     }
-    // Intercept inbound radial toward fix
     const interceptBias = clamp(headingDeltaDeg(bearingToFixDeg, inbound) * 1.4, -30, 30);
     return {
-      targetHeadingDeg: normalizeHeading(bearingToFixDeg + interceptBias * 0.25),
+      targetHeadingDeg: normalizeHeading(bearingToFixDeg + interceptBias * 0.25 + wca),
       distToFixNm,
       bearingToFixDeg
     };
@@ -167,29 +231,37 @@ export function stepHoldPattern(
 
   if (hold.phase === 'turn-outbound') {
     hold.legElapsedSec += dt;
-    const delta = Math.abs(headingDeltaDeg(outbound, headingDeg));
+    const wca = wcaForTrack(outbound);
+    hold.wcaDeg = wca;
+    const desired = normalizeHeading(outbound + wca);
+    const delta = Math.abs(headingDeltaDeg(desired, headingDeg));
     if (delta < 12 || hold.legElapsedSec > 70) {
       hold.phase = 'outbound';
       hold.legElapsedSec = 0;
     }
-    return { targetHeadingDeg: outbound, distToFixNm, bearingToFixDeg };
+    return { targetHeadingDeg: desired, distToFixNm, bearingToFixDeg };
   }
 
   if (hold.phase === 'outbound') {
     hold.legElapsedSec += dt;
+    const wca = wcaForTrack(outbound);
+    hold.wcaDeg = wca;
     if (hold.legElapsedSec >= legSec) {
       hold.phase = 'turn-inbound';
       hold.legElapsedSec = 0;
     }
-    return { targetHeadingDeg: outbound, distToFixNm, bearingToFixDeg };
+    return { targetHeadingDeg: normalizeHeading(outbound + wca), distToFixNm, bearingToFixDeg };
   }
 
   // turn-inbound
   hold.legElapsedSec += dt;
-  const delta = Math.abs(headingDeltaDeg(inbound, headingDeg));
+  const wca = wcaForTrack(inbound);
+  hold.wcaDeg = wca;
+  const desired = normalizeHeading(inbound + wca);
+  const delta = Math.abs(headingDeltaDeg(desired, headingDeg));
   if (delta < 15 || hold.legElapsedSec > 70) {
     hold.phase = 'inbound';
     hold.legElapsedSec = 0;
   }
-  return { targetHeadingDeg: inbound, distToFixNm, bearingToFixDeg };
+  return { targetHeadingDeg: desired, distToFixNm, bearingToFixDeg };
 }

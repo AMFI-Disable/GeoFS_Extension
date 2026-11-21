@@ -4,6 +4,7 @@ import { NightVfrLidarController, elevationFeetToLidarColor } from '../src/modul
 import { CameraResetController } from '../src/modules/realism-pack/camera-reset';
 import { SlewModeController } from '../src/modules/realism-pack/slew-mode';
 import { WindThermalsController, thermalStrengthToColor } from '../src/modules/realism-pack/wind-thermals';
+import { FlightSessionEvaluator } from '../src/modules/landing-statistics/session-evaluator';
 import {
   destinationPoint,
   filterGates,
@@ -388,5 +389,24 @@ describe('Phase 2 Features: Night VFR LiDAR, Camera Reset, Slew Mode, Wind & The
     const strongCol = thermalStrengthToColor(0.95) as { red: number; green: number };
     expect(strongCol.red).toBeGreaterThan(weakCol.red);
     thermals.dispose();
+  });
+
+  it('evaluates Authentic Flights vs Practice/Slew flights and computes 1-5 star ratings', () => {
+    const ev = new FlightSessionEvaluator();
+    // 1. Authentic flight: ground takeoff -> climb -> stabilized 500 ft approach -> butter TDZ
+    ev.sample(makeTelemetry({ groundContact: true, aglFeet: 0, altitude: 100 }));
+    ev.sample(makeTelemetry({ groundContact: false, aglFeet: 1200, altitude: 1300, roll: 12, gForce: 1.1 }));
+    ev.sample(makeTelemetry({ groundContact: false, aglFeet: 480, altitude: 580, vs: -700, roll: 4 }));
+    const authRes = ev.evaluate({ rating: 'Butter', score: 9.8, vsFpm: -65, bounces: 0, inTouchdownZone: true });
+    expect(authRes.authenticFlight).toBe(true);
+    expect(authRes.stars).toBe(5);
+    expect(authRes.phaseCritique.approach).toContain('Stabilized');
+
+    // 2. Practice / Slew flight -> authenticFlight is false
+    ev.reset();
+    ev.sample(makeTelemetry({ groundContact: false, aglFeet: 3000, altitude: 3100 }), true);
+    const pracRes = ev.evaluate({ rating: 'Hard', score: 5.0, vsFpm: -620, bounces: 1, inTouchdownZone: false });
+    expect(pracRes.authenticFlight).toBe(false);
+    expect(pracRes.stars).toBeLessThanOrEqual(3);
   });
 });
