@@ -284,14 +284,31 @@ export class LightingShaderController {
   private dayFactor = 0.08;
 
   private initArrays(): boolean {
-    if (this.lightPosArr.length > 0) return true;
+    if (this.spotColArr.length === MAX_SPOTS) return true;
+    this.lightPosArr = [];
+    this.lightColArr = [];
+    this.rwPosArr = [];
+    this.rwColArr = [];
+    this.spotPosArr = [];
+    this.spotDirArr = [];
+    this.spotConeArr = [];
+    this.spotColArr = [];
+
     const Cesium = window.Cesium as Record<string, unknown> | undefined;
     const C4 = Cesium?.Cartesian4 as (new (x: number, y: number, z: number, w: number) => Vec4Like) | undefined;
     const C3 = Cesium?.Cartesian3 as (new (x: number, y: number, z: number) => Vec3Like) | undefined;
-    const make4 = (x: number, y: number, z: number, w: number): Vec4Like =>
-      C4 ? new C4(x, y, z, w) : { x, y, z, w };
-    const make3 = (x: number, y: number, z: number): Vec3Like =>
-      C3 ? new C3(x, y, z) : { x, y, z };
+    const make4 = (x: number, y: number, z: number, w: number): Vec4Like => {
+      if (typeof C4 === 'function') {
+        try { return new C4(x, y, z, w); } catch { /* fallback */ }
+      }
+      return { x, y, z, w };
+    };
+    const make3 = (x: number, y: number, z: number): Vec3Like => {
+      if (typeof C3 === 'function') {
+        try { return new C3(x, y, z); } catch { /* fallback */ }
+      }
+      return { x, y, z };
+    };
 
     for (let i = 0; i < MAX_AIRCRAFT_LIGHTS; i++) {
       this.lightPosArr.push(make4(0, 0, 0, 0));

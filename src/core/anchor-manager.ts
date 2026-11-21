@@ -632,6 +632,7 @@ export class AnchorManager {
           return;
         }
       }
+      e.preventDefault();
       isPointerDown = true;
       dragMoved = false;
       startX = e.clientX;

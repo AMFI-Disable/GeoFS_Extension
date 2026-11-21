@@ -173,9 +173,9 @@ async function run() {
       };
     });
 
-    assert.deepEqual(hudAudit.tabIds, ['tab-btn-info', 'tab-btn-checks', 'tab-btn-fuel', 'tab-btn-land']);
+    assert.deepEqual(hudAudit.tabIds, ['tab-btn-info', 'tab-btn-checks', 'tab-btn-fuel', 'tab-btn-land', 'hud-tab-add-btn']);
     assert.deepEqual(hudAudit.headerChildIds, ['geofs-ext-hud-grip', 'hud-unified-tabs', 'geofs-ext-hud-min']);
-    assert.equal(hudAudit.headerText.toUpperCase(), 'INFOCHECKSFUELLAND−', 'HUD header must contain only the 4 tab labels and minimize symbol (no title)');
+    assert.equal(hudAudit.headerText.toUpperCase(), 'INFO×CHECKS×FUEL×LAND×+−', 'HUD header must contain only the 4 tab labels with close buttons, +, and minimize symbol (no title)');
     assert.equal(hudAudit.bg, 'rgba(0, 0, 0, 0.8)');
     assert.equal(hudAudit.borderRadius, '15px');
     assert.equal(hudAudit.backdropFilter, 'none');
@@ -236,9 +236,9 @@ async function run() {
     await simV3.click('.geofs-ext-hud-min');
 
     // Drag HUD to left edge from header strip (must show grabbing cursor globally without flash and move WITHOUT switching off INFO tab)
-    const hdrBox = await simV3.locator('.geofs-ext-hud-header').boundingBox();
-    assert(hdrBox);
-    await simV3.mouse.move(hdrBox.x + 120, hdrBox.y + 8);
+    const hudGripBox = await simV3.locator('.geofs-ext-hud-grip').boundingBox();
+    assert(hudGripBox);
+    await simV3.mouse.move(hudGripBox.x + hudGripBox.width / 2, hudGripBox.y + hudGripBox.height / 2);
     await simV3.mouse.down();
     await simV3.mouse.move(4, 150, { steps: 6 });
     const midDragCursor = await simV3.evaluate(() => ({
