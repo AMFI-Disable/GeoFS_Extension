@@ -5,10 +5,11 @@ import { sendApPpCommand } from '../shared/settings-store';
 interface ApPpPanelProps {
   enabled: boolean;
   snapshot: ApPpSnapshot | null | undefined;
+  tabId?: number;
   onEnableBeta: () => void;
 }
 
-export function ApPpPanel({ enabled, snapshot, onEnableBeta }: ApPpPanelProps) {
+export function ApPpPanel({ enabled, snapshot, tabId, onEnableBeta }: ApPpPanelProps) {
   const [latInput, setLatInput] = useState('37.619');
   const [lonInput, setLonInput] = useState('-122.375');
   const [spdInput, setSpdInput] = useState('');
@@ -17,7 +18,7 @@ export function ApPpPanel({ enabled, snapshot, onEnableBeta }: ApPpPanelProps) {
   const [vsInput, setVsInput] = useState('');
 
   const send = (cmd: ApPpCommand) => {
-    void sendApPpCommand(cmd);
+    void sendApPpCommand(cmd, tabId);
   };
 
   if (!enabled) {

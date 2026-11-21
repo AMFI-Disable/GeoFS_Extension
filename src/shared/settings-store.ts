@@ -384,8 +384,13 @@ export async function requestActiveTabDiagnostics(preferredTabId?: number): Prom
   return cached.diagnostics;
 }
 
-export async function sendApPpCommand(command: ApPpCommand): Promise<boolean> {
+export async function sendApPpCommand(command: ApPpCommand, preferredTabId?: number): Promise<boolean> {
   const tabIds = await getCandidateGeoFSTabIds();
+  if (preferredTabId !== undefined) {
+    const idx = tabIds.indexOf(preferredTabId);
+    if (idx > 0) tabIds.splice(idx, 1);
+    if (idx !== 0) tabIds.unshift(preferredTabId);
+  }
   if (!tabIds.length || !chrome.tabs) return false;
   for (const tabId of tabIds) {
     const resp = await sendTabMessageSafe<{ ok?: boolean }>(tabId, {

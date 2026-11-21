@@ -255,6 +255,7 @@ export function App() {
         <ApPpPanel
           enabled={Boolean(settings.modules['autopilot-pp'])}
           snapshot={live?.apPp}
+          tabId={activeTab?.id}
           onEnableBeta={() => {
             const nextModules = { ...settings.modules, 'autopilot-pp': true, 'autothrottle': false };
             setSettings((prev) => ({ ...prev, modules: nextModules }));

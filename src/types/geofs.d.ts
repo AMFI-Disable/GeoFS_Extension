@@ -213,11 +213,15 @@ export interface GeoFSGlobal {
   debug?: { fps?: number | string; [key: string]: unknown };
   autopilot?: {
     on?: boolean;
+    turnOn?: () => void;
     turnOff?: () => void;
     speedMode?: string;
-    values?: { speed?: number };
+    values?: { speed?: number; course?: number; altitude?: number; verticalSpeed?: number };
     setSpeed?: (speed: number) => void;
     setSpeedMode?: (mode: string) => void;
+    setCourse?: (course: number) => void;
+    setAltitude?: (altitude: number) => void;
+    setVerticalSpeed?: (vs: number) => void;
     PIDs?: { throttle?: GeoFSThrottlePid };
   };
   aircraft?: {

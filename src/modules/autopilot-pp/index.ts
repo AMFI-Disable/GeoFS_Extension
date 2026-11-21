@@ -295,6 +295,8 @@ export class AutopilotPlusModule implements IModule {
     const protection = this.envelopeProtection ? this.evaluateEnvelope(telemetry) : null;
     this.fma.protection = protection;
 
+    this.syncNativeAutopilot();
+
     // 2. Speed / Autothrottle Channel
     this.stepThrottleChannel(telemetry, dt, protection);
 
@@ -353,8 +355,11 @@ export class AutopilotPlusModule implements IModule {
         break;
       case 'setHeading':
         this.targetHdgDeg = normalizeHeading(cmd.deg);
-        if (window.geofs?.autopilot?.values) {
-          (window.geofs.autopilot.values as Record<string, unknown>).course = this.targetHdgDeg;
+        if (window.geofs?.autopilot) {
+          window.geofs.autopilot.setCourse?.(this.targetHdgDeg);
+          if (window.geofs.autopilot.values) {
+            window.geofs.autopilot.values.course = this.targetHdgDeg;
+          }
         }
         break;
       case 'setLateralMode':
@@ -367,8 +372,11 @@ export class AutopilotPlusModule implements IModule {
       case 'setAltitude':
         if (Number.isFinite(cmd.feet)) {
           this.targetAltFt = clamp(Math.round(cmd.feet), 0, 80000);
-          if (window.geofs?.autopilot?.values) {
-            (window.geofs.autopilot.values as Record<string, unknown>).altitude = this.targetAltFt;
+          if (window.geofs?.autopilot) {
+            window.geofs.autopilot.setAltitude?.(this.targetAltFt);
+            if (window.geofs.autopilot.values) {
+              window.geofs.autopilot.values.altitude = this.targetAltFt;
+            }
           }
         }
         break;
@@ -443,6 +451,9 @@ export class AutopilotPlusModule implements IModule {
         break;
     }
 
+    if (this.engaged) {
+      this.syncNativeAutopilot();
+    }
     this.updateFmaLabels();
     this.renderPad();
     this.emitSnapshot(true);
@@ -481,6 +492,8 @@ export class AutopilotPlusModule implements IModule {
       }
     }
 
+    this.syncNativeAutopilot();
+
     this.ctx?.emitDiag?.('AP_PP_ENGAGED', {
       lat: this.lateralMode,
       vert: this.verticalMode,
@@ -489,6 +502,33 @@ export class AutopilotPlusModule implements IModule {
     this.updateFmaLabels();
     this.renderPad();
     this.emitSnapshot(true);
+  }
+
+  private syncNativeAutopilot(): void {
+    const ap = window.geofs?.autopilot;
+    if (!ap) return;
+    const useNative =
+      this.engaged &&
+      !this.hoverMode &&
+      !this.landingArmed &&
+      (this.lateralMode === 'hdg' || this.verticalMode === 'alt');
+    try {
+      if (useNative) {
+        if (!ap.on) ap.turnOn?.();
+        if (this.lateralMode === 'hdg') {
+          ap.setCourse?.(this.targetHdgDeg);
+          if (ap.values) ap.values.course = this.targetHdgDeg;
+        }
+        if (this.verticalMode === 'alt') {
+          ap.setAltitude?.(this.targetAltFt);
+          if (ap.values) ap.values.altitude = this.targetAltFt;
+        }
+      } else if (ap.on) {
+        ap.turnOff?.();
+      }
+    } catch {
+      // Ignore sim autopilot state errors
+    }
   }
 
   private disengage(reason?: string): void {
