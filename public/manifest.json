@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GeoFS Extension",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Unified Manifest V3 flight simulation suite for GeoFS V3.x and V4.x.",
   "icons": {
     "16": "icons/icon16.png",

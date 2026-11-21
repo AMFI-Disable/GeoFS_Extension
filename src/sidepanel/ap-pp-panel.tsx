@@ -241,7 +241,7 @@ export function ApPpPanel({ enabled, snapshot, onEnableBeta }: ApPpPanelProps) {
 
         <div class="field-row" style="margin-top:6px">
           <button type="button" class="btn-sm active" onClick={() => send({ type: 'holdHere' })}>
-            HOLD HERE ({ap?.holdConfig.phase.toUpperCase() ?? 'IN'})
+            HOLD ({ap?.holdConfig.entryType?.toUpperCase() ?? 'DIR'} · {ap?.holdConfig.phase.toUpperCase() ?? 'IN'} · WCA {ap?.holdConfig.wcaDeg ?? 0}°)
           </button>
           <div class="chip-group">
             <button
@@ -266,6 +266,14 @@ export function ApPpPanel({ enabled, snapshot, onEnableBeta }: ApPpPanelProps) {
               }
             >
               {ap?.holdConfig.turnDir ?? 'R'}-TURN
+            </button>
+            <button
+              type="button"
+              class={`chip-btn ${ap?.hoverMode ? 'active' : ''}`}
+              title="Rotorcraft Auto-Hover & SAS"
+              onClick={() => send({ type: 'setHoverMode', enabled: !ap?.hoverMode })}
+            >
+              {ap?.hoverMode ? 'HOVER ON' : 'HOVER'}
             </button>
           </div>
         </div>

@@ -1118,6 +1118,8 @@ export function App() {
                       <th>Time</th>
                       <th>Aircraft</th>
                       <th>Rating</th>
+                      <th>Stars</th>
+                      <th>Session</th>
                       <th>Score</th>
                       <th>V/S (fpm)</th>
                       <th>G-Force</th>
@@ -1128,10 +1130,27 @@ export function App() {
                   </thead>
                   <tbody>
                     {logbook.map((rec) => (
-                      <tr key={rec.id}>
+                      <tr
+                        key={rec.id}
+                        title={
+                          rec.phaseCritique
+                            ? `${rec.phaseCritique.departure} | ${rec.phaseCritique.cruise} | ${rec.phaseCritique.approach}`
+                            : undefined
+                        }
+                      >
                         <td>{new Date(rec.timestamp).toLocaleString()}</td>
                         <td>{rec.aircraftName}</td>
                         <td>{rec.rating}</td>
+                        <td>{rec.stars ? '★'.repeat(rec.stars) + '☆'.repeat(5 - rec.stars) : '--'}</td>
+                        <td>
+                          {rec.authenticFlight === undefined ? (
+                            '--'
+                          ) : (
+                            <span class={`badge ${rec.authenticFlight ? 'badge--ok' : ''}`}>
+                              {rec.authenticFlight ? 'Authentic' : 'Practice'}
+                            </span>
+                          )}
+                        </td>
                         <td>{rec.score !== undefined ? `${rec.score.toFixed(1)}/10` : '--'}</td>
                         <td>{rec.vsFpm}</td>
                         <td>{rec.gForce.toFixed(2)}G</td>
