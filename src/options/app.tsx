@@ -21,6 +21,7 @@ import { AircraftEditor } from '../shared/aircraft-editor';
 import { detectDisplayProfile } from '../shared/display-calibrator';
 import { HelpLabel, SETTING_TIPS } from '../shared/help-tip';
 import {
+  MODULE_CATEGORY_META,
   MODULE_META,
   clearLogbook,
   focusGeoFSTab,
@@ -193,12 +194,33 @@ export function App() {
     void saveScriptPatch(patch);
   };
 
-  const applyPreset = (mode: 'all' | 'minimal' | 'none') => {
+  const applyPreset = (mode: 'all' | 'ifr' | 'vfr' | 'minimal' | 'none') => {
     const nextModules: Record<string, boolean> = {};
     for (const m of MODULE_META) {
       if (mode === 'all') nextModules[m.id] = true;
       else if (mode === 'none') nextModules[m.id] = false;
-      else nextModules[m.id] = ['information-display', 'autothrottle', 'landing-statistics'].includes(m.id);
+      else if (mode === 'ifr') {
+        nextModules[m.id] = [
+          'autothrottle',
+          'information-display',
+          'checklist-system',
+          'fuel-simulator',
+          'landing-statistics',
+          'flight-path-vector',
+          'realism-pack',
+          'gate-spawner'
+        ].includes(m.id);
+      } else if (mode === 'vfr') {
+        nextModules[m.id] = [
+          'information-display',
+          'landing-statistics',
+          'flight-path-vector',
+          'realism-pack',
+          'gate-spawner'
+        ].includes(m.id);
+      } else {
+        nextModules[m.id] = ['information-display', 'autothrottle', 'landing-statistics'].includes(m.id);
+      }
     }
     patchExt({ modules: nextModules });
   };
@@ -334,6 +356,12 @@ export function App() {
               <button type="button" class="btn-sm" onClick={() => applyPreset('all')}>
                 All On
               </button>
+              <button type="button" class="btn-sm" onClick={() => applyPreset('ifr')}>
+                Airliner IFR
+              </button>
+              <button type="button" class="btn-sm" onClick={() => applyPreset('vfr')}>
+                VFR / Glider
+              </button>
               <button type="button" class="btn-sm" onClick={() => applyPreset('minimal')}>
                 Minimal
               </button>
@@ -342,21 +370,32 @@ export function App() {
               </button>
             </div>
             <div class="list">
-              {MODULE_META.map((m) => (
-                <label class="switch-row" key={m.id}>
-                  <div>
-                    <div style="font-weight:700">{m.name}</div>
-                    <div class="muted-hint">{m.desc}</div>
+              {MODULE_CATEGORY_META.map((cat) => {
+                const items = MODULE_META.filter((m) => m.category === cat.id);
+                if (!items.length) return null;
+                return (
+                  <div key={cat.id} style="display:flex;flex-direction:column;gap:4px;margin-top:6px">
+                    <div style="font-size:10px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--muted);padding-bottom:2px;border-bottom:1px solid var(--border)">
+                      {cat.label}
+                    </div>
+                    {items.map((m) => (
+                      <label class="switch-row" key={m.id}>
+                        <div>
+                          <div style="font-weight:700">{m.name}</div>
+                          <div class="muted-hint">{m.desc}</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(settings.modules[m.id])}
+                          onChange={() =>
+                            patchExt({ modules: { ...settings.modules, [m.id]: !settings.modules[m.id] } })
+                          }
+                        />
+                      </label>
+                    ))}
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(settings.modules[m.id])}
-                    onChange={() =>
-                      patchExt({ modules: { ...settings.modules, [m.id]: !settings.modules[m.id] } })
-                    }
-                  />
-                </label>
-              ))}
+                );
+              })}
             </div>
           </div>
 

@@ -40,18 +40,39 @@ export interface DiagEntry {
   payload?: unknown;
 }
 
-export const MODULE_META: ReadonlyArray<{ id: string; name: string; desc: string }> = [
-  { id: 'autothrottle', name: 'Autothrottle', desc: 'GeoFS PID, reverse thrust, LCD landing pad & OP-SYNC' },
-  { id: 'autopilot-pp', name: 'AP++ (Beta)', desc: 'Unified FCU in Side Panel: VNAV/FLCH, Hold, LAT/LON, Autoland & Envelope Protection' },
-  { id: 'information-display', name: 'Information Display', desc: 'HUD telemetry, AGL/GS dev & multi-engine % THR' },
-  { id: 'fuel-simulator', name: 'Fuel Simulator', desc: 'Multi-throttle altitude burn, tank balance & flameout' },
-  { id: 'overpowered-engines', name: 'Overpowered Engines', desc: 'Native thrust/ceiling card & closed-loop SAS' },
-  { id: 'checklist-system', name: 'Checklist System', desc: '4-gate mandatory checks, situational guide & QRH' },
-  { id: 'realism-pack', name: 'Realism Pack', desc: 'Adaptive V3/V4 shaders, G-audio & 777/A320/737 SFX' },
-  { id: 'failure-simulator', name: 'Failure Simulator', desc: 'Modal failure probabilities, QRH override & recovery' },
-  { id: 'flight-path-vector', name: 'Flight Path Vector', desc: 'GeoFS V3.9 Cesium 3D billboard & glideslope badge' },
-  { id: 'landing-statistics', name: 'Landing Statistics', desc: 'Slide-in touchdown scorecard & persistent logbook' },
-  { id: 'satellite-imagery', name: 'Satellite Imagery', desc: 'Configurable Esri, Bing, OSM & custom map tiles' }
+export type ModuleCategory =
+  | 'flight-control'
+  | 'flight-deck'
+  | 'environment'
+  | 'immersion'
+  | 'utilities';
+
+export const MODULE_CATEGORY_META: ReadonlyArray<{ id: ModuleCategory; label: string }> = [
+  { id: 'flight-control', label: 'Flight Control & Avionics' },
+  { id: 'flight-deck', label: 'Flight Deck & Operations' },
+  { id: 'environment', label: 'Environment & Visuals' },
+  { id: 'immersion', label: 'Immersion & Failures' },
+  { id: 'utilities', label: 'Utilities & QoL' }
+];
+
+export const MODULE_META: ReadonlyArray<{
+  id: string;
+  name: string;
+  desc: string;
+  category: ModuleCategory;
+}> = [
+  { id: 'autothrottle', name: 'Autothrottle', desc: 'GeoFS PID, reverse thrust, LCD landing pad & OP-SYNC', category: 'flight-control' },
+  { id: 'autopilot-pp', name: 'AP++ (Beta)', desc: 'Unified FCU: VNAV/FLCH, ICAO Hold, LAT/LON, Autoland & Hover', category: 'flight-control' },
+  { id: 'overpowered-engines', name: 'Overpowered Engines', desc: 'Native thrust/ceiling card & closed-loop SAS', category: 'flight-control' },
+  { id: 'flight-path-vector', name: 'Flight Path Vector', desc: 'Cesium 3D velocity vector reticle & glideslope badge', category: 'flight-control' },
+  { id: 'information-display', name: 'Information Display', desc: 'HUD telemetry, METAR, Mini-Map & multi-engine % THR', category: 'flight-deck' },
+  { id: 'checklist-system', name: 'Checklist System', desc: '4-gate mandatory checks, situational guide & QRH', category: 'flight-deck' },
+  { id: 'fuel-simulator', name: 'Fuel Simulator', desc: 'Multi-throttle altitude burn, tank balance & flameout', category: 'flight-deck' },
+  { id: 'landing-statistics', name: 'Landing Statistics', desc: '1–5 star Authentic Flight debrief, scorecard & logbook', category: 'flight-deck' },
+  { id: 'satellite-imagery', name: 'Satellite Imagery', desc: 'Configurable Esri, Bing, OSM & custom map tiles', category: 'environment' },
+  { id: 'realism-pack', name: 'Realism Pack', desc: 'Lighting shaders, Night VFR LiDAR, Thermals, GPWS, SFX & Slew', category: 'immersion' },
+  { id: 'failure-simulator', name: 'Failure Simulator', desc: 'Modal failure probabilities, QRH override & recovery', category: 'immersion' },
+  { id: 'gate-spawner', name: 'Gate Spawner', desc: 'Airport ICAO & stand search with instant gate parking', category: 'utilities' }
 ];
 
 export function mergeExtensionPatch(

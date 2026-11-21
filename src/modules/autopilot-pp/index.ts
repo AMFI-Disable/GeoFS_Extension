@@ -511,7 +511,8 @@ export class AutopilotPlusModule implements IModule {
       this.engaged &&
       !this.hoverMode &&
       !this.landingArmed &&
-      (this.lateralMode === 'hdg' || this.verticalMode === 'alt');
+      this.lateralMode === 'hdg' &&
+      this.verticalMode === 'alt';
     try {
       if (useNative) {
         if (!ap.on) ap.turnOn?.();

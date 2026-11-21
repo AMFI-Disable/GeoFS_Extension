@@ -3,6 +3,7 @@ import { detectOsPlatform } from '../core/keybind-manager';
 import { formatLogbookCsv, triggerDownload } from '../core/logbook-export';
 import { AircraftEditor } from '../shared/aircraft-editor';
 import {
+  MODULE_CATEGORY_META,
   MODULE_META,
   loadLogbook,
   loadSplitSettings,
@@ -178,19 +179,32 @@ export function App() {
             </div>
           </div>
           <div class="panel-group panel-group--scroll">
-            {MODULE_META.map((m) => (
-              <label class="module-row" key={m.id}>
-                <div style="min-width:0">
-                  <div class="module-row-title">{m.name}</div>
-                  <div class="module-row-desc">{m.desc}</div>
+            {MODULE_CATEGORY_META.map((cat) => {
+              const items = MODULE_META.filter((m) => m.category === cat.id);
+              if (!items.length) return null;
+              return (
+                <div key={cat.id}>
+                  <div
+                    style="font-size:9px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--muted);padding:6px 10px 3px;border-bottom:1px solid rgba(255,255,255,0.06)"
+                  >
+                    {cat.label}
+                  </div>
+                  {items.map((m) => (
+                    <label class="module-row" key={m.id}>
+                      <div style="min-width:0">
+                        <div class="module-row-title">{m.name}</div>
+                        <div class="module-row-desc">{m.desc}</div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(settings.modules[m.id])}
+                        onChange={() => toggleModule(m.id)}
+                      />
+                    </label>
+                  ))}
                 </div>
-                <input
-                  type="checkbox"
-                  checked={Boolean(settings.modules[m.id])}
-                  onChange={() => toggleModule(m.id)}
-                />
-              </label>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
