@@ -27,8 +27,11 @@ This catalog documents community GeoFS repositories verified against the GitHub 
 | AP++ Roadmap | [gefs-plugins/fmc-requirejs](https://github.com/gefs-plugins/fmc-requirejs) | AGPL-3.0 | Inactive | Behavior reference (VNAV) |
 | Info Display | [tylerbmusic/GeoFS-Minimap](https://github.com/tylerbmusic/GeoFS-Minimap) | None | Inactive | Clean-room minimap HUD sub-tab |
 | Info Display | [seabus0316/GeoFS-METAR-system](https://github.com/seabus0316/GeoFS-METAR-system) | None | Inactive | Clean-room nearest-airport METAR readout |
-| Utilities | [machpoint82/geofs-gate-spawner](https://github.com/machpoint82/geofs-gate-spawner) | MIT | Active | Port real gate spawner (pairs with `CHOCKS` checklist) |
+| Utilities | [machpoint82/geofs-gate-spawner](https://github.com/machpoint82/geofs-gate-spawner) | MIT | Active | Ported into `src/modules/gate-spawner/index.ts` |
 | Utilities | [tylerbmusic/GeoFS-Slew-Mode](https://github.com/tylerbmusic/GeoFS-Slew-Mode) | None | Inactive | Clean-room FSX-style slew mode |
+| Realism Pack Audio | [GeoFS V-Speed Takeoff Callouts](https://greasyfork.org/en/scripts/by-site/geo-fs.com) (Greasy Fork) | — | Active | Clean-room `V1`/`ROTATE`/`V2` callouts in `generic-gpws.ts` |
+| Rotorcraft AP++ | [GeoFS Eurocopter EC-135 AFCS Suite](https://greasyfork.org/en/scripts/by-site/geo-fs.com) (Greasy Fork) | — | Active | Future rotorcraft SAS/Auto-Hover reference |
+| Camera QoL | [krunchiekrunch/GeoFS-Camera-Reset](https://github.com/krunchiekrunch/GeoFS-Camera-Reset) | Other | Active | Future middle-click camera reset QoL |
 
 ## Excluded Resources
 

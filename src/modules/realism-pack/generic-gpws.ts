@@ -9,14 +9,16 @@ import { hasAircraftCallouts } from './aircraft-sounds';
 const ALT_CALLOUTS = [500, 400, 300, 200, 100, 50, 40, 30, 20, 10] as const;
 
 export interface GpwsAlert {
-  kind: 'altitude' | 'warning';
+  kind: 'altitude' | 'warning' | 'vspeed';
   text: string;
   level: 'info' | 'warn';
 }
 
 export class GenericGpwsController {
   private prevHagl = Infinity;
+  private prevKias = 0;
   private triggeredAlts = new Set<number>();
+  private triggeredVSpeeds = new Set<'v1' | 'vr' | 'v2'>();
   private lastWarningMs: Record<string, number> = {};
   private audioCtx: AudioContext | null = null;
   private onAlert?: (alert: GpwsAlert) => void;
@@ -27,18 +29,59 @@ export class GenericGpwsController {
 
   public reset(): void {
     this.prevHagl = Infinity;
+    this.prevKias = 0;
     this.triggeredAlts.clear();
+    this.triggeredVSpeeds.clear();
     this.lastWarningMs = {};
   }
 
   public update(telemetry: FlightTelemetry, enabled: boolean): GpwsAlert | null {
-    if (!enabled || telemetry.paused || telemetry.crashed || hasAircraftCallouts()) {
+    if (!enabled || telemetry.paused || telemetry.crashed) {
       return null;
     }
 
     const hagl = telemetry.aglFeet;
     const vs = telemetry.vs;
+    const kias = telemetry.kias;
     const now = telemetry.timestamp;
+
+    // Takeoff V-Speed callouts (V1, Rotate, V2) apply to all aircraft
+    if (Number.isFinite(kias) && Number.isFinite(hagl)) {
+      if ((telemetry.groundContact && kias < 30) || hagl > 800) {
+        this.triggeredVSpeeds.clear();
+      }
+      const vSpeeds = telemetry.aircraft?.vSpeeds;
+      const accelerating = kias > this.prevKias && telemetry.throttles.some((t) => t > 0.5);
+      if (vSpeeds && accelerating && hagl < 200) {
+        const checks: Array<['v1' | 'vr' | 'v2', number | undefined, string, string]> = [
+          ['v1', vSpeeds.V1, 'V1', 'V1'],
+          ['vr', vSpeeds.VR, 'ROTATE', 'Rotate'],
+          ['v2', vSpeeds.V2, 'V2', 'V2']
+        ];
+        for (const [key, target, label, speech] of checks) {
+          if (
+            typeof target === 'number' &&
+            Number.isFinite(target) &&
+            !this.triggeredVSpeeds.has(key) &&
+            this.prevKias < target &&
+            kias >= target
+          ) {
+            this.triggeredVSpeeds.add(key);
+            this.prevKias = kias;
+            this.prevHagl = hagl;
+            const alert: GpwsAlert = { kind: 'vspeed', text: label, level: 'info' };
+            this.speak(speech, false);
+            this.onAlert?.(alert);
+            return alert;
+          }
+        }
+      }
+      this.prevKias = kias;
+    }
+
+    if (hasAircraftCallouts()) {
+      return null;
+    }
 
     if (!Number.isFinite(hagl) || !Number.isFinite(vs)) return null;
 

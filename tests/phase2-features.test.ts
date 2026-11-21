@@ -116,6 +116,32 @@ describe('Phase 2 Features: Generic GPWS', () => {
     expect(gpws.update(makeTelemetry({ aglFeet: 490, timestamp: 1500 }), true)).toBeNull();
     gpws.dispose();
   });
+
+  it('triggers V1, ROTATE, and V2 callouts once per takeoff roll', () => {
+    const gpws = new GenericGpwsController();
+    const acWithV = {
+      ...makeTelemetry().aircraft!,
+      id: '4',
+      vSpeeds: { V1: 130, VR: 136, V2: 144 }
+    };
+    expect(
+      gpws.update(makeTelemetry({ aircraft: acWithV, aglFeet: 0, groundContact: true, kias: 120, throttles: [0.95], timestamp: 1000 }), true)
+    ).toBeNull();
+    expect(
+      gpws.update(makeTelemetry({ aircraft: acWithV, aglFeet: 0, groundContact: true, kias: 131, throttles: [0.95], timestamp: 1500 }), true)?.text
+    ).toBe('V1');
+    expect(
+      gpws.update(makeTelemetry({ aircraft: acWithV, aglFeet: 0, groundContact: true, kias: 137, throttles: [0.95], timestamp: 2000 }), true)?.text
+    ).toBe('ROTATE');
+    expect(
+      gpws.update(makeTelemetry({ aircraft: acWithV, aglFeet: 20, groundContact: false, kias: 145, throttles: [0.95], timestamp: 2500 }), true)?.text
+    ).toBe('V2');
+    // Does not repeat
+    expect(
+      gpws.update(makeTelemetry({ aircraft: acWithV, aglFeet: 40, groundContact: false, kias: 148, throttles: [0.95], timestamp: 3000 }), true)
+    ).toBeNull();
+    gpws.dispose();
+  });
 });
 
 describe('Phase 2 Features: Gate Spawner', () => {
