@@ -22,6 +22,7 @@ export interface KeybindConfig {
   toggleFpv: string;
   toggleChecklist: string;
   toggleLandingLights: string;
+  toggleSlewMode: string;
 }
 
 export interface LandingRecord {
@@ -66,6 +67,10 @@ export interface RealismOptions {
   runwayGlow: boolean;
   taxiwayLights: boolean;
   genericGpws: boolean;
+  nightVfrLidar: boolean;
+  windThermals: boolean;
+  cameraReset: boolean;
+  slewMode: boolean;
 }
 
 export const DEFAULT_REALISM_OPTIONS: RealismOptions = {
@@ -85,7 +90,11 @@ export const DEFAULT_REALISM_OPTIONS: RealismOptions = {
   aircraftLights: true,
   runwayGlow: true,
   taxiwayLights: false,
-  genericGpws: true
+  genericGpws: true,
+  nightVfrLidar: false,
+  windThermals: false,
+  cameraReset: true,
+  slewMode: false
 };
 
 export interface ExtensionConfig {
@@ -157,7 +166,8 @@ export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
     toggleHud: 'Shift+H',
     toggleFpv: 'Shift+F',
     toggleChecklist: 'Shift+C',
-    toggleLandingLights: 'Shift+L'
+    toggleLandingLights: 'Shift+L',
+    toggleSlewMode: 'Shift+Y'
   },
   imageryProvider: 'native',
   customImageryUrl: '',

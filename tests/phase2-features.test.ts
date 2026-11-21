@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenericGpwsController } from '../src/modules/realism-pack/generic-gpws';
+import { NightVfrLidarController, elevationFeetToLidarColor } from '../src/modules/realism-pack/lidar/lidar';
+import { CameraResetController } from '../src/modules/realism-pack/camera-reset';
+import { SlewModeController } from '../src/modules/realism-pack/slew-mode';
+import { WindThermalsController, thermalStrengthToColor } from '../src/modules/realism-pack/wind-thermals';
 import {
   destinationPoint,
   filterGates,
@@ -190,5 +194,199 @@ describe('Phase 2 Features: Gate Spawner', () => {
     expect(placeSpy.mock.calls[0][1]).toEqual([0, 0, 0]);
     expect(rigidBody.v_linearVelocity).toEqual([0, 0, 0]);
     expect(brakeSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Phase 2 Features: Night VFR LiDAR, Camera Reset, Slew Mode, Wind & Thermals', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('projects elevation-colored LiDAR terrain points at night when enabled and cleans up on dispose', () => {
+    const addedPoints: Array<{ position: unknown; color: unknown; pixelSize?: number }> = [];
+    const removedPrimitives: unknown[] = [];
+    class MockPointCollection {
+      public show = false;
+      public get length() {
+        return addedPoints.length;
+      }
+      public add(p: { position: unknown; color: unknown; pixelSize?: number }) {
+        addedPoints.push(p);
+        return p;
+      }
+      public removeAll() {
+        addedPoints.length = 0;
+      }
+    }
+
+    vi.stubGlobal('window', {
+      Cesium: {
+        PointPrimitiveCollection: MockPointCollection,
+        Cartesian3: { fromDegrees: (lon: number, lat: number, alt: number) => ({ lon, lat, alt }) }
+      },
+      geofs: {
+        getGroundAltitude: () => ({ location: [37.6, -122.4, 1500] }),
+        api: {
+          viewer: {
+            scene: {
+              primitives: {
+                add: vi.fn(),
+                remove: (p: unknown) => removedPrimitives.push(p)
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const lidar = new NightVfrLidarController({ maxPoints: 100 });
+    // Daytime in auto mode -> 0 points
+    expect(lidar.update(true, false, 37.6, -122.4, 10_000)).toBe(0);
+    // Nighttime -> projects points
+    const count = lidar.update(true, true, 37.6, -122.4, 15_000);
+    expect(count).toBeGreaterThan(0);
+    expect(addedPoints.length).toBe(count);
+
+    const lowCol = elevationFeetToLidarColor(200) as { blue: number; red: number };
+    const highCol = elevationFeetToLidarColor(18_000) as { blue: number; red: number };
+    expect(lowCol.blue).toBeGreaterThan(highCol.blue);
+    expect(highCol.red).toBeGreaterThan(lowCol.red);
+
+    lidar.dispose();
+    expect(removedPrimitives).toHaveLength(1);
+  });
+
+  it('triggers CameraResetController only on double middle-click', () => {
+    const listeners: Record<string, (e: unknown) => void> = {};
+    vi.stubGlobal('document', {
+      addEventListener: (ev: string, fn: (e: unknown) => void) => {
+        listeners[ev] = fn;
+      },
+      removeEventListener: vi.fn()
+    });
+    const resetSpy = vi.fn();
+    vi.stubGlobal('window', {
+      geofs: { camera: { reset: resetSpy } }
+    });
+
+    const onReset = vi.fn();
+    const ctrl = new CameraResetController(onReset);
+    ctrl.attach();
+
+    // Left click ignored
+    listeners.mousedown({ button: 0 });
+    expect(resetSpy).not.toHaveBeenCalled();
+
+    // Single middle click -> not reset yet
+    listeners.mousedown({ button: 1 });
+    expect(resetSpy).not.toHaveBeenCalled();
+
+    // Second middle click within 320ms -> resets camera
+    listeners.mousedown({ button: 1 });
+    expect(resetSpy).toHaveBeenCalledTimes(1);
+    expect(onReset).toHaveBeenCalledTimes(1);
+
+    ctrl.dispose();
+  });
+
+  it('activates, moves aircraft, zeroes gravity, and restores on SlewModeController deactivate', () => {
+    const setRotSpy = vi.fn();
+    const impulseSpy = vi.fn();
+    const rigidBody = {
+      gravityForce: [0, 0, -9.81] as [number, number, number],
+      v_linearVelocity: [50, 0, 0] as [number, number, number],
+      v_angularVelocity: [1, 0, 0] as [number, number, number],
+      applyCentralImpulse: impulseSpy
+    };
+    const aircraft = {
+      llaLocation: [37.62, -122.38, 500] as [number, number, number],
+      groundContact: false,
+      definition: { mass: 10_000, minimumSpeed: 60 },
+      object3d: {
+        setInitialRotation: setRotSpy,
+        getWorldFrame: () => [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+      },
+      rigidBody
+    };
+    const docListeners: Record<string, (e: unknown) => void> = {};
+    vi.stubGlobal('document', {
+      body: null,
+      addEventListener: (ev: string, fn: (e: unknown) => void) => {
+        docListeners[ev] = fn;
+      },
+      removeEventListener: vi.fn()
+    });
+    vi.stubGlobal('window', {
+      geofs: {
+        aircraft: { instance: aircraft },
+        animation: { values: { heading360: 0 } }
+      }
+    });
+
+    const slew = new SlewModeController();
+    expect(slew.activate()).toBe(true);
+    expect(slew.isActive()).toBe(true);
+
+    // Hold 'KeyI' (forward north at heading 0) and 'KeyU' (up)
+    docListeners.keydown({ code: 'KeyI', preventDefault: vi.fn() });
+    docListeners.keydown({ code: 'KeyU', preventDefault: vi.fn() });
+    slew.update(makeTelemetry({ dt: 0.1, aglFeet: 1500, groundContact: false }));
+
+    expect(aircraft.llaLocation[0]).toBeGreaterThan(37.62);
+    expect(aircraft.llaLocation[2]).toBeGreaterThan(500);
+    expect(rigidBody.gravityForce).toEqual([0, 0, 0]);
+    expect(setRotSpy).toHaveBeenCalled();
+
+    slew.deactivate();
+    expect(slew.isActive()).toBe(false);
+    expect(rigidBody.gravityForce).toEqual([0, 0, -9.81]);
+    expect(impulseSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders thermal & ridge-lift points in WindThermalsController when enabled', () => {
+    const addedPoints: unknown[] = [];
+    class MockPointCollection {
+      public show = false;
+      public add(p: unknown) {
+        addedPoints.push(p);
+        return p;
+      }
+      public removeAll() {
+        addedPoints.length = 0;
+      }
+    }
+
+    vi.stubGlobal('window', {
+      Cesium: {
+        PointPrimitiveCollection: MockPointCollection,
+        Cartesian3: { fromDegrees: (lon: number, lat: number, alt: number) => ({ lon, lat, alt }) }
+      },
+      weather: {
+        getLocalThermal: () => 4.2
+      },
+      geofs: {
+        api: {
+          viewer: {
+            scene: {
+              primitives: {
+                add: vi.fn(),
+                remove: vi.fn()
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const thermals = new WindThermalsController();
+    expect(thermals.update(false, 37.6, -122.4, 3000, 1000)).toBe(0);
+    const count = thermals.update(true, 37.6, -122.4, 3000, 5000);
+    expect(count).toBeGreaterThan(0);
+    expect(addedPoints.length).toBe(count);
+
+    const weakCol = thermalStrengthToColor(0.1) as { red: number; green: number };
+    const strongCol = thermalStrengthToColor(0.95) as { red: number; green: number };
+    expect(strongCol.red).toBeGreaterThan(weakCol.red);
+    thermals.dispose();
   });
 });

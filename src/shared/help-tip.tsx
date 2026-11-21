@@ -70,6 +70,10 @@ export const SETTING_TIPS: Record<string, string> = {
   'realism.taxiwayLights': 'Opt-in: downloads OpenStreetMap taxiway geometry near your aircraft to render green/yellow centerline and blue edge lights.',
   'realism.lightIntensity': 'Scales overall brightness of aircraft headlights, nav glow, and runway glow.',
   'realism.headlightMode': 'Choose whether landing/taxi headlights run automatically at night, always on, or off.',
+  'realism.nightVfrLidar': 'Opt-in: projects elevation-colored LiDAR terrain dots around your aircraft for night VFR.',
+  'realism.windThermals': 'Opt-in: visualizes local thermals and ridge-lift updrafts for glider soaring.',
+  'realism.cameraReset': 'Double-click the middle mouse button anywhere in the viewport to reset the GeoFS camera.',
+  'realism.slewMode': 'Enables FSX-style Slew Mode (Shift+Y to toggle, I/J/K/L/U/N to move, ,/. and arrows to rotate).',
   'realism.performanceMode': 'Reduces heavy visual effects to keep frame rates smooth on laptops and older computers.'
 };
 

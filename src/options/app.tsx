@@ -69,7 +69,8 @@ const KEYBIND_LABELS: Record<keyof KeybindConfig, string> = {
   toggleHud: 'Toggle Shared HUD',
   toggleFpv: 'Toggle Flight Path Vector',
   toggleChecklist: 'Open / Advance Checklists',
-  toggleLandingLights: 'Toggle Landing & Taxi Lights'
+  toggleLandingLights: 'Toggle Landing & Taxi Lights',
+  toggleSlewMode: 'Toggle FSX Slew Mode'
 };
 
 function catalogSpecToProfile(spec: StaticAircraftSpec & { id: string }): AircraftProfile {

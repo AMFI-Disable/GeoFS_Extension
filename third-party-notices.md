@@ -38,6 +38,11 @@ SOFTWARE.
 - License: MIT License (Copyright (c) 2026 machpoint82)
 - Used in: [`src/modules/gate-spawner/index.ts`](src/modules/gate-spawner/index.ts) (gate coordinate offset math, category filters, and no-reload `ac.place` gate placement).
 
+### GeoFS Wind, Terrain & Thermals (`Tokke1111ALT/GeoFS-Wind-Terrain-and-Thermals-Addon`)
+- Source: https://github.com/Tokke1111ALT/GeoFS-Wind-Terrain-and-Thermals-Addon
+- License: MIT License (Copyright (c) 2026 Tokke_1111)
+- Used in: [`src/modules/realism-pack/wind-thermals.ts`](src/modules/realism-pack/wind-thermals.ts) (glider thermal & ridge-lift visualization).
+
 ## Open Data Attribution
 
 ### OpenStreetMap (`aeroway=taxiway`)
@@ -49,3 +54,6 @@ SOFTWARE.
 - **Runway Light Pavement Glow** ([`src/modules/realism-pack/lighting/runway-glow.ts`](src/modules/realism-pack/lighting/runway-glow.ts)): Independently written using GeoFS's native `geofs.fx.litRunways` API, inspired by the runway-lighting concept in `Ariakim-Taiyo/GeoFS-Experiments`.
 - **OSM Taxiway Lights** ([`src/modules/realism-pack/lighting/taxiway-lights.ts`](src/modules/realism-pack/lighting/taxiway-lights.ts)): Independently written using Overpass API queries and `geofs.runways.nearRunways`, inspired by `tylerbmusic/GeoFS-Taxiway-Lights`, with zero third-party telemetry.
 - **Exterior Light Presets** (Cold & Dark / Takeoff): Inspired by `Mahe40Landes/geofs-exterior-lights`.
+- **Night VFR LiDAR** ([`src/modules/realism-pack/lidar/lidar.ts`](src/modules/realism-pack/lidar/lidar.ts)): Clean-room terrain point-cloud projection inspired by `AviATR72/GeoFS-LiDAR-for-Night-VFR`.
+- **Middle-Click Camera Reset** ([`src/modules/realism-pack/camera-reset.ts`](src/modules/realism-pack/camera-reset.ts)): Clean-room double-middle-click camera reset inspired by `krunchiekrunch/GeoFS-Camera-Reset`.
+- **FSX-Style Slew Mode** ([`src/modules/realism-pack/slew-mode.ts`](src/modules/realism-pack/slew-mode.ts)): Clean-room slew positioning controller inspired by `tylerbmusic/GeoFS-Slew-Mode`, with zero copied code and zero telemetry.

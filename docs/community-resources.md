@@ -18,20 +18,20 @@ This catalog documents community GeoFS repositories verified against the GitHub 
 | Realism Pack Audio | [tylerbmusic/GeoFS-GPWS-Callouts](https://github.com/tylerbmusic/GeoFS-GPWS-Callouts) | None | Inactive | Clean-room generic GPWS callouts for all aircraft |
 | Realism Pack Audio | [avramovic/GeoFS-alerts](https://github.com/avramovic/GeoFS-alerts) | None | Inactive | Behavior reference for stall/bank/TCAS alerts |
 | Realism Pack Audio | [fengshuo2004/geofs-alarms](https://github.com/fengshuo2004/geofs-alarms) | GPL-3.0 | Inactive | Behavior reference only |
-| Realism Pack VFR | [AviATR72/GeoFS-LiDAR-for-Night-VFR](https://github.com/AviATR72/GeoFS-LiDAR-for-Night-VFR) | None | Active (3.9/4.0) | Clean-room night VFR terrain dot projection |
-| Realism Pack Glider | [Tokke1111ALT/GeoFS-Wind-Terrain-and-Thermals-Addon](https://github.com/Tokke1111ALT/GeoFS-Wind-Terrain-and-Thermals-Addon) | MIT | Inactive | Port glider wind/thermal visualization |
+| Realism Pack VFR | [AviATR72/GeoFS-LiDAR-for-Night-VFR](https://github.com/AviATR72/GeoFS-LiDAR-for-Night-VFR) | None | Implemented (opt-in) | Clean-room `lidar/lidar.ts` night VFR terrain dot projection |
+| Realism Pack Glider | [Tokke1111ALT/GeoFS-Wind-Terrain-and-Thermals-Addon](https://github.com/Tokke1111ALT/GeoFS-Wind-Terrain-and-Thermals-Addon) | MIT | Implemented (opt-in) | Ported into `wind-thermals.ts` |
 | AP++ Roadmap | [Qantas94Heavy/autopilot-pp](https://github.com/Qantas94Heavy/autopilot-pp) | GPL-3.0 | Inactive | Behavior reference (PID modes, PAPI fixes) |
 | AP++ Roadmap | [GeoFS-Extensions/autoland](https://github.com/GeoFS-Extensions/autoland) | GPL-3.0 | Archived | Behavior reference only |
 | AP++ Roadmap | [tylerbmusic/GeoFS-Autoland](https://github.com/tylerbmusic/GeoFS-Autoland) | None | Inactive | Clean-room smooth autoland flare |
 | AP++ Roadmap | [nafeesnazzim/geofs-holding-pattern](https://github.com/nafeesnazzim/geofs-holding-pattern) | MIT | Active | Port ICAO racetrack holds |
 | AP++ Roadmap | [gefs-plugins/fmc-requirejs](https://github.com/gefs-plugins/fmc-requirejs) | AGPL-3.0 | Inactive | Behavior reference (VNAV) |
-| Info Display | [tylerbmusic/GeoFS-Minimap](https://github.com/tylerbmusic/GeoFS-Minimap) | None | Inactive | Clean-room minimap HUD sub-tab |
-| Info Display | [seabus0316/GeoFS-METAR-system](https://github.com/seabus0316/GeoFS-METAR-system) | None | Inactive | Clean-room nearest-airport METAR readout |
-| Utilities | [machpoint82/geofs-gate-spawner](https://github.com/machpoint82/geofs-gate-spawner) | MIT | Active | Ported into `src/modules/gate-spawner/index.ts` |
-| Utilities | [tylerbmusic/GeoFS-Slew-Mode](https://github.com/tylerbmusic/GeoFS-Slew-Mode) | None | Inactive | Clean-room FSX-style slew mode |
-| Realism Pack Audio | [GeoFS V-Speed Takeoff Callouts](https://greasyfork.org/en/scripts/by-site/geo-fs.com) (Greasy Fork) | — | Active | Clean-room `V1`/`ROTATE`/`V2` callouts in `generic-gpws.ts` |
+| Info Display | [tylerbmusic/GeoFS-Minimap](https://github.com/tylerbmusic/GeoFS-Minimap) | None | Implemented | Clean-room minimap HUD sub-tab |
+| Info Display | [seabus0316/GeoFS-METAR-system](https://github.com/seabus0316/GeoFS-METAR-system) | None | Implemented | Clean-room nearest-airport METAR readout |
+| Utilities | [machpoint82/geofs-gate-spawner](https://github.com/machpoint82/geofs-gate-spawner) | MIT | Implemented | Ported into `src/modules/gate-spawner/index.ts` |
+| Utilities | [tylerbmusic/GeoFS-Slew-Mode](https://github.com/tylerbmusic/GeoFS-Slew-Mode) | None | Implemented (opt-in) | Clean-room `slew-mode.ts` (`Shift+Y`) |
+| Realism Pack Audio | [GeoFS V-Speed Takeoff Callouts](https://greasyfork.org/en/scripts/by-site/geo-fs.com) (Greasy Fork) | — | Implemented | Clean-room `V1`/`ROTATE`/`V2` callouts in `generic-gpws.ts` |
 | Rotorcraft AP++ | [GeoFS Eurocopter EC-135 AFCS Suite](https://greasyfork.org/en/scripts/by-site/geo-fs.com) (Greasy Fork) | — | Active | Future rotorcraft SAS/Auto-Hover reference |
-| Camera QoL | [krunchiekrunch/GeoFS-Camera-Reset](https://github.com/krunchiekrunch/GeoFS-Camera-Reset) | Other | Active | Future middle-click camera reset QoL |
+| Camera QoL | [krunchiekrunch/GeoFS-Camera-Reset](https://github.com/krunchiekrunch/GeoFS-Camera-Reset) | CC BY-NC-SA | Implemented | Clean-room `camera-reset.ts` middle-click reset |
 
 ## Excluded Resources
 

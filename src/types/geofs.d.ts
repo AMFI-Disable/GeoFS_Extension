@@ -223,7 +223,13 @@ export interface GeoFSGlobal {
   aircraft?: {
     instance?: GeoFSAircraftInstance & { toggleGear?: () => void };
   };
-  camera?: { lla?: [number, number, number]; currentModeName?: string; translate?: (x: number, y: number, z: number) => void };
+  camera?: {
+    lla?: [number, number, number];
+    currentModeName?: string;
+    translate?: (x: number, y: number, z: number) => void;
+    reset?: () => void;
+  };
+  getGroundAltitude?: (lat: number, lon: number) => { location?: number[] } | undefined;
   preferences?: { crashDetection?: boolean };
   flyToCamera?: () => void;
   cautiousWithTerrain?: boolean;
@@ -324,6 +330,13 @@ export interface GeoFSCartesian {
   z: number;
 }
 
+export interface GeoFSCesiumColor {
+  red?: number;
+  green?: number;
+  blue?: number;
+  alpha?: number;
+}
+
 declare global {
   interface Window {
     geofs?: GeoFSGlobal;
@@ -344,11 +357,13 @@ declare global {
     controls?: GeoFSControls;
     Cesium?: {
       Color?: {
-        new (r: number, g: number, b: number, a: number): unknown;
+        new (r: number, g: number, b: number, a: number): GeoFSCesiumColor;
         LIME?: unknown;
         RED?: unknown;
         fromHsl?: (h: number, s: number, l: number) => unknown;
       };
+      PointPrimitiveCollection?: new () => unknown;
+      Cartographic?: { fromDegrees?: (lon: number, lat: number, height?: number) => unknown };
       PostProcessStage?: new (opts: { fragmentShader: string; uniforms?: Record<string, unknown> }) => unknown;
       UrlTemplateImageryProvider?: new (opts: { url: string; maximumLevel?: number; credit?: unknown }) => unknown;
       BingMapsImageryProvider?: new (opts: { url?: string; key: string; mapStyle?: string }) => unknown;
