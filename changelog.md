@@ -5,6 +5,28 @@
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Added free live GeoFS + global **ADS-B** radar (`src/sidepanel/radar-panel.tsx`, `src/shared/global-traffic.ts`) with popout tab support and callsign watchlist.
+- Added **EFB Side Panel** (`src/sidepanel/efb-panel.tsx`) with **SimBrief OFP** integration, FAA airport charts, runway crosswind calculator, and Career Jobs.
+- Added **Pushback Tug**, **Pre-Flight Walkaround** (`Alt+W`), **Shortcut Cheatsheet Overlay** (`?`), **AP++ LNAV** route arc backup, and automatic **Immersive Airports** detection.
+- Added unit test suite [`tests/phase3-features.test.ts`](tests/phase3-features.test.ts) covering SimBrief, ADS-B/relay traffic, airport charts, career jobs, semver update checks, pushback, walkaround, and Immersive Airports detection.
+
+### Changed
+
+- Migrated default extension keybindings from `Shift+` to `Alt+` (`Alt+A`, `Alt+O`, `Alt+H`, `Alt+F`, `Alt+C`, `Alt+L`, `Alt+Y`, `Alt+W`) to avoid conflicts with native GeoFS controls, and harmonized the GeoFS palette across all UI surfaces.
+
+### Fixed
+
+- Fixed `fetchSimBriefOfp` to pass `userid=` for numeric Pilot IDs (and `username=` for string usernames) and added request timeouts across external API fetches.
+- Fixed `WalkaroundController` to ignore modifier combos (`Alt`/`Ctrl`/`Meta`) in its key handler and restore the saved camera definition position on exit.
+- Fixed `PushbackController.setMode` to guard against airborne, high-speed, paused, or crashed activation.
+- Improved Chromium executable discovery in `tests/e2e/run-e2e.mjs`.
+
+---
+
 ## [0.3.0] - 5-Category Architecture, Community Integrations & AP++
 
 > [!CAUTION]

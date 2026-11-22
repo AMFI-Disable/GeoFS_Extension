@@ -59,19 +59,20 @@ Once loaded into GeoFS, you control the suite from four clean places:
 | Category | Feature | What It Does In Flight |
 | :--- | :--- | :--- |
 | **Flight Control** | **Autothrottle (`A/THR`)** | Holds target airspeed (`KTS`) or Mach (`M.`) with **LANDING** auto-retard (`27 ft RA`) and spoiler deployment. |
-| **Flight Control** | **AP++** | Unified FCU with VNAV/FLCH, Mach crossover, ICAO Direct/Parallel/Teardrop holds with WCA, LAT/LON steering, Autoland flare, Rotorcraft Auto-Hover, and Envelope Protection. |
+| **Flight Control** | **AP++** | Unified FCU with VNAV/FLCH, LNAV route arc backup, Mach crossover, ICAO Direct/Parallel/Teardrop holds with WCA, LAT/LON steering, Autoland flare, Rotorcraft Auto-Hover, and Envelope Protection. |
 | **Flight Control** | **Overpowered Engines (`OP ENG`)** | Multiplies thrust (`1x`–`1,000,000,000x`), bypasses altitude ceilings, and includes closed-loop **SAS** + **OP-SYNC**. |
 | **Flight Control** | **Flight Path Vector (`FPV`)** | Projects a 3D velocity marker ahead of your aircraft paired with a bottom-right **Glideslope** indicator. |
-| **Flight Deck** | **Information Display (`INFO`)** | Live telemetry, multi-engine `% THR` / `[REV]`, nearest-airport **METAR**, and SVG runway/heading **MINI-MAP**. |
+| **Flight Deck** | **Information Display (`INFO`)** | Live telemetry, multi-engine `% THR` / `[REV]`, nearest-airport **METAR**, and SVG runway/heading **MINI-MAP** with TCAS traffic. |
+| **Flight Deck** | **Live Radar & EFB (Side Panel)** | Free live GeoFS + global **ADS-B** radar with popout tab and callsign watchlist, plus an **EFB** with **SimBrief OFP** import, FAA airport charts, crosswind calculator, and Career Jobs. |
 | **Flight Deck** | **Checklists & Guide (`CHECKS`)** | Four mandatory flight gates (**PRE-T/O**, **PRE-CRZ**, **PRE-LDG**, **CHOCKS**) with interactive controls and situational **GUIDE**. |
 | **Flight Deck** | **Fuel & Weight (`FUEL`)** | Fuel slider, **ALTITUDE BURN**, **REAL TANKS** wing imbalance, and flameout protection. |
 | **Flight Deck** | **Landing Scorecard (`LAND`)** | Evaluates every landing (`Butter`–`Crash`) with **1–5 Star Ratings**, **Authentic vs. Practice** session tracking, phase-by-phase critique, and Chrome Logbook CSV/JSON export. |
-| **Environment** | **Visuals & Lighting (`LIGHTS`)** | Ground headlights/nav/strobe/beacon shaders, runway light glow, opt-in OSM taxiway lights, opt-in **Night VFR LiDAR**, and **Wind & Thermals** glider visualizer. |
+| **Environment** | **Visuals & Lighting (`LIGHTS`)** | Ground headlights/nav/strobe/beacon shaders, runway light glow, opt-in OSM taxiway lights (with automatic **Immersive Airports** detection), opt-in **Night VFR LiDAR**, and **Wind & Thermals** glider visualizer. |
 | **Environment** | **Satellite Imagery** | Switch GeoFS ground imagery between Native, Esri, Bing, OpenStreetMap, or custom tile providers. |
 | **Immersion** | **Realism Pack (`REALISM`)** | G-force breathing, cockpit blackout, shake, engine inertia, spoiler arming, 737/777/A320 SFX, and **Generic GPWS + V-Speed Takeoff Callouts**. |
 | **Immersion** | **Failure Simulator (`FAILURES`)** | Draggable `FAILURES` pill & modal for system faults, random probabilities, and Emergency QRH recovery. |
 | **Utilities** | **Gate Spawner (`GATES`)** | Search airports by ICAO, filter stands by aircraft size (`Heavy`, `Code F`, `GA`, `Cargo`), and spawn parked at the gate. |
-| **Utilities** | **Sim Utilities** | FSX-style **Slew Mode** (`Shift + Y`) and **Middle-Click Camera Reset** (double-click middle mouse button). |
+| **Utilities** | **Sim Utilities** | FSX-style **Slew Mode** (`Alt + Y`), **Pushback Tug**, **Pre-Flight Walkaround** (`Alt + W`), **Shortcut Overlay** (`?`), and **Middle-Click Camera Reset** (double-click middle mouse button). |
 
 ---
 
@@ -79,13 +80,15 @@ Once loaded into GeoFS, you control the suite from four clean places:
 
 | Action | Default Shortcut (Windows / Linux) | Default Shortcut (macOS) |
 | :--- | :--- | :--- |
-| Toggle Autothrottle | `Shift + A` | `⇧ + A` |
-| Toggle Overpowered Engines Card | `Shift + O` | `⇧ + O` |
-| Toggle Shared HUD | `Shift + H` | `⇧ + H` |
-| Toggle Flight Path Vector | `Shift + F` | `⇧ + F` |
-| Open Checklists Tab / Advance Gate | `Shift + C` | `⇧ + C` |
-| Toggle Landing & Taxi Lights | `Shift + L` | `⇧ + L` |
-| Toggle FSX Slew Mode | `Shift + Y` | `⇧ + Y` |
+| Toggle Autothrottle | `Alt + A` | `⌥ + A` |
+| Toggle Overpowered Engines Card | `Alt + O` | `⌥ + O` |
+| Toggle Shared HUD | `Alt + H` | `⌥ + H` |
+| Toggle Flight Path Vector | `Alt + F` | `⌥ + F` |
+| Open Checklists Tab / Advance Gate | `Alt + C` | `⌥ + C` |
+| Toggle Landing & Taxi Lights | `Alt + L` | `⌥ + L` |
+| Toggle FSX Slew Mode | `Alt + Y` | `⌥ + Y` |
+| Toggle Pre-Flight Walkaround | `Alt + W` | `⌥ + W` |
+| Open Shortcut Cheatsheet | `?` (`Shift + /`) | `?` (`⇧ + /`) |
 | Reset Camera | Double-click Middle Mouse | Double-click Middle Mouse |
 
 All shortcuts can be rebound in **Full Settings**, which automatically warns you if a shortcut conflicts with GeoFS's built-in flight keys. Shortcuts never fire while you are typing inside text inputs.
