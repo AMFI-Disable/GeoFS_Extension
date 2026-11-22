@@ -103,7 +103,7 @@
 // @description:ur      جی فورس مانیٹرنگ، عمودی رفتار کے تجزیہ، اور مسافروں کے تاثرات کے ساتھ جیو ایف ایس کے لیے درست پرواز کے تجزیات۔ © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
 
 // @namespace           https://greasyfork.org/users/1594049
-// @version             3.9.0
+// @version             3.9.1
 // @author              AMFI-Disable
 // @homepageURL         https://sites.google.com/view/geofs-v39-ecosystem/home
 // @icon                https://www.geo-fs.com/images/icons/favicon.ico
@@ -182,6 +182,81 @@
     window.isInTDZ = false;
     window.oldTime = Date.now();
     window.newTime = Date.now();
+
+    const sessionEvaluator = {
+        sawGroundBeforeTakeoff: false,
+        airborne: false,
+        teleportOrSlewDetected: false,
+        lastLat: null,
+        lastLon: null,
+        maxAltFt: 0,
+        maxGForce: 1,
+        departureMaxBankDeg: 0,
+        approach500Stable: true,
+        approach500Checked: false,
+        reset() {
+            this.sawGroundBeforeTakeoff = false;
+            this.airborne = false;
+            this.teleportOrSlewDetected = false;
+            this.lastLat = null;
+            this.lastLon = null;
+            this.maxAltFt = 0;
+            this.maxGForce = 1;
+            this.departureMaxBankDeg = 0;
+            this.approach500Stable = true;
+            this.approach500Checked = false;
+        },
+        sample(lat, lon, aglFeet, altitude, vs, roll, gForce, groundContact) {
+            if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                if (this.lastLat !== null && this.lastLon !== null) {
+                    const cosLat = Math.max(0.2, Math.cos((lat * Math.PI) / 180));
+                    const dMeters = Math.hypot((lat - this.lastLat) * 111320, (lon - this.lastLon) * 111320 * cosLat);
+                    if (dMeters / 1852 > 5) this.teleportOrSlewDetected = true;
+                }
+                this.lastLat = lat;
+                this.lastLon = lon;
+            }
+            if (groundContact && aglFeet < 30) {
+                if (!this.airborne) this.sawGroundBeforeTakeoff = true;
+                return;
+            }
+            if (!this.airborne && aglFeet > 50) this.airborne = true;
+            if (this.airborne) {
+                if (Number.isFinite(altitude)) this.maxAltFt = Math.max(this.maxAltFt, altitude);
+                if (Number.isFinite(gForce)) this.maxGForce = Math.max(this.maxGForce, Math.abs(gForce));
+                if (aglFeet <= 1500 && Number.isFinite(roll)) this.departureMaxBankDeg = Math.max(this.departureMaxBankDeg, Math.abs(roll));
+                if (aglFeet <= 550 && aglFeet >= 400 && vs < 0) {
+                    this.approach500Checked = true;
+                    if (Math.abs(vs) > 1300 || Math.abs(roll) > 25) this.approach500Stable = false;
+                }
+            }
+        },
+        evaluate(label, score, vsFpm, bounces, inTDZ) {
+            const authenticFlight = this.sawGroundBeforeTakeoff && this.airborne && !this.teleportOrSlewDetected;
+            let starFloat = (score / 10) * 5;
+            if (!this.approach500Stable) starFloat -= 0.4;
+            if (this.maxGForce > 2.4) starFloat -= 0.3;
+            if (String(label).toUpperCase() === 'CRASH') starFloat = 1;
+            const stars = Math.max(1, Math.min(5, Math.round(starFloat)));
+            const departure = !this.sawGroundBeforeTakeoff
+                ? 'Mid-air spawn (untracked departure)'
+                : this.departureMaxBankDeg > 32
+                    ? `Aggressive initial bank (${Math.round(this.departureMaxBankDeg)}°)`
+                    : 'Clean runway departure & climb-out';
+            const cruise = this.teleportOrSlewDetected
+                ? 'Slew/teleport discontinuity detected'
+                : this.maxGForce > 2.4
+                    ? `High cruise G-load (${this.maxGForce.toFixed(1)}G)`
+                    : `Smooth cruise discipline (peak ${Math.round(this.maxAltFt)} ft)`;
+            const approach = !this.approach500Checked
+                ? 'Short pattern / direct final'
+                : this.approach500Stable
+                    ? 'Stabilized 500 ft AGL gate'
+                    : 'Unstabilized 500 ft AGL gate (high sink/bank)';
+            const touchdown = `${label} (${Math.round(vsFpm)} fpm${bounces ? `, ${bounces} bounce` : ''}${inTDZ ? ', TDZ' : ', off-TDZ'})`;
+            return { authenticFlight, stars, phaseCritique: { departure, cruise, approach, touchdown } };
+        }
+    };
 
     // Audio Assets: CDN-hosted high-fidelity sound effects
     window.softLanding = new Audio('https://geofs-assets.evengao6688.workers.dev/audio/soft_landing.wav');
@@ -575,6 +650,11 @@
         const content = window.statsCard.querySelector('.addonpack-card-content');
         if (content) {
             const badgeLabel = isBounce ? `${quality.label} (BOUNCE)` : quality.label;
+            const sessionEval = sessionEvaluator.evaluate(quality.label, window.landingScore, vSpeed, window.bounces, window.isInTDZ);
+            const starsStr = '★'.repeat(sessionEval.stars) + '☆'.repeat(5 - sessionEval.stars);
+            const authBg = sessionEval.authenticFlight ? 'rgba(34,197,94,0.18)' : 'rgba(234,179,8,0.18)';
+            const authColor = sessionEval.authenticFlight ? '#22c55e' : '#eab308';
+            const authLabel = sessionEval.authenticFlight ? 'AUTHENTIC FLIGHT' : 'PRACTICE SESSION';
             content.innerHTML = `
                 <div class="stats-main-row">
                     <div class="addonpack-score-circle">
@@ -584,6 +664,10 @@
                     <div class="addonpack-badge ${quality.badgeClass}">
                         ${badgeLabel}
                     </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:11px;">
+                    <span style="color:#facc15;letter-spacing:1.5px;font-weight:800;">${starsStr} (${sessionEval.stars}/5)</span>
+                    <span style="padding:2px 6px;border-radius:4px;background:${authBg};color:${authColor};font-size:9px;font-weight:800;">${authLabel}</span>
                 </div>
                 
                 <div class="stats-grid">
@@ -634,7 +718,13 @@
                 <div class="feedback-box" style="border-left-color: ${passenger.color}">
                     <div style="font-size: 10px; font-weight: 800; color: rgba(100, 200, 255, 0.8); text-transform: uppercase; margin-bottom: 3px; letter-spacing: 0.5px;">Flight Report & Feedback</div>
                     <div style="font-weight: 600; margin-bottom: 3px;">${qText}</div>
-                    <div style="opacity: 0.85; font-size: 10px;">${passenger.text}</div>
+                    <div style="opacity: 0.85; font-size: 10px; margin-bottom: 5px;">${passenger.text}</div>
+                    <div style="font-size: 9.5px; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 4px; line-height: 1.4;">
+                        <div><strong>DEP:</strong> ${sessionEval.phaseCritique.departure}</div>
+                        <div><strong>CRZ:</strong> ${sessionEval.phaseCritique.cruise}</div>
+                        <div><strong>APP:</strong> ${sessionEval.phaseCritique.approach}</div>
+                        <div><strong>TDN:</strong> ${sessionEval.phaseCritique.touchdown}</div>
+                    </div>
                 </div>
             `;
         }
@@ -669,6 +759,22 @@
             var ldgAGL = (window.geofs.animation.values.altitude !== undefined && window.geofs.animation.values.groundElevationFeet !== undefined) 
                 ? ((window.geofs.animation.values.altitude - window.geofs.animation.values.groundElevationFeet) + collisionOffset) 
                 : 'N/A';
+
+            if (ldgAGL !== 'N/A') {
+                const lla = inst.llaLocation;
+                const gc = !!window.geofs.animation.values.groundContact;
+                const gf = (window.geofs.animation.values.accZ !== undefined) ? (window.geofs.animation.values.accZ / 9.80665) : 1.0;
+                sessionEvaluator.sample(
+                    Array.isArray(lla) ? lla[0] : NaN,
+                    Array.isArray(lla) ? lla[1] : NaN,
+                    ldgAGL,
+                    window.geofs.animation.values.altitude,
+                    window.geofs.animation.values.verticalSpeed || 0,
+                    window.geofs.animation.values.aroll || 0,
+                    gf,
+                    gc
+                );
+            }
             
             if (ldgAGL !== 'N/A' && ldgAGL < 500) {
                 const groundContact = !!window.geofs.animation.values.groundContact;
@@ -789,6 +895,7 @@
         }
         window.statsOpen = false;
         window.bounces = 0;
+        sessionEvaluator.reset();
     };
 
     // Start loops

@@ -103,7 +103,7 @@
 // @description:ur      اعلی درجے کا فزکس انجن جس میں G-force اثرات، کیمرہ شیک، اور عمیق آڈیو شامل ہیں۔ © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
 
 // @namespace           https://greasyfork.org/users/1594049
-// @version             3.9.0
+// @version             3.9.1
 // @author              AMFI-Disable
 // @homepageURL         https://sites.google.com/view/geofs-v39-ecosystem/home
 // @icon                https://www.geo-fs.com/images/icons/favicon.ico
@@ -186,6 +186,8 @@
             soundExpansion: true,
             carrierOps: true,
             vortexEffects: true,
+            genericGpws: true,
+            cameraReset: true,
             addonAircraft: false, 
             performanceMode: false
         };
@@ -244,6 +246,8 @@
                 this.initKiasFix();
                 this.initCarrierOps();
                 this.initCloudDensity();
+                this.initGenericGpws();
+                this.initCameraReset();
                 console.log("[GeoFS-V3.9_Realism-Pack] >> All sub-systems operational.");
             },
 
@@ -278,6 +282,8 @@
                                 ${makeToggle("Spoiler", "spoilerArming")}
                                 ${makeToggle("Carrier", "carrierOps")}
                                 ${makeToggle("Sounds", "soundExpansion")}
+                                ${makeToggle("GPWS", "genericGpws")}
+                                ${makeToggle("Cam Reset", "cameraReset")}
                             </div>
                         </div>
                         
@@ -598,7 +604,103 @@
                 }, 100);
             },
 
-            initCloudDensity: () => { }
+            initCloudDensity: () => { },
+
+            initGenericGpws: () => {
+                const ALT_CALLOUTS = [500, 400, 300, 200, 100, 50, 40, 30, 20, 10];
+                let prevHagl = Infinity;
+                let prevKias = 0;
+                const triggeredAlts = new Set();
+                const triggeredVSpeeds = new Set();
+                const lastWarn = {};
+                const speak = (phrase, urgent) => {
+                    try {
+                        if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') return;
+                        if (urgent) window.speechSynthesis.cancel();
+                        const u = new SpeechSynthesisUtterance(phrase);
+                        u.rate = urgent ? 1.15 : 1.05;
+                        u.pitch = urgent ? 1.05 : 0.95;
+                        u.volume = 0.8;
+                        window.speechSynthesis.speak(u);
+                    } catch (_) {}
+                };
+                const canWarn = (key, now, cd) => {
+                    if (now - (lastWarn[key] || -Infinity) < cd) return false;
+                    lastWarn[key] = now;
+                    return true;
+                };
+                setInterval(() => {
+                    if (!window.realismSettings.genericGpws || geofs.isPaused() || !geofs.aircraft?.instance || !geofs.animation?.values) return;
+                    const v = geofs.animation.values;
+                    const ac = geofs.aircraft.instance;
+                    const hagl = Number.isFinite(v.haglFeet) ? v.haglFeet : (Number.isFinite(v.altitude) && Number.isFinite(v.groundElevationFeet) ? v.altitude - v.groundElevationFeet : NaN);
+                    const vs = v.verticalSpeed;
+                    const kias = v.kias;
+                    const now = Date.now();
+                    const gc = !!v.groundContact;
+
+                    if (Number.isFinite(kias) && Number.isFinite(hagl)) {
+                        if ((gc && kias < 30) || hagl > 800) triggeredVSpeeds.clear();
+                        const vSpeeds = window.AIRCRAFT_DATA?.[ac.id]?.vSpeeds;
+                        const thr = typeof controls !== 'undefined' ? (controls.throttle || 0) : 0;
+                        if (vSpeeds && kias > prevKias && thr > 0.5 && hagl < 200) {
+                            for (const [k, target, speech] of [['v1', vSpeeds.V1, 'V1'], ['vr', vSpeeds.VR, 'Rotate'], ['v2', vSpeeds.V2, 'V2']]) {
+                                if (typeof target === 'number' && !triggeredVSpeeds.has(k) && prevKias < target && kias >= target) {
+                                    triggeredVSpeeds.add(k);
+                                    speak(speech, false);
+                                    if (window.V39_NOTIF) window.V39_NOTIF.info(speech.toUpperCase());
+                                    break;
+                                }
+                            }
+                        }
+                        prevKias = kias;
+                    }
+
+                    if (!Number.isFinite(hagl) || !Number.isFinite(vs)) return;
+                    if (gc) { prevHagl = hagl; return; }
+                    if (hagl > 1200) triggeredAlts.clear();
+
+                    let warned = false;
+                    if (hagl < 1000 && vs < -3500 && canWarn('pullUp', now, 3000)) {
+                        speak('Pull up', true); warned = true;
+                        if (window.V39_NOTIF) window.V39_NOTIF.critical('PULL UP');
+                    } else if (hagl < 2500 && vs < -2500 && canWarn('sinkRate', now, 4000)) {
+                        speak('Sink rate', true); warned = true;
+                        if (window.V39_NOTIF) window.V39_NOTIF.warn('SINK RATE');
+                    } else if (hagl < 500 && v.gearPosition === 0 && vs < -300 && canWarn('gear', now, 6000)) {
+                        speak('Too low, gear', true); warned = true;
+                        if (window.V39_NOTIF) window.V39_NOTIF.warn('TOO LOW, GEAR');
+                    } else if (((Math.abs(v.aroll || 0) > 38 && hagl < 2500) || Math.abs(v.aroll || 0) > 48) && canWarn('bank', now, 5000)) {
+                        speak('Bank angle', false); warned = true;
+                    }
+
+                    if (!warned && vs < -100 && Number.isFinite(prevHagl)) {
+                        for (let i = ALT_CALLOUTS.length - 1; i >= 0; i--) {
+                            const alt = ALT_CALLOUTS[i];
+                            if (!triggeredAlts.has(alt) && prevHagl > alt && hagl <= alt) {
+                                for (let j = 0; j <= i; j++) triggeredAlts.add(ALT_CALLOUTS[j]);
+                                speak(String(alt), false);
+                                break;
+                            }
+                        }
+                    }
+                    prevHagl = hagl;
+                }, 100);
+            },
+
+            initCameraReset: () => {
+                let lastMidClick = 0;
+                window.addEventListener('mousedown', (e) => {
+                    if (e.button !== 1 || !window.realismSettings.cameraReset) return;
+                    const now = Date.now();
+                    if (now - lastMidClick < 400) {
+                        lastMidClick = 0;
+                        try { geofs?.camera?.reset?.(); } catch (_) {}
+                    } else {
+                        lastMidClick = now;
+                    }
+                });
+            }
         };
 
         window.realismPackInstance = suite;

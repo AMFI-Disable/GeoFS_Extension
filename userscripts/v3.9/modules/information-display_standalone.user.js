@@ -103,7 +103,7 @@
 // @description:ur      عین مطابق فلائٹ ڈیٹا HUD جس میں گلاسمورفک ٹیلی میٹری ریڈ آؤٹس شامل ہیں۔ © 2026 AMFI-Disable. Part of the GeoFS-V3.9_Ecosystem.
 
 // @namespace           https://greasyfork.org/users/1594049
-// @version             3.9.0
+// @version             3.9.1
 // @author              AMFI-Disable
 // @homepageURL         https://sites.google.com/view/geofs-v39-ecosystem/home
 // @icon                https://www.geo-fs.com/images/icons/favicon.ico
@@ -206,11 +206,37 @@
             ${safeCell('FT AGL', 'N/A', '', 'hud-agl')}
             ${safeCell('KTS GS', 'N/A', '', 'hud-gs')} 
             ${safeCell('DEG GSLOPE', 'N/A', '', 'hud-gslope')}
+            <div style="grid-column: 1 / -1; display: flex; gap: 4px; padding-top: 6px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <button type="button" id="hud-metar-btn" style="flex:1;background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(136,136,136,0.3);border-radius:4px;padding:3px 4px;font-size:9px;font-weight:700;cursor:pointer;">METAR</button>
+                <button type="button" id="hud-minimap-btn" style="flex:1;background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(136,136,136,0.3);border-radius:4px;padding:3px 4px;font-size:9px;font-weight:700;cursor:pointer;">MINI-MAP</button>
+            </div>
+            <div id="hud-metar-panel" hidden style="grid-column: 1 / -1; font-size:9px;line-height:1.35;color:#cbd5e1;background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.22);border-radius:6px;padding:4px 6px;word-break:break-word;">--</div>
+            <div id="hud-minimap-panel" hidden style="grid-column: 1 / -1; background:rgba(2,6,23,0.75);border:1px solid rgba(136,136,136,0.25);border-radius:6px;padding:4px;">
+                <svg id="hud-minimap-svg" viewBox="-90 -48 180 96" style="width:100%;height:90px;display:block;"></svg>
+                <div id="hud-minimap-info" style="font-size:8.5px;color:#94a3b8;text-align:center;margin-top:2px;">No runway nearby</div>
+            </div>
         `;
         
         // Registration: Inject into the HUD tab manager
         window.registerHUDTab('id', 'INFO', idHTML, true);
         window.hudInformationDisplayPro = true;
+
+        const metarBtn = document.getElementById('hud-metar-btn');
+        const mapBtn = document.getElementById('hud-minimap-btn');
+        const metarPanel = document.getElementById('hud-metar-panel');
+        const mapPanel = document.getElementById('hud-minimap-panel');
+        metarBtn?.addEventListener('click', () => {
+            if (!metarPanel) return;
+            metarPanel.hidden = !metarPanel.hidden;
+            metarBtn.style.color = metarPanel.hidden ? '#9ca3af' : '#10b981';
+            metarBtn.style.borderColor = metarPanel.hidden ? 'rgba(136,136,136,0.3)' : '#10b981';
+        });
+        mapBtn?.addEventListener('click', () => {
+            if (!mapPanel) return;
+            mapPanel.hidden = !mapPanel.hidden;
+            mapBtn.style.color = mapPanel.hidden ? '#9ca3af' : '#10b981';
+            mapBtn.style.borderColor = mapPanel.hidden ? 'rgba(136,136,136,0.3)' : '#10b981';
+        });
 
         /**
          * Primary Refresh Loop: Telemetry Processing
@@ -295,6 +321,73 @@
             updateCell('hud-g', (v.loadFactor ? v.loadFactor.toFixed(1) : "N/A"), gColor);
             updateCell('hud-aoa', (v.aoa ? v.aoa.toFixed(1) : "N/A"), aoaColor);
             updateCell('hud-gs', v.groundSpeed ? v.groundSpeed.toFixed(1) : "N/A");
+
+            // METAR & MINI-MAP Radar
+            if ((metarPanel && !metarPanel.hidden) || (mapPanel && !mapPanel.hidden)) {
+                const lla = ac.llaLocation;
+                const lat = Array.isArray(lla) ? lla[0] : NaN;
+                const lon = Array.isArray(lla) ? lla[1] : NaN;
+                const nearRunways = window.geofs?.runways?.nearRunways;
+                let nearestIcao = '';
+                let nearestDistNm = Infinity;
+                const runwayLines = [];
+
+                if (nearRunways && Number.isFinite(lat) && Number.isFinite(lon)) {
+                    const cosLat = Math.max(0.1, Math.cos((lat * Math.PI) / 180));
+                    const scale = 6;
+                    for (const rw of Object.values(nearRunways)) {
+                        const t1 = rw?.threshold1;
+                        const t2 = rw?.threshold2;
+                        if (!Array.isArray(t1) || !Array.isArray(t2) || t1.length < 2 || t2.length < 2) continue;
+                        const x1 = (t1[1] - lon) * 60 * cosLat * scale;
+                        const y1 = -(t1[0] - lat) * 60 * scale;
+                        const x2 = (t2[1] - lon) * 60 * cosLat * scale;
+                        const y2 = -(t2[0] - lat) * 60 * scale;
+                        const midNm = Math.hypot((x1 + x2) / 2, (y1 + y2) / 2) / scale;
+                        if (midNm < nearestDistNm) {
+                            nearestDistNm = midNm;
+                            nearestIcao = rw.icao || 'RWY';
+                        }
+                        if (midNm <= 20) runwayLines.push({ x1, y1, x2, y2 });
+                    }
+                }
+
+                if (metarPanel && !metarPanel.hidden) {
+                    const metar = window.geofs?.environment?.metar;
+                    const windKts = window.weather?.currentWindSpeed;
+                    if (metar?.raw) {
+                        metarPanel.textContent = `${nearestIcao ? `[${nearestIcao}] ` : ''}${metar.raw}`;
+                    } else {
+                        const parts = [];
+                        if (nearestIcao) parts.push(`NEAR: ${nearestIcao} (${nearestDistNm.toFixed(1)} NM)`);
+                        if (typeof metar?.temp === 'number') parts.push(`${Math.round(metar.temp)}°C`);
+                        if (typeof windKts === 'number') parts.push(`WIND ${Math.round(windKts)}KT`);
+                        if (typeof metar?.visibility === 'number') parts.push(`VIS ${Math.round(metar.visibility)}M`);
+                        if (typeof metar?.clouds === 'number') parts.push(`CLD ${Math.round(metar.clouds)}%`);
+                        metarPanel.textContent = parts.length > 0 ? parts.join(' · ') : 'METAR unavailable';
+                    }
+                }
+
+                const svg = document.getElementById('hud-minimap-svg');
+                const info = document.getElementById('hud-minimap-info');
+                if (mapPanel && !mapPanel.hidden && svg) {
+                    const linesHtml = runwayLines
+                        .map((r) => `<line x1="${r.x1.toFixed(1)}" y1="${r.y1.toFixed(1)}" x2="${r.x2.toFixed(1)}" y2="${r.y2.toFixed(1)}" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>`)
+                        .join('');
+                    const hdg = Number.isFinite(v.heading360) ? v.heading360 : 0;
+                    svg.innerHTML = `
+                        <circle cx="0" cy="0" r="30" fill="none" stroke="rgba(148,163,184,0.22)" stroke-width="0.8" stroke-dasharray="2,2"/>
+                        <circle cx="0" cy="0" r="60" fill="none" stroke="rgba(148,163,184,0.14)" stroke-width="0.8"/>
+                        ${linesHtml}
+                        <g transform="rotate(${hdg.toFixed(1)})">
+                            <polygon points="0,-6 4,5 0,2 -4,5" fill="#10b981"/>
+                        </g>
+                    `;
+                    if (info) {
+                        info.textContent = nearestIcao ? `${nearestIcao} · ${nearestDistNm.toFixed(1)} NM` : 'No runway within 20 NM';
+                    }
+                }
+            }
         }, 100);
     };
 
