@@ -26,6 +26,7 @@ import {
 } from '../shared/simbrief';
 import { getCachedUpdateInfo, type UpdateInfo } from '../shared/update-checker';
 import { ApPpPanel } from './ap-pp-panel';
+import { EfbPanel } from './efb-panel';
 import { RadarPanel } from './radar-panel';
 import {
   DEFAULT_SETTINGS,
@@ -55,12 +56,12 @@ export function App() {
     typeof window !== 'undefined' &&
     (new URLSearchParams(window.location.search).get('mode') === 'tab' || window.innerWidth >= 720);
 
-  const [panelTab, setActiveTab] = useState<'ap-pp' | 'radar' | 'realism' | 'diag'>(() => {
+  const [panelTab, setActiveTab] = useState<'ap-pp' | 'radar' | 'efb' | 'realism' | 'diag'>(() => {
     try {
       const qTab = new URLSearchParams(window.location.search).get('tab');
-      if (qTab === 'ap-pp' || qTab === 'radar' || qTab === 'realism' || qTab === 'diag') return qTab;
+      if (qTab === 'ap-pp' || qTab === 'radar' || qTab === 'efb' || qTab === 'realism' || qTab === 'diag') return qTab;
       const saved = localStorage.getItem('geofs_ext_sidepanel_tab');
-      return saved === 'radar' || saved === 'realism' || saved === 'diag' ? saved : 'ap-pp';
+      return saved === 'radar' || saved === 'efb' || saved === 'realism' || saved === 'diag' ? saved : 'ap-pp';
     } catch {
       return 'ap-pp';
     }
@@ -73,7 +74,7 @@ export function App() {
     }
   }, [panelTab]);
 
-  const openPopOutTab = (targetTab: 'ap-pp' | 'radar' | 'realism' | 'diag' = panelTab) => {
+  const openPopOutTab = (targetTab: 'ap-pp' | 'radar' | 'efb' | 'realism' | 'diag' = panelTab) => {
     const rel = `sidepanel/index.html?tab=${targetTab}&mode=tab`;
     if (typeof chrome !== 'undefined' && chrome.tabs?.create && chrome.runtime?.getURL) {
       chrome.tabs.create({ url: chrome.runtime.getURL(rel) });
@@ -303,6 +304,13 @@ export function App() {
         </button>
         <button
           type="button"
+          class={`tab-btn ${panelTab === 'efb' ? 'active' : ''}`}
+          onClick={() => setActiveTab('efb')}
+        >
+          EFB
+        </button>
+        <button
+          type="button"
           class={`tab-btn ${panelTab === 'realism' ? 'active' : ''}`}
           onClick={() => setActiveTab('realism')}
         >
@@ -316,6 +324,10 @@ export function App() {
           OP / Diag
         </button>
       </div>
+
+      {panelTab === 'efb' && (
+        <EfbPanel ownCallsign={simbriefOfp?.callsign || live?.aircraftProfile?.name || 'GEOFS1'} />
+      )}
 
       {panelTab === 'radar' && (
         <RadarPanel

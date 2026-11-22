@@ -94,11 +94,12 @@ export class InformationDisplayModule implements IModule {
         <svg data-field="minimap-svg" viewBox="-90 -48 180 96" style="width:100%;height:90px;display:block;"></svg>
         <div data-field="minimap-info" style="font-size:8px;color:#94a3b8;text-align:center;margin-top:2px;">No runway nearby</div>
       </div>
-      <div data-panel="tug" hidden style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.22);border-radius:6px;padding:4px;">
+      <div data-panel="tug" hidden style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.22);border-radius:6px;padding:4px;">
         <button type="button" data-push="left" style="background:rgba(255,255,255,0.08);color:#e2e8f0;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">L</button>
         <button type="button" data-push="straight" style="background:rgba(255,255,255,0.08);color:#e2e8f0;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">BACK</button>
         <button type="button" data-push="right" style="background:rgba(255,255,255,0.08);color:#e2e8f0;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">R</button>
         <button type="button" data-push="off" style="background:rgba(239,68,68,0.2);color:#fca5a5;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">STOP</button>
+        <button type="button" data-walk-toggle style="background:rgba(56,189,248,0.16);color:#38bdf8;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;" title="Pre-Flight Walkaround (Shift+W)">WALK</button>
       </div>
     `;
 
@@ -143,6 +144,9 @@ export class InformationDisplayModule implements IModule {
         });
         window.dispatchEvent(new CustomEvent('geofs-ext:pushback', { detail: { mode } }));
       });
+    });
+    root.querySelector('[data-walk-toggle]')?.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('geofs-ext:walkaround'));
     });
 
     this.rootEl = root;

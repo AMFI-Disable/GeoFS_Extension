@@ -69,6 +69,27 @@ export function RadarPanel({
       return '';
     }
   });
+  const [watchlist, setWatchlist] = useState<string[]>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('geofs_ext_radar_watchlist') || '[]');
+      return Array.isArray(raw) ? raw.map((s) => String(s).toUpperCase()) : [];
+    } catch {
+      return [];
+    }
+  });
+  const toggleWatch = (callsign: string) => {
+    const clean = callsign.trim().toUpperCase();
+    if (!clean) return;
+    setWatchlist((prev) => {
+      const next = prev.includes(clean) ? prev.filter((c) => c !== clean) : [...prev, clean];
+      try {
+        localStorage.setItem('geofs_ext_radar_watchlist', JSON.stringify(next));
+      } catch {
+        // ignore storage errors
+      }
+      return next;
+    });
+  };
   const dragRef = useRef<{ x: number; y: number; lat: number; lon: number } | null>(null);
 
   const centerLat = panCenter?.lat ?? radar?.lat ?? 37.6213;
@@ -433,10 +454,17 @@ export function RadarPanel({
             <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={s.color} stroke-width="1.4" opacity="0.85" />
           ))}
 
-          {/* Traffic targets (GeoFS MP = cyan, ADS-B = gold, Relay = green) */}
+          {/* Traffic targets (GeoFS MP = cyan, ADS-B = gold, Relay = green, Watched Friend = magenta) */}
           {projected.traffic.map((t) => {
             if (Math.abs(t.x) > 116 || Math.abs(t.y) > 116) return null;
-            const baseColor = t.source === 'adsb' ? '#facc15' : t.source === 'relay' ? '#4ade80' : '#22d3ee';
+            const isFriend = watchlist.includes(t.callsign.toUpperCase());
+            const baseColor = isFriend
+              ? '#ec4899'
+              : t.source === 'adsb'
+                ? '#facc15'
+                : t.source === 'relay'
+                  ? '#4ade80'
+                  : '#22d3ee';
             const color = t.tcas === 'RA' ? '#ef4444' : t.tcas === 'TA' ? '#f59e0b' : t.id === selectedId ? '#ffffff' : baseColor;
             const arrow = t.vsFpm > 200 ? '↑' : t.vsFpm < -200 ? '↓' : '';
             return (
@@ -448,7 +476,7 @@ export function RadarPanel({
                   fill={color}
                 />
                 <text x={t.x + 4.5} y={t.y - 1} font-size="5.2" fill={color} font-weight="700">
-                  {t.callsign.slice(0, 8)}
+                  {isFriend ? '★ ' : ''}{t.callsign.slice(0, 8)}
                 </text>
                 <text x={t.x + 4.5} y={t.y + 5.2} font-size="4.8" fill="#94a3b8">
                   {formatFl(t.altFt)}{arrow} {t.speedKts}kt
@@ -470,7 +498,7 @@ export function RadarPanel({
             {panCenter ? `PAN: ${panCenter.label}` : radar ? `OWN: ${formatFl(ownAltFt)} · ${ownKias}kt · ${radar.heading}°` : 'VIEW: KSFO'}
           </span>
           <span>
-            <span style="color:#22d3ee;">■ MP</span> · <span style="color:#facc15;">■ ADS-B</span> · {projected.traffic.length} TFC
+            <span style="color:#22d3ee;">■ MP</span> · <span style="color:#facc15;">■ ADS-B</span> · <span style="color:#ec4899;">★ FRD</span> · {projected.traffic.length} TFC
           </span>
         </div>
 
@@ -490,14 +518,23 @@ export function RadarPanel({
       <div style="display:flex;flex-direction:column;gap:8px;">
         {selectedTraffic && (
           <div class="panel-card" style="padding:8px;font-size:11px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:4px;">
               <strong>
                 {selectedTraffic.callsign} ({selectedTraffic.aircraft}){' '}
                 <span class="badge" style="font-size:9px;">
                   {selectedTraffic.source === 'adsb' ? 'ADS-B' : selectedTraffic.source === 'relay' ? 'RELAY' : 'GEOFS'}
                 </span>
               </strong>
-              <button type="button" class="chip-btn" onClick={() => setSelectedId(null)}>✕</button>
+              <div style="display:flex;gap:3px;">
+                <button
+                  type="button"
+                  class={`chip-btn ${watchlist.includes(selectedTraffic.callsign.toUpperCase()) ? 'active' : ''}`}
+                  onClick={() => toggleWatch(selectedTraffic.callsign)}
+                >
+                  {watchlist.includes(selectedTraffic.callsign.toUpperCase()) ? '★ Pinned' : '☆ Pin'}
+                </button>
+                <button type="button" class="chip-btn" onClick={() => setSelectedId(null)}>✕</button>
+              </div>
             </div>
             <div class="muted-hint">
               DIST {selectedTraffic.distNm.toFixed(1)} NM · BRG {Math.round(selectedTraffic.brgDeg)}° · ALT {selectedTraffic.altFt.toLocaleString()} ft · GS {selectedTraffic.speedKts} kt · HDG {selectedTraffic.heading}°

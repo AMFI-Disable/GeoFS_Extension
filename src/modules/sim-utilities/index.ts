@@ -2,6 +2,7 @@ import { CameraResetController } from '../realism-pack/camera-reset';
 import { SlewModeController } from '../realism-pack/slew-mode';
 import { PushbackController, type PushbackMode } from './pushback';
 import { ShortcutOverlay } from './shortcut-overlay';
+import { WalkaroundController } from './walkaround';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 import type { ExtensionSettings, RealismOptions } from '../../types/settings';
 
@@ -16,20 +17,23 @@ function isCameraResetEnabled(options: Partial<RealismOptions> | undefined): boo
 export class SimUtilitiesModule implements IModule {
   public readonly id = 'sim-utilities';
   public readonly name = 'Sim Utilities';
-  public readonly description = 'FSX-style Slew Mode (Shift+Y), Pushback Tug, Shortcut Overlay (?), and camera reset.';
+  public readonly description = 'FSX-style Slew Mode (Shift+Y), Pushback Tug, Pre-Flight Walkaround (Shift+W), Shortcut Overlay (?), and camera reset.';
   public readonly supportedMajors = [3, 4] as const;
   public readonly defaultEnabled = true;
 
   private ctx: ModuleContext | null = null;
   private slewMode = new SlewModeController();
   private pushback = new PushbackController();
+  private walkaround = new WalkaroundController();
   private shortcutOverlay = new ShortcutOverlay(() => this.ctx?.getSettings().keybindings);
   private cameraReset = new CameraResetController(() => {
     this.ctx?.anchors.showToast('Camera Reset');
   });
   private unbindSlewKey: (() => void) | null = null;
+  private unbindWalkKey: (() => void) | null = null;
   private pushbackEventHandler: ((e: Event) => void) | null = null;
   private shortcutEventHandler: (() => void) | null = null;
+  private walkaroundEventHandler: (() => void) | null = null;
 
   public init(context: ModuleContext): void {
     this.ctx = context;
@@ -45,8 +49,13 @@ export class SimUtilitiesModule implements IModule {
     this.shortcutEventHandler = () => {
       this.shortcutOverlay.toggle();
     };
+    this.walkaroundEventHandler = () => {
+      const on = this.walkaround.toggle();
+      this.ctx?.anchors.showToast(on ? 'Walkaround ON (WASD)' : 'Walkaround OFF');
+    };
     window.addEventListener('geofs-ext:pushback', this.pushbackEventHandler);
     window.addEventListener('geofs-ext:shortcuts', this.shortcutEventHandler);
+    window.addEventListener('geofs-ext:walkaround', this.walkaroundEventHandler);
 
     this.unbindSlewKey =
       context.keybinds?.register?.(
@@ -59,6 +68,12 @@ export class SimUtilitiesModule implements IModule {
           this.ctx?.anchors.showToast(nextOn ? 'Slew Mode ON' : 'Slew Mode OFF');
         }
       ) ?? null;
+
+    this.unbindWalkKey =
+      context.keybinds?.register?.('utilities-walkaround-toggle', 'Shift+W', () => {
+        const on = this.walkaround.toggle();
+        this.ctx?.anchors.showToast(on ? 'Walkaround ON (WASD)' : 'Walkaround OFF');
+      }) ?? null;
   }
 
   public onSettingsChange(settings: ExtensionSettings): void {
@@ -79,6 +94,7 @@ export class SimUtilitiesModule implements IModule {
       this.slewMode.update(telemetry);
     }
     this.pushback.update(telemetry);
+    this.walkaround.update(telemetry);
   }
 
   public destroy(): void {
@@ -90,9 +106,16 @@ export class SimUtilitiesModule implements IModule {
       window.removeEventListener('geofs-ext:shortcuts', this.shortcutEventHandler);
       this.shortcutEventHandler = null;
     }
+    if (this.walkaroundEventHandler) {
+      window.removeEventListener('geofs-ext:walkaround', this.walkaroundEventHandler);
+      this.walkaroundEventHandler = null;
+    }
     this.unbindSlewKey?.();
     this.unbindSlewKey = null;
+    this.unbindWalkKey?.();
+    this.unbindWalkKey = null;
     this.pushback.dispose();
+    this.walkaround.dispose();
     this.shortcutOverlay.dispose();
     this.slewMode.dispose();
     this.cameraReset.dispose();
