@@ -1,8 +1,8 @@
 <div align="center">
 
-# GeoFS Extension
+# GeoFS Flight Suite (`GeoFS_Extension`)
 
-**All-In-One Flight Deck Companion For GeoFS V3.9 And V4.0**
+**All-In-One Addon Pack For GeoFS V3.9 & V4.0 — AP++ Autopilot, Autothrottle, Landing Stats, SimBrief, GPWS, Realism Pack, Fuel, Failures, TCAS & Pushback**
 
 [![Website: Live](https://img.shields.io/badge/Website-Live-66BB6A.svg?style=flat-square)](https://amfi-disable.github.io/GeoFS_Extension/)
 ![Version](https://img.shields.io/badge/Version-v0.3.0-blue?style=flat-square)

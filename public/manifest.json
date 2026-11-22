@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "GeoFS Extension",
+  "name": "GeoFS Flight Suite — AP++, HUD, Realism & Stats",
   "version": "0.3.0",
-  "description": "Unified Manifest V3 flight simulation suite for GeoFS V3.x and V4.x.",
+  "description": "All-in-one GeoFS V3.9 & V4.0 flight deck suite: AP++ Autopilot, Autothrottle, Landing Stats, SimBrief, GPWS, Realism Pack, Fuel, Failures, TCAS Mini-Map & Pushback.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
