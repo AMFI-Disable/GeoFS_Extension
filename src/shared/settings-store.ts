@@ -103,7 +103,7 @@ export const MODULE_META: ReadonlyArray<{
   { id: 'realism-pack', name: 'Realism Pack', desc: 'G-force shaders, camera shake, 737/777/A320 SFX & GPWS', category: 'immersion' },
   { id: 'failure-simulator', name: 'Failure Simulator', desc: 'Modal failure probabilities, QRH override & recovery', category: 'immersion' },
   { id: 'gate-spawner', name: 'Gate Spawner', desc: 'Airport ICAO & stand search with instant gate parking', category: 'utilities' },
-  { id: 'sim-utilities', name: 'Sim Utilities', desc: 'FSX-style Slew Mode (Shift+Y) & middle-click camera reset', category: 'utilities' }
+  { id: 'sim-utilities', name: 'Sim Utilities', desc: 'FSX-style Slew Mode (Alt+Y), Pushback, Walkaround & camera reset', category: 'utilities' }
 ];
 
 export function mergeExtensionPatch(

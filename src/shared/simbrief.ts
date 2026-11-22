@@ -43,8 +43,12 @@ export async function clearCachedSimBriefOfp(): Promise<void> {
 export async function fetchSimBriefOfp(username: string): Promise<SimBriefOfp> {
   const cleanUser = username.trim();
   if (!cleanUser) throw new Error('Enter a SimBrief username or Pilot ID.');
-  const url = `https://www.simbrief.com/api/xml.fetcher.php?username=${encodeURIComponent(cleanUser)}&json=1`;
-  const resp = await fetch(url);
+  const param = /^\d+$/.test(cleanUser) ? 'userid' : 'username';
+  const url = `https://www.simbrief.com/api/xml.fetcher.php?${param}=${encodeURIComponent(cleanUser)}&json=1`;
+  const signal = typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+    ? AbortSignal.timeout(12000)
+    : undefined;
+  const resp = await fetch(url, signal ? { signal } : undefined);
   if (!resp.ok) {
     throw new Error(`SimBrief HTTP ${resp.status}`);
   }

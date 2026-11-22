@@ -75,8 +75,12 @@ export async function checkForExtensionUpdate(force = false): Promise<UpdateInfo
   }
 
   try {
+    const signal = typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+      ? AbortSignal.timeout(8000)
+      : undefined;
     const resp = await fetch(LATEST_RELEASE_API, {
-      headers: { Accept: 'application/vnd.github+json' }
+      headers: { Accept: 'application/vnd.github+json' },
+      ...(signal ? { signal } : {})
     });
     if (!resp.ok) return null;
     const data = (await resp.json()) as {

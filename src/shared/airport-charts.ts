@@ -32,7 +32,10 @@ export async function fetchFaaCharts(icao: string): Promise<AirportChartEntry[]>
   if (!/^[A-Z0-9]{3,4}$/.test(clean)) return [];
   const url = `https://api.aviationapi.com/v1/charts?apt=${encodeURIComponent(clean)}`;
   try {
-    const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+    const signal = typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+      ? AbortSignal.timeout(8000)
+      : undefined;
+    const resp = await fetch(url, { headers: { Accept: 'application/json' }, ...(signal ? { signal } : {}) });
     if (!resp.ok) return [];
     const data = (await resp.json()) as Record<string, Array<{ chart_name?: string; chart_code?: string; pdf_path?: string }>>;
     const list = data[clean] ?? Object.values(data)[0] ?? [];

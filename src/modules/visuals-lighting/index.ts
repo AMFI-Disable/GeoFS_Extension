@@ -75,7 +75,7 @@ export class VisualsLightingModule implements IModule {
     this.unbindLightsKey =
       context.keybinds?.register?.(
         'visuals-lights-toggle',
-        context.getSettings().keybindings?.toggleLandingLights ?? 'Shift+L',
+        context.getSettings().keybindings?.toggleLandingLights ?? 'Alt+L',
         () => {
           const nextOn = !(this.lightSwitches.landing || this.lightSwitches.taxi);
           this.lightSwitches = {
@@ -150,7 +150,7 @@ export class VisualsLightingModule implements IModule {
 
   public onSettingsChange(settings: ExtensionSettings): void {
     const options = settings.realismOptions;
-    this.ctx?.keybinds?.updateCombo?.('visuals-lights-toggle', settings.keybindings?.toggleLandingLights ?? 'Shift+L');
+    this.ctx?.keybinds?.updateCombo?.('visuals-lights-toggle', settings.keybindings?.toggleLandingLights ?? 'Alt+L');
     this.syncHudTab?.();
     const optionKey = JSON.stringify({
       aircraftLights: isOptEnabled(options, 'aircraftLights'),

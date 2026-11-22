@@ -14,6 +14,12 @@ interface AirplanesLiveAc {
   baro_rate?: number;
 }
 
+function timeoutSignal(ms: number): AbortSignal | undefined {
+  return typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+    ? AbortSignal.timeout(ms)
+    : undefined;
+}
+
 export async function fetchAdsbTraffic(
   lat: number,
   lon: number,
@@ -23,7 +29,7 @@ export async function fetchAdsbTraffic(
   const dist = Math.max(5, Math.min(250, Math.round(radiusNm)));
   const url = `https://api.airplanes.live/v2/point/${lat.toFixed(3)}/${lon.toFixed(3)}/${dist}`;
   try {
-    const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+    const resp = await fetch(url, { headers: { Accept: 'application/json' }, signal: timeoutSignal(8000) });
     if (!resp.ok) return [];
     const data = (await resp.json()) as { ac?: AirplanesLiveAc[] };
     if (!Array.isArray(data.ac)) return [];
@@ -70,10 +76,11 @@ export async function syncGlobalRelay(
       await fetch(clean, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...ownship, ts: Date.now() })
+        body: JSON.stringify({ ...ownship, ts: Date.now() }),
+        signal: timeoutSignal(8000)
       }).catch(() => {});
     }
-    const resp = await fetch(clean, { headers: { Accept: 'application/json' } });
+    const resp = await fetch(clean, { headers: { Accept: 'application/json' }, signal: timeoutSignal(8000) });
     if (!resp.ok) return [];
     const data = (await resp.json()) as { traffic?: RadarTraffic[] } | RadarTraffic[];
     const list = Array.isArray(data) ? data : Array.isArray(data?.traffic) ? data.traffic : [];

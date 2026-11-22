@@ -15,20 +15,35 @@ export class PushbackController {
   }
 
   public setMode(mode: PushbackMode): void {
+    if (mode === 'off') {
+      this.mode = 'off';
+      return;
+    }
+    const geofs = window.geofs;
+    const ac = geofs?.aircraft?.instance;
+    const vals = geofs?.animation?.values;
+    if (geofs?.isPaused?.() || ac?.crashed) {
+      this.mode = 'off';
+      return;
+    }
+    const kias = Number(vals?.kias) || 0;
+    const aglFeet = Number(vals?.haglFeet) || 0;
+    const rawGc = Boolean(ac?.groundContact || vals?.groundContact);
+    if ((!rawGc && aglFeet > 60) || kias > 25) {
+      this.mode = 'off';
+      return;
+    }
     const prev = this.mode;
     this.mode = mode;
     this.lastTickMs = Date.now();
-    if (mode !== 'off') {
-      const ac = window.geofs?.aircraft?.instance;
-      const lla = ac?.llaLocation;
-      if (prev === 'off' && Array.isArray(lla) && lla.length >= 2) {
-        this.lat = Number(lla[0]) || 0;
-        this.lon = Number(lla[1]) || 0;
-        this.altMeters = Number(lla[2]) || 0;
-        this.headingDeg = Number(window.geofs?.animation?.values?.heading360) || 0;
-      }
-      this.stepPose(0.05);
+    const lla = ac?.llaLocation;
+    if (prev === 'off' && Array.isArray(lla) && lla.length >= 2) {
+      this.lat = Number(lla[0]) || 0;
+      this.lon = Number(lla[1]) || 0;
+      this.altMeters = Number(lla[2]) || 0;
+      this.headingDeg = Number(vals?.heading360) || 0;
     }
+    this.stepPose(0.05);
   }
 
   public stop(): void {

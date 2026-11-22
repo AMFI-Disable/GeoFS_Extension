@@ -17,7 +17,7 @@ function isCameraResetEnabled(options: Partial<RealismOptions> | undefined): boo
 export class SimUtilitiesModule implements IModule {
   public readonly id = 'sim-utilities';
   public readonly name = 'Sim Utilities';
-  public readonly description = 'FSX-style Slew Mode (Shift+Y), Pushback Tug, Pre-Flight Walkaround (Shift+W), Shortcut Overlay (?), and camera reset.';
+  public readonly description = 'FSX-style Slew Mode (Alt+Y), Pushback Tug, Pre-Flight Walkaround (Alt+W), Shortcut Overlay (?), and camera reset.';
   public readonly supportedMajors = [3, 4] as const;
   public readonly defaultEnabled = true;
 

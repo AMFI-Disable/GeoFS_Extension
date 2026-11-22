@@ -8,6 +8,7 @@ export class WalkaroundController {
   private offsetY = 0; // meters forward of aircraft
   private offsetZ = 1.7; // eye height meters
   private savedMode = 0;
+  private savedPosition: [number, number, number] | null = null;
   private heldKeys = new Set<string>();
   private bannerEl: HTMLDivElement | null = null;
   private listenersAttached = false;
@@ -32,6 +33,11 @@ export class WalkaroundController {
       | undefined;
     if (!cam) return false;
     this.savedMode = typeof cam.currentMode === 'number' ? cam.currentMode : 0;
+    const pos = cam.currentDefinition?.position;
+    this.savedPosition =
+      Array.isArray(pos) && pos.length >= 3
+        ? [Number(pos[0]) || 0, Number(pos[1]) || 0, Number(pos[2]) || 0]
+        : null;
     this.offsetX = 14;
     this.offsetY = 4;
     this.offsetZ = 1.8;
@@ -48,11 +54,22 @@ export class WalkaroundController {
     this.detachListeners();
     this.removeBanner();
     try {
-      const cam = window.geofs?.camera as { set?: (mode: number) => void; reset?: () => void } | undefined;
+      const cam = window.geofs?.camera as
+        | {
+            set?: (mode: number) => void;
+            reset?: () => void;
+            currentDefinition?: { position?: [number, number, number] };
+          }
+        | undefined;
+      if (this.savedPosition && cam?.currentDefinition) {
+        cam.currentDefinition.position = [...this.savedPosition] as [number, number, number];
+      }
       cam?.set?.(this.savedMode);
       cam?.reset?.();
     } catch {
       // ignore camera restore errors
+    } finally {
+      this.savedPosition = null;
     }
   }
 
@@ -94,6 +111,7 @@ export class WalkaroundController {
 
   private onKeyDown = (e: KeyboardEvent): void => {
     if (!this.active) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
     const target = e.target as HTMLElement | null;
     if (target && typeof target.matches === 'function' && target.matches('input, textarea, select, [contenteditable]')) {
       return;
