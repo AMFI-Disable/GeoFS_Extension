@@ -7,7 +7,7 @@ export function resolveScaledInertiaVector(
   definition: GeoFSAircraftInstance['definition'] | undefined,
   originalMass: number,
   targetMass: number
-): { base: [number, number, number]; scaled: [number, number, number] } | null {
+): { base: [number, number, number]; scaled: [number, number, number]; isConstantFactor?: boolean } | null {
   if (!Number.isFinite(originalMass) || originalMass <= 0 || !Number.isFinite(targetMass) || targetMass <= 0) {
     return null;
   }
@@ -44,6 +44,35 @@ export function resolveScaledInertiaVector(
 
   let base: [number, number, number] | null = null;
   const bodyRecord = body as Record<string, unknown> | undefined;
+
+  // GeoFS V4.0 rigidBody stores m_localInvInertia as a 3x3 matrix where setMassProps(mass, a)
+  // sets m_localInvInertia[i][i] = a[i] / mass. Recovering a[i] = diag[i] * originalMass
+  // preserves exact rotational inertia scaling with mass and bit-exact teardown restoration.
+  const localInvMat = bodyRecord?.m_localInvInertia;
+  if (
+    Array.isArray(localInvMat) &&
+    localInvMat.length >= 3 &&
+    Array.isArray(localInvMat[0]) &&
+    Array.isArray(localInvMat[1]) &&
+    Array.isArray(localInvMat[2])
+  ) {
+    const diag: [number, number, number] = [
+      Number(localInvMat[0][0]),
+      Number(localInvMat[1][1]),
+      Number(localInvMat[2][2])
+    ];
+    if (diag.every((n) => Number.isFinite(n) && n > 0)) {
+      const factor: [number, number, number] = [
+        diag[0] * originalMass,
+        diag[1] * originalMass,
+        diag[2] * originalMass
+      ];
+      if (factor.every((n) => Number.isFinite(n) && n > 0)) {
+        return { base: factor, scaled: factor, isConstantFactor: true };
+      }
+    }
+  }
+
   for (const key of ['inertia', 'localInertia', 'inertiaTensor']) {
     const vec = extractPositiveVec3(bodyRecord?.[key]);
     if (vec) {
@@ -202,6 +231,7 @@ export class FuelSimulatorModule implements IModule {
         body: NonNullable<GeoFSAircraftInstance['rigidBody']> | undefined;
         originalMass: number | undefined;
         originalInertia: [number, number, number] | null;
+        inertiaConstantFactor: boolean;
         lastBodyMass: number | undefined;
         calledSetMassProps: boolean;
       }
@@ -287,6 +317,16 @@ export class FuelSimulatorModule implements IModule {
       if (this.fuelKg > 0) this.restoreFuelEngine();
       this.distributeFuel();
       this.massSyncElapsed = 1;
+      const profile = context.sim.getAircraftProfile();
+      if (profile && profile.id !== '2953' && !/atlantis/i.test(profile.name)) {
+        const payload = Math.max(profile.mtow * 0.1, profile.mtow - profile.oew - profile.maxFuel) * 0.5;
+        const mass = profile.oew + payload + this.fuelKg;
+        if (Number.isFinite(mass) && mass > 0) {
+          this.syncMass(this.aircraft, mass);
+          this.massSyncElapsed = 0;
+          if (this.weightEl) this.weightEl.textContent = `${Math.round(mass).toLocaleString()} kg`;
+        }
+      }
       if (this.sliderLabelEl) this.sliderLabelEl.textContent = `${Math.round(clamped)}%`;
       context.anchors.showToast(`Fuel set to ${Math.round(clamped)}%`);
     };
@@ -487,6 +527,7 @@ export class FuelSimulatorModule implements IModule {
         body,
         originalMass: initialBodyMass,
         originalInertia: null,
+        inertiaConstantFactor: false,
         lastBodyMass: initialBodyMass,
         calledSetMassProps: false
       };
@@ -496,14 +537,32 @@ export class FuelSimulatorModule implements IModule {
 
     let bodySynced = false;
     if (body && typeof body.setMassProps === 'function' && this.massTarget.originalMass !== undefined) {
-      const inertiaInfo = resolveScaledInertiaVector(body, definition, this.massTarget.originalMass, safeMass);
-      if (inertiaInfo) {
-        if (!this.massTarget.originalInertia) {
-          this.massTarget.originalInertia = inertiaInfo.base;
+      let scaledInertia: [number, number, number] | null = null;
+      if (this.massTarget.originalInertia) {
+        if (this.massTarget.inertiaConstantFactor) {
+          scaledInertia = this.massTarget.originalInertia;
+        } else {
+          const scale = Math.max(0.25, Math.min(4, safeMass / this.massTarget.originalMass));
+          scaledInertia = [
+            this.massTarget.originalInertia[0] * scale,
+            this.massTarget.originalInertia[1] * scale,
+            this.massTarget.originalInertia[2] * scale
+          ];
         }
+      } else {
+        const inertiaInfo = resolveScaledInertiaVector(body, definition, this.massTarget.originalMass, safeMass);
+        if (inertiaInfo) {
+          this.massTarget.originalInertia = inertiaInfo.base;
+          this.massTarget.inertiaConstantFactor = Boolean(inertiaInfo.isConstantFactor);
+          scaledInertia = inertiaInfo.scaled;
+        }
+      }
+
+      if (scaledInertia) {
         const prevBodyMass = this.massTarget.lastBodyMass ?? this.massTarget.originalMass;
-        if (!this.massTarget.calledSetMassProps || Math.abs(prevBodyMass - safeMass) > 25) {
-          body.setMassProps(safeMass, inertiaInfo.scaled);
+        const bodyThreshold = Math.max(2, this.massTarget.originalMass * 0.01);
+        if (!this.massTarget.calledSetMassProps || Math.abs(prevBodyMass - safeMass) > bodyThreshold) {
+          body.setMassProps(safeMass, scaledInertia);
           this.massTarget.calledSetMassProps = true;
           this.massTarget.lastBodyMass = safeMass;
           bodySynced = true;

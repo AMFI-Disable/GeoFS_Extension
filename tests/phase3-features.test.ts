@@ -7,7 +7,8 @@ import { compareSemver } from '../src/shared/update-checker';
 import { PushbackController } from '../src/modules/sim-utilities/pushback';
 import { WalkaroundController } from '../src/modules/sim-utilities/walkaround';
 import { detectImmersiveAirports } from '../src/modules/visuals-lighting';
-import type { FlightTelemetry } from '../src/types/module';
+import { FuelSimulatorModule, resolveScaledInertiaVector } from '../src/modules/fuel-simulator';
+import type { FlightTelemetry, ModuleContext } from '../src/types/module';
 
 function makeTelemetry(overrides: Partial<FlightTelemetry> = {}): FlightTelemetry {
   return {
@@ -350,3 +351,122 @@ describe('Immersive Airports Detection', () => {
     expect(detectImmersiveAirports()).toBe(true);
   });
 });
+
+describe('GeoFS V4.0 FuelSimulator RigidBody Mass Sync', () => {
+  it('recovers exact V4.0 tensorFactor from 3x3 m_localInvInertia matrix', () => {
+    const v4Body = {
+      mass: 500,
+      m_localInvInertia: [
+        [0.0002, 0, 0],
+        [0, 0.0002, 0],
+        [0, 0, 0.0002]
+      ]
+    } as unknown as Parameters<typeof resolveScaledInertiaVector>[0];
+
+    const res = resolveScaledInertiaVector(v4Body, {}, 500, 420);
+    expect(res).not.toBeNull();
+    expect(res!.base[0]).toBeCloseTo(0.1, 6);
+    expect(res!.base[1]).toBeCloseTo(0.1, 6);
+    expect(res!.base[2]).toBeCloseTo(0.1, 6);
+    expect(res!.scaled).toEqual(res!.base);
+    expect(res!.isConstantFactor).toBe(true);
+  });
+
+  it('maintains constant V4.0 inertia factor across repeated fuel changes and restores bit-exact on destroy', () => {
+    const v4Body = {
+      mass: 500,
+      m_localInvInertia: [
+        [0.0002, 0, 0],
+        [0, 0.0002, 0],
+        [0, 0, 0.0002]
+      ],
+      setMassProps(m: number, a: number | [number, number, number]) {
+        const vec = Array.isArray(a) ? a : [a, a, a];
+        this.mass = m;
+        this.m_localInvInertia = [
+          [vec[0] / m, 0, 0],
+          [0, vec[1] / m, 0],
+          [0, 0, vec[2] / m]
+        ];
+      }
+    };
+    const definition: { mass?: number; maxThrust?: number } = { mass: 500, maxThrust: 2000 };
+    const aircraft = {
+      id: '1',
+      definition,
+      rigidBody: v4Body,
+      crashed: false,
+      engine: { on: true }
+    };
+    Object.defineProperty(globalThis, 'window', {
+      value: { geofs: { aircraft: { instance: aircraft } } },
+      configurable: true,
+      writable: true
+    });
+    const makeEl = () => ({
+      id: '',
+      className: '',
+      textContent: '',
+      innerHTML: '',
+      style: {},
+      dataset: {},
+      classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() },
+      addEventListener: vi.fn(),
+      setAttribute: vi.fn(),
+      querySelector: () => makeEl(),
+      querySelectorAll: () => [],
+      remove: vi.fn()
+    });
+    Object.defineProperty(globalThis, 'document', {
+      value: {
+        createElement: () => makeEl(),
+        head: { appendChild: vi.fn() },
+        activeElement: null
+      },
+      configurable: true,
+      writable: true
+    });
+
+    const diags: Array<{ code: string; payload: Record<string, unknown> }> = [];
+    const mod = new FuelSimulatorModule();
+    mod.init({
+      getSettings: () => ({ fuelDynamicSfc: false, fuelRealisticTanks: false, fuelAutoRefuel: false }),
+      updateSettings: vi.fn(),
+      anchors: { registerHudTab: vi.fn(() => () => {}), showToast: vi.fn() },
+      emitEvent: vi.fn(),
+      emitDiag: (code: string, payload: Record<string, unknown>) => diags.push({ code, payload })
+    } as unknown as ModuleContext);
+
+    const profile = {
+      id: '1',
+      name: 'Piper Cub',
+      oew: 380,
+      maxFuel: 45,
+      mtow: 550
+    };
+    // 5 ticks of dt=0.25 (> 1s) triggers initial mass sync at 100% fuel -> 380 + 62.5 + 45 = 487.5 kg
+    for (let i = 0; i < 5; i += 1) {
+      mod.update(makeTelemetry({ dt: 0.25, aircraft: profile as unknown as FlightTelemetry['aircraft'] }));
+    }
+    expect(definition.mass).toBeCloseTo(487.5, 4);
+    expect(v4Body.mass).toBeCloseTo(487.5, 4);
+    expect(v4Body.m_localInvInertia[0][0] * v4Body.mass).toBeCloseTo(0.1, 8);
+    expect(diags.at(-1)?.payload.rigidBodySynced).toBe(true);
+
+    // Repeated fuel changes via private syncMass (10% -> 50% -> 100%) must never drift inertia factor
+    (mod as unknown as { syncMass: (ac: typeof aircraft, m: number) => void }).syncMass(aircraft, 427);
+    expect(v4Body.mass).toBeCloseTo(427, 4);
+    expect(v4Body.m_localInvInertia[0][0] * v4Body.mass).toBeCloseTo(0.1, 8);
+
+    (mod as unknown as { syncMass: (ac: typeof aircraft, m: number) => void }).syncMass(aircraft, 445);
+    expect(v4Body.mass).toBeCloseTo(445, 4);
+    expect(v4Body.m_localInvInertia[0][0] * v4Body.mass).toBeCloseTo(0.1, 8);
+
+    // Destroy restores original mass and m_localInvInertia bit-for-bit
+    mod.destroy();
+    expect(definition.mass).toBe(500);
+    expect(v4Body.mass).toBe(500);
+    expect(v4Body.m_localInvInertia[0][0]).toBeCloseTo(0.0002, 10);
+  });
+});
+
