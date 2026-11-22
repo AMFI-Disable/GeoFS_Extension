@@ -39,78 +39,78 @@ Currently implemented in [sim-adapter.ts](../src/core/sim-adapter.ts):
 
 ## Awaiting Planes Queue
 
-Aircraft awaiting dedicated `AIRCRAFT_CATALOG` entries (OEW, MTOW, max fuel, flap detents, autothrottle tuning, and bespoke checklist items). Community-contributed GeoFS aircraft IDs fall back to dynamic classification until added here.
+Aircraft covered via dedicated `AIRCRAFT_CATALOG` IDs or `NAMED_AIRCRAFT_SPECS` entries in [aircraft-catalog.ts](../src/core/aircraft-catalog.ts) (OEW, MTOW, max fuel, flap detents, V-speeds, and category checklists). Unchecked items remain queued for future addition.
 
 ### Commercial Twin-Engine Airliners
 
-- [ ] Airbus A220-300 (`airliner-twin`)
-- [ ] Airbus A319 / A320-214 / A320neo (`airliner-twin`)
-- [ ] Airbus A330-300 / A330-900neo (`airliner-twin`)
-- [ ] Boeing 717-200 (`airliner-twin`)
-- [ ] Boeing 737-700 / 737-800 / 737 MAX 8 (`airliner-twin`)
-- [ ] Boeing 757-200 / 757-300 (`airliner-twin`)
-- [ ] Boeing 767-300ER (`airliner-twin`)
-- [ ] Boeing 777-200ER / 777F (`airliner-twin`)
-- [ ] Boeing 787-8 / 787-9 (`airliner-twin`)
-- [ ] Bombardier CRJ-700 / CRJ-900 (`airliner-twin`)
-- [ ] Embraer E190 / E195-E2 (`airliner-twin`)
-- [ ] McDonnell Douglas MD-80 / MD-90 (`airliner-twin`)
+- [x] Airbus A220-300 (`airliner-twin`)
+- [x] Airbus A319 / A320-214 / A320neo (`airliner-twin`)
+- [x] Airbus A330-300 / A330-900neo (`airliner-twin`)
+- [x] Boeing 717-200 (`airliner-twin`)
+- [x] Boeing 737-700 / 737-800 / 737 MAX 8 (`airliner-twin`)
+- [x] Boeing 757-200 / 757-300 (`airliner-twin`)
+- [x] Boeing 767-300ER (`airliner-twin`)
+- [x] Boeing 777-200ER / 777F (`airliner-twin`)
+- [x] Boeing 787-8 / 787-9 (`airliner-twin`)
+- [x] Bombardier CRJ-700 / CRJ-900 (`airliner-twin`)
+- [x] Embraer E190 / E195-E2 (`airliner-twin`)
+- [x] McDonnell Douglas MD-80 / MD-90 (`airliner-twin`)
 
 ### Commercial Quad-Engine And Tri-Jet Heavy Aircraft
 
-- [ ] Airbus A340-300 / A340-600 (`airliner-quad`)
-- [ ] Antonov An-124 / An-225 Mriya (`airliner-quad`)
-- [ ] Boeing 747-100 / 747-200 / 747SP (`airliner-quad`)
-- [ ] McDonnell Douglas MD-11 / DC-10 (`airliner-twin` / tri-jet handling)
-- [ ] Lockheed L-1011 TriStar (`airliner-twin` / tri-jet handling)
+- [x] Airbus A340-300 / A340-600 (`airliner-quad`)
+- [x] Antonov An-124 / An-225 Mriya (`airliner-quad`)
+- [x] Boeing 747-100 / 747-200 / 747SP (`airliner-quad`)
+- [x] McDonnell Douglas MD-11 / DC-10 (`airliner-twin` / tri-jet handling)
+- [x] Lockheed L-1011 TriStar (`airliner-twin` / tri-jet handling)
 
 ### Turboprops And Regional Commuters
 
-- [ ] ATR 42-600 / ATR 72-600 (`turboprop`)
-- [ ] Beechcraft King Air 350i (`turboprop`)
-- [ ] De Havilland Canada Dash 8 Q400 (`turboprop`)
-- [ ] De Havilland Canada DHC-6 Twin Otter (`turboprop`)
-- [ ] Pilatus PC-12 (`turboprop`)
-- [ ] Saab 340 (`turboprop`)
+- [x] ATR 42-600 / ATR 72-600 (`turboprop`)
+- [x] Beechcraft King Air 350i (`turboprop`)
+- [x] De Havilland Canada Dash 8 Q400 (`turboprop`)
+- [x] De Havilland Canada DHC-6 Twin Otter (`turboprop`)
+- [x] Pilatus PC-12 (`turboprop`)
+- [x] Saab 340 (`turboprop`)
 
 ### General Aviation, Business Jets, And Classics
 
-- [ ] Beechcraft Baron G58 (`ga-piston`)
-- [ ] Beechcraft Bonanza (`ga-piston`)
-- [ ] Cessna 182 / 208 Caravan (`ga-piston` / `turboprop`)
-- [ ] Cessna Citation X / CJ4 (`airliner-twin` / bizjet preset)
-- [ ] Cirrus SR22 / SF50 Vision Jet (`ga-piston`)
-- [ ] Diamond DA40 / DA42 (`ga-piston`)
-- [ ] Gulfstream G550 / G650 (`airliner-twin` / bizjet preset)
-- [ ] Pitts Special S-2B (`ga-piston`)
-- [ ] Robin DR400 (`ga-piston`)
+- [x] Beechcraft Baron G58 / B55 (`ga-piston`)
+- [x] Beechcraft Bonanza (`ga-piston`)
+- [x] Cessna 182 / 208 Caravan (`ga-piston` / `turboprop`)
+- [x] Cessna Citation X / CJ4 (`airliner-twin` / bizjet preset)
+- [x] Cirrus SR22 / SF50 Vision Jet (`ga-piston` / bizjet preset)
+- [x] Diamond DA40 / DA42 (`ga-piston`)
+- [x] Gulfstream G550 / G650 (`airliner-twin` / bizjet preset)
+- [x] Pitts Special S-2B / S1 (`ga-piston`)
+- [x] Robin DR400 (`ga-piston`)
 
 ### Military, Fighters, And Supersonic
 
-- [ ] Boeing F-15E Strike Eagle (`fighter`)
-- [ ] Eurofighter Typhoon (`fighter`)
-- [ ] General Dynamics F-16C Fighting Falcon (`fighter`)
-- [ ] Lockheed Martin F-22A Raptor (`fighter`)
-- [ ] Lockheed Martin F-35A/B/C Lightning II (`fighter`)
-- [ ] Lockheed SR-71 Blackbird (`supersonic`)
-- [ ] Mikoyan MiG-29 / MiG-31 (`fighter` / `supersonic`)
-- [ ] North American P-51 Mustang (`ga-piston` / warbird)
-- [ ] Saab JAS 39 Gripen (`fighter`)
-- [ ] Tupolev Tu-144 (`supersonic`)
+- [x] Boeing F-15E Strike Eagle (`fighter`)
+- [x] Eurofighter Typhoon (`fighter`)
+- [x] General Dynamics F-16C Fighting Falcon (`fighter`)
+- [x] Lockheed Martin F-22A Raptor (`fighter`)
+- [x] Lockheed Martin F-35A/B/C Lightning II (`fighter`)
+- [x] Lockheed SR-71 Blackbird (`supersonic`)
+- [x] Mikoyan MiG-29 / MiG-31 (`fighter` / `supersonic`)
+- [x] North American P-51 Mustang (`ga-piston` / warbird)
+- [x] Saab JAS 39 Gripen (`fighter`)
+- [x] Tupolev Tu-144 (`supersonic`)
 
 ### Helicopters And Rotorcraft
 
-- [ ] Bell 206 / Bell 407 (`specialized` / rotorcraft)
-- [ ] Eurocopter EC135 / H145 (`specialized` / rotorcraft)
-- [ ] Robinson R22 / R44 (`specialized` / rotorcraft)
-- [ ] Sikorsky UH-60 Black Hawk (`specialized` / rotorcraft)
+- [x] Bell 206 / Bell 407 (`rotorcraft`)
+- [x] Eurocopter EC135 / H145 (`rotorcraft`)
+- [x] Robinson R22 / R44 (`rotorcraft`)
+- [x] Sikorsky UH-60 Black Hawk (`rotorcraft`)
 
 ### Experimental, Gliders, And Spacecraft
 
-- [ ] Northrop Grumman B-2 Spirit (`specialized`)
-- [ ] North American X-15 (`specialized`)
-- [ ] SpaceX Falcon 9 / Starship (`specialized`)
-- [ ] Standard Sailplanes / ASK 21 (`specialized` / glider)
+- [x] Northrop Grumman B-2 Spirit (`specialized`)
+- [x] North American X-15 (`specialized`)
+- [x] SpaceX Falcon 9 (`specialized`)
+- [x] Standard Sailplanes / ASK 21 (`specialized` / glider)
 
 ---
 

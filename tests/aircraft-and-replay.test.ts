@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { formatVSpeeds, parseAircraftOverride, parseAircraftOverrides } from '../src/core/aircraft-profile';
 import { LandingReplay, landingReplayCsv } from '../src/core/landing-replay';
-import { SimAdapter } from '../src/core/sim-adapter';
+import { NAMED_AIRCRAFT_SPECS, SimAdapter, getAllCatalogAircraft } from '../src/core/sim-adapter';
 import type { LandingRecord } from '../src/types/settings';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -103,3 +103,43 @@ describe('Landing Replay', () => {
     expect(csv).toContain(',"Smooth",-110,');
   });
 });
+
+describe('Expanded Aircraft Catalog Integrity', () => {
+  it('enforces valid weight, fuel, and V-speed invariants across all catalog and named specs', () => {
+    const allSpecs = [...getAllCatalogAircraft(), ...NAMED_AIRCRAFT_SPECS.map((entry) => entry.spec)];
+    expect(allSpecs.length).toBeGreaterThanOrEqual(100);
+    for (const spec of allSpecs) {
+      expect(spec.oew).toBeGreaterThan(0);
+      expect(spec.mtow).toBeGreaterThan(spec.oew);
+      expect(spec.maxFuel).toBeGreaterThanOrEqual(0);
+      expect(spec.vSpeeds.vref).toBeGreaterThan(0);
+      expect(spec.vSpeeds.vne).toBeGreaterThan(spec.vSpeeds.vref);
+    }
+  });
+
+  it('resolves newly added named aircraft profiles (airliners, turboprops, bizjets, fighters, rotorcraft, gliders)', () => {
+    const samples: Array<[string, string, number]> = [
+      ['Airbus A220-300', 'airliner-twin', 126],
+      ['Boeing 787-9 Dreamliner', 'airliner-twin', 139],
+      ['Antonov An-225 Mriya', 'airliner-quad', 145],
+      ['Pilatus PC-12', 'turboprop', 85],
+      ['Gulfstream G650', 'airliner-twin', 126],
+      ['Boeing F-15E Strike Eagle', 'fighter', 148],
+      ['Airbus H145', 'rotorcraft', 65],
+      ['Schleicher ASK 21', 'specialized', 48]
+    ];
+    for (const [name, expectedCategory, expectedVref] of samples) {
+      vi.stubGlobal('window', {
+        geofs: {
+          aircraft: {
+            instance: { id: '99999', name, definition: {} }
+          }
+        }
+      });
+      const profile = new SimAdapter().getAircraftProfile();
+      expect(profile?.category).toBe(expectedCategory);
+      expect(profile?.vSpeeds?.Vref).toBe(expectedVref);
+    }
+  });
+});
+
