@@ -22,6 +22,24 @@ function isOptEnabled(options: Partial<RealismOptions> | undefined, key: keyof R
   return options?.[key] ?? true;
 }
 
+export function detectImmersiveAirports(): boolean {
+  if (typeof window === 'undefined') return false;
+  const w = window as unknown as Record<string, unknown>;
+  if (w.immersiveAirports || w.ImmersiveAirports || w.IA_CONFIG || (window.geofs as unknown as Record<string, unknown>)?.immersiveAirports) {
+    return true;
+  }
+  if (typeof document !== 'undefined') {
+    if (
+      document.querySelector(
+        '[id*="immersive-airport" i], [id*="immersiveAirport" i], [class*="immersive-airport" i], script[src*="immersive" i][src*="airport" i]'
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export class VisualsLightingModule implements IModule {
   public readonly id = 'visuals-lighting';
   public readonly name = 'Visuals & Lighting';
@@ -38,6 +56,8 @@ export class VisualsLightingModule implements IModule {
   private windThermals = new WindThermalsController();
   private lightSwitches: LightSwitches = { ...DEFAULT_LIGHT_SWITCHES };
   private nextTaxiwayUpdate = 0;
+  private nextCompatCheck = 0;
+  private immersiveAirportsDetected = false;
   private unmountTab: (() => void) | null = null;
   private syncHudTab: (() => void) | null = null;
   private unbindLightsKey: (() => void) | null = null;
@@ -169,11 +189,28 @@ export class VisualsLightingModule implements IModule {
       return;
     }
 
+    if (telemetry.timestamp >= this.nextCompatCheck) {
+      this.nextCompatCheck = telemetry.timestamp + 5000;
+      const found = detectImmersiveAirports();
+      if (found !== this.immersiveAirportsDetected) {
+        this.immersiveAirportsDetected = found;
+        if (found) {
+          this.runwayGlow.reset();
+          this.taxiwayLights.dispose();
+          this.ctx?.emitDiag?.('COMPANION_DETECTED', {
+            companion: 'Immersive Airports',
+            yielded: ['runwayGlow', 'taxiwayLights']
+          });
+        }
+        this.syncHudTab?.();
+      }
+    }
+
     const settings = this.ctx?.getSettings();
     const options = settings?.realismOptions;
     const acLightsOn = isOptEnabled(options, 'aircraftLights');
-    const rwGlowOn = isOptEnabled(options, 'runwayGlow');
-    const twyLightsOn = isOptEnabled(options, 'taxiwayLights');
+    const rwGlowOn = !this.immersiveAirportsDetected && isOptEnabled(options, 'runwayGlow');
+    const twyLightsOn = !this.immersiveAirportsDetected && isOptEnabled(options, 'taxiwayLights');
     const isNight = Boolean(this.ctx?.sim.isNight());
 
     if (acLightsOn || rwGlowOn) {
@@ -234,6 +271,8 @@ export class VisualsLightingModule implements IModule {
     this.lidar.dispose();
     this.windThermals.dispose();
     this.nextTaxiwayUpdate = 0;
+    this.nextCompatCheck = 0;
+    this.immersiveAirportsDetected = false;
     this.ctx = null;
   }
 }
