@@ -33,6 +33,7 @@ export class OverpoweredEnginesModule implements IModule {
   private thrustEnabled = false;
   private ceilingEnabled = false;
   private atEngaged = false;
+  private apPpEngaged = false;
   private opSyncActive = false;
   private automaticMultiplier: number | null = null;
   private sasElapsed = 0;
@@ -276,6 +277,10 @@ export class OverpoweredEnginesModule implements IModule {
       this.opSyncActive = Boolean(active);
       this.render();
     }));
+    this.unmounts.push(context.onEvent<{ engaged?: boolean }>('autopilot-pp:state', (detail) => {
+      this.apPpEngaged = Boolean(detail?.engaged);
+      if (this.apPpEngaged) this.sas.reset();
+    }));
     this.unmounts.push(context.onEvent<{ desired: number | null; report: (multiplier: number) => void }>(
       'autothrottle:boost', ({ desired, report }) => {
         const settings = context.getSettings();
@@ -393,7 +398,7 @@ export class OverpoweredEnginesModule implements IModule {
           multiplier: activeMultiplier,
           sasStrength: settings.sasStrength ?? 1.0,
           groundContact: telemetry.groundContact,
-          autopilotOn: telemetry.autopilotOn
+          autopilotOn: telemetry.autopilotOn || this.apPpEngaged
         });
       }
     }

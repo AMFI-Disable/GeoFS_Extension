@@ -104,6 +104,12 @@ export class AutothrottleModule implements IModule {
     this.unmounts.push(context.onEvent<{ type: string }>('failure:cleared', ({ type }) => {
       if (type === 'electrical') this.electricalFailure = false;
     }));
+    this.unmounts.push(context.onEvent<{ engaged?: boolean }>('autopilot-pp:state', (detail) => {
+      if (detail?.engaged && this.engaged) {
+        this.stop();
+        this.ctx?.anchors.showToast('Autothrottle yielded to AP++');
+      }
+    }));
     context.emitEvent('failure:request-active');
   }
 
@@ -479,7 +485,8 @@ export class AutothrottleModule implements IModule {
       const selected = control.dataset.arm
         ? this.landingArmed !== off : this.machMode === (control.dataset.speedMode === 'mach');
       control.classList.toggle('active', selected);
-      control.classList.toggle('green-pad', selected);
+      control.classList.toggle('green-pad', selected && !off);
+      control.classList.toggle('red-pad', selected && off);
       control.setAttribute('aria-pressed', String(selected));
     }
   }

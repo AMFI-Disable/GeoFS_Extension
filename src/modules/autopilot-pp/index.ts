@@ -81,6 +81,12 @@ export class AutopilotPlusModule implements IModule {
   private lastTelemetry: FlightTelemetry | null = null;
   private lastEmitMs = 0;
   private stickOverrideSec = 0;
+  private engageBaselineRoll = 0;
+  private engageBaselinePitch = 0;
+  private hasCustomHeading = false;
+  private lastAircraftId: string | null = null;
+  private restoreThrottleAxis?: () => void;
+  private disengageTimer?: ReturnType<typeof setTimeout>;
   private activeFailures = new Set<string>();
 
   private readonly rollPid = new PidController(0.032, 0.001, 0.015, -0.8, 0.8, 10);
@@ -155,7 +161,20 @@ export class AutopilotPlusModule implements IModule {
       this.ctx?.anchors.syncAutopilotPad(this.padEl, this.barEl);
     }
 
-    if (telemetry.paused || telemetry.crashed) return;
+    const acId = telemetry.aircraft?.id ?? null;
+    if (this.lastAircraftId !== null && acId !== null && acId !== this.lastAircraftId) {
+      this.hasCustomHeading = false;
+      if (this.engaged) {
+        this.disengage('AIRCRAFT CHANGE');
+      }
+    }
+    this.lastAircraftId = acId;
+
+    if (telemetry.crashed) {
+      if (this.engaged) this.disengage('CRASHED');
+      return;
+    }
+    if (telemetry.paused) return;
 
     const dt = clamp(telemetry.dt || 0.05, 0.01, 0.25);
 
@@ -212,14 +231,20 @@ export class AutopilotPlusModule implements IModule {
   }
 
   public destroy(): void {
+    clearTimeout(this.disengageTimer);
     if (this.engaged) {
       this.disengage();
+    } else {
+      this.restoreThrottleAxis?.();
+      this.restoreThrottleAxis = undefined;
     }
     for (const fn of this.unmounts) fn();
     this.unmounts = [];
     this.barEl = null;
     this.padEl = null;
     this.fmaLineEl = null;
+    this.hudFmaEl = null;
+    this.syncHudTab = null;
     this.ctx = null;
   }
 
@@ -248,6 +273,7 @@ export class AutopilotPlusModule implements IModule {
         break;
       case 'setHeading':
         this.targetHdgDeg = normalizeHeading(cmd.deg);
+        this.hasCustomHeading = true;
         if (window.geofs?.autopilot) {
           window.geofs.autopilot.setCourse?.(this.targetHdgDeg);
           if (window.geofs.autopilot.values) {
@@ -358,6 +384,7 @@ export class AutopilotPlusModule implements IModule {
           }
           if (cmd.axis === 'hdg' || cmd.axis === 'all') {
             this.targetHdgDeg = Math.round(normalizeHeading(this.lastTelemetry.heading));
+            this.hasCustomHeading = true;
             this.lateralMode = 'hdg';
           }
           if (cmd.axis === 'spd' || cmd.axis === 'all') {
@@ -399,24 +426,43 @@ export class AutopilotPlusModule implements IModule {
     }
   }
 
+  private suppressThrottleAxis(): void {
+    if (this.restoreThrottleAxis) return;
+    const setter = window.controls?.axisSetters?.throttle;
+    const original = setter?.process;
+    if (!setter || !original) return;
+    const suppressed = () => {};
+    setter.process = suppressed;
+    this.restoreThrottleAxis = () => {
+      if (setter.process === suppressed) setter.process = original;
+    };
+  }
+
   private engage(): void {
     if (this.activeFailures.has('electrical')) {
       this.ctx?.anchors.showToast('AP++ Unavailable: Electrical Failure');
       return;
     }
+    clearTimeout(this.disengageTimer);
+    this.padEl?.classList.remove('red-pad');
     this.engaged = true;
     this.stickOverrideSec = 0;
+    const rawRoll = Number(window.controls?.rawRoll ?? 0);
+    const rawPitch = Number(window.controls?.rawPitch ?? 0);
+    this.engageBaselineRoll = Number.isFinite(rawRoll) ? rawRoll : 0;
+    this.engageBaselinePitch = Number.isFinite(rawPitch) ? rawPitch : 0;
     this.fma.protection = null;
     this.rollPid.reset();
     this.pitchPid.reset();
     this.speedPitchPid.reset();
     this.throttlePid.reset();
+    this.suppressThrottleAxis();
 
     if (this.lastTelemetry) {
       if (this.targetAltFt <= 0) {
         this.targetAltFt = Math.max(500, Math.round(this.lastTelemetry.altitude / 100) * 100);
       }
-      if (this.lateralMode === 'hdg' && this.targetHdgDeg === 0) {
+      if (this.lateralMode === 'hdg' && !this.hasCustomHeading) {
         this.targetHdgDeg = Math.round(normalizeHeading(this.lastTelemetry.heading));
       }
       if (this.targetKias <= 0) {
@@ -436,15 +482,24 @@ export class AutopilotPlusModule implements IModule {
     this.emitSnapshot(true);
   }
 
-  private syncNativeAutopilot(): void {
-    const ap = window.geofs?.autopilot;
-    if (!ap) return;
-    const useNative =
+  private shouldUseNativeAutopilot(): boolean {
+    return (
       this.engaged &&
       !this.hoverMode &&
       !this.landingArmed &&
       this.lateralMode === 'hdg' &&
-      this.verticalMode === 'alt';
+      this.verticalMode === 'alt'
+    );
+  }
+
+  private isNativeAutopilotActive(): boolean {
+    return this.shouldUseNativeAutopilot() && Boolean(window.geofs?.autopilot?.on);
+  }
+
+  private syncNativeAutopilot(): void {
+    const ap = window.geofs?.autopilot;
+    if (!ap) return;
+    const useNative = this.shouldUseNativeAutopilot();
     try {
       if (useNative) {
         if (!ap.on) ap.turnOn?.();
@@ -465,12 +520,20 @@ export class AutopilotPlusModule implements IModule {
   }
 
   private disengage(reason?: string): void {
+    const wasEngaged = this.engaged;
     this.engaged = false;
     this.landingRetarded = false;
+    this.restoreThrottleAxis?.();
+    this.restoreThrottleAxis = undefined;
     try {
       window.geofs?.autopilot?.turnOff?.();
     } catch {
       // Ignore sim teardown differences
+    }
+    if (wasEngaged && this.padEl) {
+      clearTimeout(this.disengageTimer);
+      this.padEl.classList.add('red-pad');
+      this.disengageTimer = setTimeout(() => this.padEl?.classList.remove('red-pad'), 3000);
     }
     this.ctx?.emitDiag?.('AP_PP_DISENGAGED', { reason: reason ?? 'manual' });
     this.updateFmaLabels();
@@ -504,9 +567,23 @@ export class AutopilotPlusModule implements IModule {
   private checkStickOverride(dt: number): boolean {
     const controls = window.controls;
     if (!controls) return false;
-    const rawRoll = Math.abs(Number(controls.rawRoll ?? 0));
-    const rawPitch = Math.abs(Number(controls.rawPitch ?? 0));
-    if (Math.max(rawRoll, rawPitch) > 0.25) {
+    const rawRoll = Number(controls.rawRoll ?? 0);
+    const rawPitch = Number(controls.rawPitch ?? 0);
+    if (!Number.isFinite(rawRoll) || !Number.isFinite(rawPitch)) return false;
+
+    // Once stick/mouse returns near neutral, clear any resting engage baseline
+    if (Math.abs(rawRoll) < 0.15) this.engageBaselineRoll = 0;
+    if (Math.abs(rawPitch) < 0.15) this.engageBaselinePitch = 0;
+
+    // Require active deflection beyond deadzone AND movement away from the engage baseline
+    // so resting mouse cursor position over the AP++ button in mouse mode does not false-trip.
+    const rollDelta = Math.abs(rawRoll - this.engageBaselineRoll);
+    const pitchDelta = Math.abs(rawPitch - this.engageBaselinePitch);
+    const activeInput =
+      (Math.abs(rawRoll) > 0.25 && (Math.abs(this.engageBaselineRoll) <= 0.25 || rollDelta > 0.12)) ||
+      (Math.abs(rawPitch) > 0.25 && (Math.abs(this.engageBaselinePitch) <= 0.25 || pitchDelta > 0.12));
+
+    if (activeInput) {
       this.stickOverrideSec += dt;
       return this.stickOverrideSec >= 0.3;
     }
@@ -612,16 +689,16 @@ export class AutopilotPlusModule implements IModule {
       return;
     }
 
-    // Hybrid Override: delegate basic HDG to native GeoFS autopilot if available and no bank limit hit
-    if (this.lateralMode === 'hdg' && window.geofs?.autopilot && Math.abs(t.roll) <= 30) {
-      const ap = window.geofs.autopilot;
-      if (ap.values) {
+    // Hybrid Override: delegate basic HDG to native GeoFS autopilot ONLY when native AP is active
+    if (this.lateralMode === 'hdg' && this.isNativeAutopilotActive() && Math.abs(t.roll) <= 30) {
+      const ap = window.geofs?.autopilot;
+      if (ap?.values) {
         (ap.values as Record<string, unknown>).course = this.targetHdgDeg;
       }
       return;
     }
 
-    // Custom PID roll guidance for HOLD, LAT/LON, WPT, LOC
+    // Custom PID roll guidance for HOLD, LAT/LON, WPT, LOC, or mixed-mode HDG
     let desiredHeading = this.targetHdgDeg;
     if (this.lateralMode === 'hold') {
       const windSpeedKts = Number(window.weather?.currentWindSpeed ?? 0);
@@ -656,7 +733,7 @@ export class AutopilotPlusModule implements IModule {
     const bankErr = desiredBank - t.roll;
     const rollCmd = this.rollPid.step(bankErr, dt) * (hydFail ? 0.5 : 1.0);
 
-    if (window.controls) {
+    if (window.controls && Number.isFinite(rollCmd)) {
       window.controls.roll = clamp(rollCmd, -0.7, 0.7);
     }
   }
@@ -696,8 +773,8 @@ export class AutopilotPlusModule implements IModule {
       return;
     }
 
-    // Hybrid Override: basic ALT delegates to native GeoFS autopilot when available
-    if (this.verticalMode === 'alt' && window.geofs?.autopilot?.values) {
+    // Hybrid Override: basic ALT delegates to native GeoFS autopilot ONLY when native AP is active
+    if (this.verticalMode === 'alt' && this.isNativeAutopilotActive() && window.geofs?.autopilot?.values) {
       (window.geofs.autopilot.values as Record<string, unknown>).altitude = this.targetAltFt;
       return;
     }
@@ -712,21 +789,28 @@ export class AutopilotPlusModule implements IModule {
       const spdDiff = t.kias - targetSpd;
       const basePitch = altErr > 0 ? 7.5 : -4.5;
       const desiredPitch = clamp(basePitch + this.speedPitchPid.step(spdDiff, dt), -14, 18);
-      controls.pitch = clamp(this.pitchPid.step(desiredPitch - t.pitch, dt), -0.6, 0.6);
+      const pitchCmd = this.pitchPid.step(desiredPitch - t.pitch, dt);
+      if (Number.isFinite(pitchCmd)) controls.pitch = clamp(pitchCmd, -0.6, 0.6);
       return;
     }
 
-    // Auto-V/S or manual V/S or ALT* capture
+    // Auto-V/S, custom ALT hold, manual V/S, or G/S capture
     let desiredVs = this.targetVsFpm;
     if (this.verticalMode === 'gs' && Number.isFinite(t.glideslopeDeviation)) {
       desiredVs = clamp(-700 + Number(t.glideslopeDeviation) * 250, -1800, 500);
-    } else if (this.autoVs || this.verticalMode === 'flch' || this.verticalMode === 'vnav') {
+    } else if (
+      this.autoVs ||
+      this.verticalMode === 'alt' ||
+      this.verticalMode === 'flch' ||
+      this.verticalMode === 'vnav'
+    ) {
       desiredVs = clamp(altErr * 2.5, -2400, 2400);
     }
 
     const vsErr = desiredVs - t.vs;
     const desiredPitch = clamp(t.pitch + vsErr * 0.0035, -12, 16);
-    controls.pitch = clamp(this.pitchPid.step(desiredPitch - t.pitch, dt), -0.6, 0.6);
+    const pitchCmd = this.pitchPid.step(desiredPitch - t.pitch, dt);
+    if (Number.isFinite(pitchCmd)) controls.pitch = clamp(pitchCmd, -0.6, 0.6);
   }
 
   private updateFmaLabels(): void {
@@ -787,12 +871,14 @@ export class AutopilotPlusModule implements IModule {
   }
 
   private renderPad(): void {
-    if (!this.padEl) return;
-    this.padEl.classList.toggle('pad-active', this.engaged);
-    this.padEl.setAttribute('aria-pressed', String(this.engaged));
+    if (this.padEl) {
+      this.padEl.classList.toggle('green-pad', this.engaged);
+      this.padEl.setAttribute('aria-pressed', String(this.engaged));
+    }
     if (this.fmaLineEl) {
       this.fmaLineEl.textContent = this.engaged ? `${this.fma.thr}·${this.fma.lat}` : 'STBY';
     }
+    this.syncHudTab?.();
   }
 
   private getSnapshot(): ApPpSnapshot {

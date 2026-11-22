@@ -243,15 +243,118 @@ describe('AutopilotPlusModule (Beta)', () => {
     expect(hovSnap.fma.lat).toBe('LVL');
     expect(setThrottlesSpy).toHaveBeenCalled();
 
-    // Autoland flare & 27 ft RA retard
+    // Autoland flare & 27 ft RA retard (switching from rotorcraft to airliner disengages AP++ safely, then re-engage)
     mod.handleCommand({ type: 'setHoverMode', enabled: false });
+    mod.update(makeTelemetry({ timestamp: 2400, aglFeet: 120, kias: 140, groundContact: false }));
     mod.handleCommand({ type: 'setLandingArm', armed: true });
-    mod.update(makeTelemetry({ timestamp: 2500, aglFeet: 24, kias: 135, groundContact: false }));
+    mod.handleCommand({ type: 'engage' });
+    mod.update(makeTelemetry({ timestamp: 2700, aglFeet: 24, kias: 135, groundContact: false }));
     const ldgSnap = snapshots[snapshots.length - 1];
     expect(ldgSnap.landingRetarded).toBe(true);
     expect(ldgSnap.verticalMode).toBe('flare');
     expect(ldgSnap.fma.thr).toBe('IDLE');
     expect(ldgSnap.fma.vert).toBe('FLARE');
+
+    mod.destroy();
+    g.window = prevWindow;
+  });
+
+  it('controls roll/pitch in mixed modes (HDG+FLCH, HOLD+ALT), avoids mouse-mode false stick disconnect, suppresses throttle axis, and disengages on aircraft switch', () => {
+    const sim = new SimAdapter();
+    vi.spyOn(sim, 'setThrottle').mockImplementation(() => {});
+    const anchors = new AnchorManager();
+    anchors.init();
+    const snapshots: ApPpSnapshot[] = [];
+
+    const ctx: ModuleContext = {
+      sim,
+      audio: new AudioEngine(),
+      anchors,
+      keybinds: new KeybindManager(),
+      getSettings: () => DEFAULT_SETTINGS,
+      updateSettings: () => {},
+      emitEvent: (ev, detail) => {
+        if (ev === 'autopilot-pp:state' && detail) snapshots.push(detail as unknown as ApPpSnapshot);
+      },
+      onEvent: () => () => {}
+    };
+
+    const origThrottleAxis = vi.fn();
+    const controlsObj: Record<string, unknown> = {
+      rawRoll: 0,
+      rawPitch: 0.55, // Resting mouse cursor over bottom bar when clicking AP++
+      roll: 0,
+      pitch: 0,
+      axisSetters: { throttle: { process: origThrottleAxis } }
+    };
+    const nativeAp = {
+      on: false,
+      values: { course: 0, altitude: 0 },
+      turnOn() {
+        this.on = true;
+      },
+      turnOff() {
+        this.on = false;
+      },
+      setCourse(c: number) {
+        this.values.course = c;
+      },
+      setAltitude(a: number) {
+        this.values.altitude = a;
+      }
+    };
+
+    const g = globalThis as unknown as { window?: Record<string, unknown>; controls?: Record<string, unknown> };
+    const prevWindow = g.window;
+    g.window = {
+      controls: controlsObj,
+      geofs: { autopilot: nativeAp },
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+    g.controls = controlsObj;
+
+    const mod = new AutopilotPlusModule();
+    mod.init(ctx);
+
+    // Explicitly command 000° North before engaging; engage must preserve 000°
+    mod.update(makeTelemetry({ timestamp: 3000, heading: 90, altitude: 10000 }));
+    mod.handleCommand({ type: 'setHeading', deg: 0 });
+    mod.handleCommand({ type: 'setVerticalMode', mode: 'flch' });
+    mod.handleCommand({ type: 'setAltitude', feet: 15000 });
+    mod.handleCommand({ type: 'engage' });
+
+    // Throttle axis setter should be suppressed while engaged
+    expect((controlsObj.axisSetters as { throttle: { process: unknown } }).throttle.process).not.toBe(origThrottleAxis);
+
+    // Resting mouse cursor (rawPitch=0.55 unchanged from engage) must NOT false-trip STICK DISC
+    mod.update(makeTelemetry({ timestamp: 3200, dt: 0.2, heading: 90, roll: 0, altitude: 10000, pitch: 2 }));
+    mod.update(makeTelemetry({ timestamp: 3400, dt: 0.2, heading: 90, roll: 0, altitude: 10000, pitch: 2 }));
+    expect(snapshots[snapshots.length - 1].engaged).toBe(true);
+    expect(snapshots[snapshots.length - 1].targetHdgDeg).toBe(0);
+
+    // In HDG + FLCH, native AP is OFF, so AP++ MUST actively drive controls.roll toward 000° (left turn -> negative roll)
+    expect(nativeAp.on).toBe(false);
+    expect(Number(controlsObj.roll)).toBeLessThan(-0.05);
+
+    // In HOLD + ALT, native AP is OFF, so AP++ MUST actively drive controls.pitch toward target altitude
+    controlsObj.pitch = 0;
+    mod.handleCommand({ type: 'setLateralMode', mode: 'hold' });
+    mod.handleCommand({ type: 'setVerticalMode', mode: 'alt' });
+    mod.handleCommand({ type: 'setAltitude', feet: 12000 });
+    mod.update(makeTelemetry({ timestamp: 3600, dt: 0.1, heading: 90, altitude: 10000, vs: 0, pitch: 0 }));
+    expect(nativeAp.on).toBe(false);
+    expect(Number(controlsObj.pitch)).not.toBe(0);
+
+    // Switching aircraft cleanly disengages AP++ and restores throttle axis setter
+    mod.update(
+      makeTelemetry({
+        timestamp: 3800,
+        aircraft: { ...makeTelemetry().aircraft!, id: '999', name: 'Cessna 172' }
+      })
+    );
+    expect(snapshots[snapshots.length - 1].engaged).toBe(false);
+    expect((controlsObj.axisSetters as { throttle: { process: unknown } }).throttle.process).toBe(origThrottleAxis);
 
     mod.destroy();
     g.window = prevWindow;
