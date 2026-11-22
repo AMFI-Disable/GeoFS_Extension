@@ -26,6 +26,8 @@
 
 ## Live Simulator Verification
 
+Track individual V4 checks and their live evidence in the [V4 verification checklist](live-v4-status.md#live-verification-checklist).
+
 - [ ] Install the current unpacked build from `dist/` in Chrome and test both GeoFS V3.9 and V4.0 following the [Live Verification Guide](live-verification-guide.md). Test live toggling, aircraft changes, respawns, and repeated enable/disable cycles.
 - [ ] Verify thrust, reverse, landing retard (`<= 27 ft RA`), OP-SYNC prompt decisions (`Allow Once`, `Keep Standard`, `Always Allow`, `Never Allow`), Effective SAS attitude hold/turning authority, and native autopilot interaction with Autothrottle and Overpowered Engines active together.
 - [ ] Verify `ALTITUDE BURN` across multi-engine/asymmetric throttles, `REAL TANKS` wing imbalance torque, `10%` vs `100%` fuel MTOW feel via `setMassProps`, refueling, and flameout lock/recovery.

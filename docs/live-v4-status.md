@@ -3,15 +3,60 @@
 > [!CAUTION]
 > **Educational And Fair-Play Disclaimer**: Use this extension for education and single-player simulation. Respect GeoFS subscriptions, ad-reward entitlements, multiplayer rules, and access controls.
 
-Updated November 19, 2026. The latest Chrome check used the unpacked v0.2.1 build against GeoFS 4.0 Beta. Full five-leg verification remains open.
+Tracker updated November 23, 2026. Checked items have live evidence from the builds documented below. The unpacked v0.3.0 build still needs a live retest.
 
-| Leg | Latest Evidence | Remaining Verification |
-| --- | --- | --- |
-| 1. Cold Check | On the V4 A380, the extension mounted and showed all four titleless HUD tabs on one row at 250 px wide. At the existing left-edge position, minimizing exposed a 24 × 40 px handle that restored the HUD. Chrome’s docked Side Panel showed live A380 telemetry, `UI_MOUNT`, and `REALISM_STATE`. After rebuilding and reloading, **Realism & Fuel** showed its controls and disabled **Vortex Effects** and **Carrier Ops**, each labeled **Unavailable on V4**. **OP / Diag** still showed boost controls and diagnostics. | Verify fresh default placement, the 40 × 40 px collapsed circle away from the edge, and the expanded A/THR and OP ENG layout in an extension-only parked session. |
-| 2. Checklist And Fuel | The original V4 test found issues in lights actuation, rigid-body fuel mass, and live-thrust fuel burn. Fixes landed in `c735538`. The later A380 check confirmed the checklist gates and fuel UI rendered. | Repeat the hardware actuation, rigid-body mass and matched takeoff-roll checks against the fixed build. |
-| 3. Climb, OP-SYNC And SAS | The original V4 test confirmed the boost permission prompt, thrust handoff and restoration. Gear direction, SAS hold and release diagnostics needed fixes, which landed in `6130e10`. The Leg 4 session confirmed the updated gear adapter and release diagnostic code was loaded. | Repeat the climb and sustained SAS hold and turning checks, and validate the gear checklist and release event in flight. |
-| 4. Failures And Recovery | Parked A380 tests verified injection, matching emergency checklists, successful recoveries, failed pitot recovery, and combined cleanup. Permanent structural damage kept the emergency QRH heading while recovery was unavailable. | Resolve the structural contingency presentation and repeat applicable checks airborne. |
-| 5. Approach And Landing | The latest V4 session showed the Glideslope widget. | Verify the rendered high-resolution FPV marker on approach, landing retard, spoilers, touchdown scoring, persisted logbook, chocks and verification bundle through a completed flight. |
+## Live Verification Checklist
+
+### Leg 1 — Cold Check
+
+- [x] Observe the titleless 250 px HUD with INFO, CHECKS, FUEL, and LAND on one row.
+- [x] Drag the expanded HUD and verify the 24 × 40 px left-edge handle restores it.
+- [x] Confirm docked Side Panel telemetry, `UI_MOUNT`, and `REALISM_STATE`.
+- [x] Confirm Realism & Fuel renders and marks Vortex Effects and Carrier Ops unavailable on V4.
+- [x] Confirm OP / Diag exposes boost controls and diagnostics.
+- [ ] Confirm fresh default HUD placement with no saved position.
+- [ ] Measure the 40 × 40 px off-edge collapsed circle and confirm it restores in place.
+- [ ] Verify the expanded A/THR speed pad, LANDING label, and OP ENG layout in an extension-only parked session.
+
+### Leg 2 — Checklist And Fuel
+
+- [x] Confirm the checklist gates and fuel controls render.
+- [ ] Verify PRE-T/O parking brake, flaps, gear, and lights each actuate in the simulator.
+- [ ] Open GUIDE and verify the situational reference for the aircraft.
+- [ ] Change fuel from 100% to 10% and verify gross weight, `FUEL_MASS_SYNC`, and native rigid-body `setMassProps`.
+- [ ] Compare matched 100% and 10% fuel takeoff rolls for acceleration and pitch response.
+- [ ] Verify live multi-throttle ALTITUDE BURN and REAL TANKS left, center, and right tank drain.
+
+### Leg 3 — Climb, OP-SYNC, And SAS
+
+- [x] Observe the OP-SYNC permission prompt and thrust handoff and restoration in the original V4 run.
+- [ ] Verify a sustained climb with SAS active.
+- [ ] Release pilot input and verify sustained pitch and bank hold without oscillation.
+- [ ] Command turns and verify speed-compensated turn authority.
+- [ ] Verify PRE-CRZ recognizes actual gear retraction.
+- [ ] Verify PRE-CRZ tracks flaps, altitude, and cruise-speed gates.
+- [ ] Verify `OPSYNC_RELEASED` is emitted on in-flight release.
+
+### Leg 4 — Failures And Recovery
+
+- [x] Verify parked failure injection, matching Emergency QRH, recovery outcomes, and combined cleanup.
+- [x] Verify permanent Structural damage immediately opens **CONTINGENCY SOLUTION: STRUCTURAL AIRFRAME DAMAGE**, disables recovery, and clears via Clear All.
+- [ ] Repeat airborne injection for MCAS, Engine 1, Left Main Gear, Electrical, and Pitot-Static. Confirm `FAILURE_TRIGGERED`, the matching QRH, and the corresponding red LED.
+- [ ] Verify successful airborne recovery emits `RESTORE_VERIFIED` and restores the affected systems.
+- [ ] Verify airborne failed recovery updates the contingency procedure.
+- [ ] Verify airborne Clear All clears system LEDs, smoke, and instrument blackout.
+
+### Leg 5 — Approach And Landing
+
+- [x] Observe the Glideslope widget in V4.
+- [x] Download and parse a Verification Bundle JSON containing existing logbook data.
+- [ ] Verify the rendered high-resolution Cesium 3D FPV marker on approach and `FPV_BILLBOARD_READY`.
+- [ ] Complete PRE-LDG and verify LANDING auto-retard by 27 ft radio altitude.
+- [ ] Verify spoilers deploy on ground contact.
+- [ ] Verify the fresh touchdown opens `#statsCard` with the score badge, metrics, and feedback.
+- [ ] Verify `LANDING_RECORDED` and confirm the new entry survives a reload in Chrome Logbook.
+- [ ] Taxi clear and complete CHOCKS.
+- [ ] Export a Verification Bundle containing the new landing and check the run for uncaught console errors.
 
 ## Reports
 
