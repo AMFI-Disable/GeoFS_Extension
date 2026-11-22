@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="274" height="420" viewBox="0 0 274 420" role="img">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowRed" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  
+  
+    <g filter="url(#shadow)">
+      <rect x="12" y="12" width="250" height="396" rx="15" fill="#ffffff" fill-opacity="0.96" stroke="#cbd5e1" stroke-width="1"/>
+    </g>
+    <!-- Drag grip -->
+    <g fill="#94a3b8">
+      <circle cx="23" cy="28" r="1.2"/><circle cx="27" cy="28" r="1.2"/>
+      <circle cx="23" cy="32" r="1.2"/><circle cx="27" cy="32" r="1.2"/>
+      <circle cx="23" cy="36" r="1.2"/><circle cx="27" cy="36" r="1.2"/>
+    </g>
+    <rect x="34" y="22" width="44" height="20" rx="10" fill="#0d5f8d" stroke="#0d5f8d" stroke-width="1"/>
+      <text x="56" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#ffffff">INFO</text>
+<rect x="81" y="22" width="44" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="103" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">CHECKS</text>
+<rect x="128" y="22" width="44" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="150" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">FUEL</text>
+<rect x="175" y="22" width="44" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="197" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">LAND</text>
+    <!-- + and - buttons -->
+    <circle cx="228" cy="32" r="9" fill="#f1f5f9" stroke="#cbd5e1"/>
+    <text x="228" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="700" fill="#334155">+</text>
+    <circle cx="248" cy="32" r="9" fill="#111827"/>
+    <text x="248" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="#ffffff">−</text>
+    <line x1="22" y1="50" x2="252" y2="50" stroke="#e2e8f0" stroke-width="1"/>
+    
+  <text x="24" y="68" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="#0f172a">Airbus A321neo</text>
+  <rect x="24" y="76" width="52" height="18" rx="4" fill="#0d5f8d"/>
+  <text x="50" y="88" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#ffffff">REG: 242</text>
+  <text x="248" y="88" text-anchor="end" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#64748b">AIRLINER-TWIN</text>
+  <text x="24" y="112" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#64748b" letter-spacing="0.6">PERFORMANCE</text>
+  <text x="24" y="130" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">KTS KIAS</text>
+  <text x="24" y="146" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#0f172a">248.4</text>
+  <text x="148" y="130" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">FT ALT</text>
+  <text x="148" y="146" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#0f172a">18,450</text>
+  <text x="24" y="168" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">FPM V/S</text>
+  <text x="24" y="184" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#16a34a">+1,420</text>
+  <text x="148" y="168" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">DEG HDG</text>
+  <text x="148" y="184" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#0f172a">284°</text>
+  <text x="24" y="208" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">% THR · ENG 1 / 2</text>
+  <text x="248" y="208" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="9.5" font-weight="700" fill="#0d5f8d">82% / 82%</text>
+  <line x1="24" y1="218" x2="248" y2="218" stroke="#e2e8f0"/>
+  <text x="24" y="236" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#64748b" letter-spacing="0.6">ADDITIONAL DATA</text>
+  <text x="24" y="254" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">M MACH</text>
+  <text x="24" y="269" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="#0f172a">0.54</text>
+  <text x="148" y="254" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">DEG AOA</text>
+  <text x="148" y="269" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="#0f172a">2.4°</text>
+  <text x="24" y="290" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">G G-FORCE</text>
+  <text x="24" y="305" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="#0f172a">1.01</text>
+  <text x="148" y="290" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">FT AGL</text>
+  <text x="148" y="305" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="#0f172a">18,430</text>
+  <text x="24" y="330" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" fill="#475569">FLAPS: 0/5</text>
+  <text x="122" y="330" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" fill="#475569">GEAR: <tspan font-weight="700" fill="#0d5f8d">UP</tspan></text>
+  <text x="248" y="330" text-anchor="end" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" fill="#475569">BRK: OFF</text>
+  <text x="24" y="350" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" fill="#334155">V-Speeds: V1 138 · VR 143 · V2 149 · Vref 135</text>
+  <line x1="24" y1="364" x2="248" y2="364" stroke="#e2e8f0"/>
+  <rect x="24" y="372" width="70" height="22" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="59" y="386" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#334155">METAR</text>
+  <rect x="102" y="372" width="70" height="22" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="137" y="386" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#334155">MINI-MAP</text>
+  <rect x="180" y="372" width="68" height="22" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="214" y="386" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#334155">TUG</text>
+  
+    
+</svg>

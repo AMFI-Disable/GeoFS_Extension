@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="274" height="316" viewBox="0 0 274 316" role="img">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowRed" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  
+  
+    <g filter="url(#shadow)">
+      <rect x="12" y="12" width="250" height="292" rx="15" fill="#ffffff" fill-opacity="0.96" stroke="#cbd5e1" stroke-width="1"/>
+    </g>
+    <!-- Drag grip -->
+    <g fill="#94a3b8">
+      <circle cx="23" cy="28" r="1.2"/><circle cx="27" cy="28" r="1.2"/>
+      <circle cx="23" cy="32" r="1.2"/><circle cx="27" cy="32" r="1.2"/>
+      <circle cx="23" cy="36" r="1.2"/><circle cx="27" cy="36" r="1.2"/>
+    </g>
+    <rect x="34" y="22" width="44" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="56" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">INFO</text>
+<rect x="81" y="22" width="44" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="103" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">CHECKS</text>
+<rect x="128" y="22" width="44" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="150" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">FUEL</text>
+<rect x="175" y="22" width="44" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="197" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">LAND</text>
+    <!-- + and - buttons -->
+    <circle cx="228" cy="32" r="9" fill="#f1f5f9" stroke="#cbd5e1"/>
+    <text x="228" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="700" fill="#334155">+</text>
+    <circle cx="248" cy="32" r="9" fill="#111827"/>
+    <text x="248" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="#ffffff">−</text>
+    <line x1="22" y1="50" x2="252" y2="50" stroke="#e2e8f0" stroke-width="1"/>
+    
+  <text x="24" y="66" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9" font-weight="700" fill="#0f172a">GATE SPAWNER</text>
+  <rect x="24" y="76" width="164" height="24" rx="5" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="32" y="91" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="10" font-weight="700" fill="#0f172a">KSFO</text>
+  <rect x="192" y="76" width="56" height="24" rx="5" fill="#0d5f8d"/>
+  <text x="220" y="91" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#ffffff">SEARCH</text>
+  <!-- Filter chips -->
+  <rect x="24" y="108" width="42" height="17" rx="8.5" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="45" y="119.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" font-weight="700" fill="#475569">All</text>
+<rect x="69" y="108" width="42" height="17" rx="8.5" fill="#0d5f8d" stroke="#0d5f8d"/>
+      <text x="90" y="119.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" font-weight="700" fill="#ffffff">Heavy</text>
+<rect x="114" y="108" width="42" height="17" rx="8.5" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="135" y="119.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" font-weight="700" fill="#475569">Code F</text>
+<rect x="159" y="108" width="42" height="17" rx="8.5" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="180" y="119.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" font-weight="700" fill="#475569">GA</text>
+<rect x="204" y="108" width="42" height="17" rx="8.5" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="225" y="119.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" font-weight="700" fill="#475569">Cargo</text>
+  <!-- Stand rows -->
+  <rect x="24" y="136" width="224" height="34" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="32" y="150" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#0f172a">Gate G92 · Int'l Terminal</text>
+      <text x="32" y="162" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" fill="#64748b">Heavy · Hdg 284°</text>
+      <rect x="198" y="144" width="42" height="18" rx="4" fill="#0d5f8d"/>
+      <text x="219" y="156" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" font-weight="700" fill="#ffffff">SPAWN</text>
+<rect x="24" y="176" width="224" height="34" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="32" y="190" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#0f172a">Gate G94 · Int'l Terminal</text>
+      <text x="32" y="202" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" fill="#64748b">Code F · Hdg 284°</text>
+      <rect x="198" y="184" width="42" height="18" rx="4" fill="#0d5f8d"/>
+      <text x="219" y="196" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" font-weight="700" fill="#ffffff">SPAWN</text>
+<rect x="24" y="216" width="224" height="34" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="32" y="230" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#0f172a">Gate A10 · Int'l A</text>
+      <text x="32" y="242" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" fill="#64748b">Heavy · Hdg 104°</text>
+      <rect x="198" y="224" width="42" height="18" rx="4" fill="#0d5f8d"/>
+      <text x="219" y="236" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" font-weight="700" fill="#ffffff">SPAWN</text>
+<rect x="24" y="256" width="224" height="34" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="32" y="270" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#0f172a">Gate B18 · Terminal 1</text>
+      <text x="32" y="282" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" fill="#64748b">Medium · Hdg 014°</text>
+      <rect x="198" y="264" width="42" height="18" rx="4" fill="#0d5f8d"/>
+      <text x="219" y="276" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="7.5" font-weight="700" fill="#ffffff">SPAWN</text>
+  
+    
+</svg>

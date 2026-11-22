@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="424" height="558" viewBox="0 0 424 558" role="img">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowRed" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  
+  
+    <g filter="url(#shadow)">
+      <rect x="12" y="12" width="400" height="534" rx="12" fill="#f5f6f8" stroke="#cbd5e1" stroke-width="1"/>
+    </g>
+    <!-- Header -->
+    <text x="24" y="34" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="800" fill="#0f172a">COCKPIT COMPANION</text>
+    <text x="24" y="48" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#64748b">Airbus A321neo</text>
+    <rect x="202" y="24" width="28" height="20" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="216" y="37" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="9" font-weight="700" fill="#15803d">V4</text>
+    <rect x="236" y="24" width="44" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="258" y="37" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9.5" font-weight="600" fill="#334155">Focus</text>
+    <rect x="285" y="24" width="56" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="313" y="37" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9.5" font-weight="600" fill="#334155">Popout ↗</text>
+    <rect x="346" y="24" width="54" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="373" y="37" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#0f172a">Settings</text>
+    <!-- Live Telemetry Card -->
+    <rect x="24" y="58" width="376" height="60" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+    <text x="71" y="73" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#64748b">KIAS</text>
+        <text x="71" y="89" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="11.5" font-weight="800" fill="#0f172a">248</text>
+<text x="165" y="73" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#64748b">MACH</text>
+        <text x="165" y="89" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="11.5" font-weight="800" fill="#0f172a">0.54</text>
+<text x="259" y="73" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#64748b">ALT</text>
+        <text x="259" y="89" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="11.5" font-weight="800" fill="#0f172a">18,450</text>
+<text x="353" y="73" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#64748b">AGL</text>
+        <text x="353" y="89" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="11.5" font-weight="800" fill="#0f172a">18,430</text>
+    <text x="71" y="106" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#64748b">V/S <tspan font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" fill="#16a34a">+1420</tspan></text>
+    <text x="165" y="106" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#64748b">FUEL <tspan font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" fill="#0f172a">72%</tspan></text>
+    <!-- Status Pills -->
+    <rect x="24" y="126" width="112" height="20" rx="4" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="80" y="139" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#b45309">Gate: PRE-CRUISE</text>
+    <rect x="142" y="126" width="66" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="175" y="139" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">SAS: OFF</text>
+    <rect x="214" y="126" width="96" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="262" y="139" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">OP-SYNC: ASK</text>
+    <rect x="316" y="126" width="84" height="20" rx="4" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="358" y="139" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#15803d">Failures: 0</text>
+    <!-- Tab Bar -->
+    <rect x="24" y="154" width="376" height="28" rx="6" fill="#e2e8f0"/>
+    <rect x="24" y="156" width="56" height="24" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+      <text x="52" y="171.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="700" fill="#0d5f8d">AP++</text>
+<rect x="84" y="156" width="62" height="24" rx="4" fill="transparent" stroke="transparent"/>
+      <text x="115" y="171.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="600" fill="#64748b">Radar</text>
+<rect x="150" y="156" width="52" height="24" rx="4" fill="transparent" stroke="transparent"/>
+      <text x="176" y="171.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="600" fill="#64748b">EFB</text>
+<rect x="206" y="156" width="108" height="24" rx="4" fill="transparent" stroke="transparent"/>
+      <text x="260" y="171.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="600" fill="#64748b">Realism &amp; Fuel</text>
+<rect x="318" y="156" width="86" height="24" rx="4" fill="transparent" stroke="transparent"/>
+      <text x="361" y="171.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="600" fill="#64748b">OP / Diag</text>
+    
+  <rect x="24" y="192" width="376" height="44" rx="8" fill="#0f172a"/>
+  <text x="212" y="211" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="11" font-weight="800" fill="#4ade80">SPD 250  |  VNAV  |  LNAV</text>
+  <text x="212" y="226" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="8.5" fill="#94a3b8">NEXT WPT: PORTE · 14.2 NM · FL180</text>
+  <!-- Mode buttons -->
+  <rect x="24" y="246" width="376" height="288" rx="10" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="36" y="266" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9" font-weight="800" fill="#64748b">FLIGHT CONTROL UNIT (FCU)</text>
+  <rect x="36" y="276" width="84" height="26" rx="5" fill="#0d5f8d" stroke="#0d5f8d"/>
+      <text x="78" y="292.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ffffff">MASTER AP++</text>
+<rect x="126" y="276" width="84" height="26" rx="5" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="168" y="292.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#334155">HOLD ALL</text>
+<rect x="216" y="276" width="84" height="26" rx="5" fill="#0d5f8d" stroke="#0d5f8d"/>
+      <text x="258" y="292.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ffffff">AUTOLAND</text>
+<rect x="306" y="276" width="84" height="26" rx="5" fill="#0d5f8d" stroke="#0d5f8d"/>
+      <text x="348" y="292.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ffffff">ENVELOPE PROT</text>
+  <!-- Targets -->
+  <text x="36" y="328" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#64748b">TARGET SPEED (KTS / MACH)</text>
+      <rect x="36" y="334" width="160" height="24" rx="5" fill="#f8fafc" stroke="#cbd5e1"/>
+      <text x="46" y="349.5" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="11" font-weight="700" fill="#0f172a">250 KTS</text>
+      <rect x="206" y="334" width="182" height="24" rx="5" fill="#e0f2fe" stroke="#0d5f8d" stroke-width="0.8"/>
+      <text x="297" y="349.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#0d5f8d">KTS | MACH</text>
+<text x="36" y="380" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#64748b">TARGET ALTITUDE (FT)</text>
+      <rect x="36" y="386" width="160" height="24" rx="5" fill="#f8fafc" stroke="#cbd5e1"/>
+      <text x="46" y="401.5" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="11" font-weight="700" fill="#0f172a">35,000 ft</text>
+      <rect x="206" y="386" width="182" height="24" rx="5" fill="#e0f2fe" stroke="#0d5f8d" stroke-width="0.8"/>
+      <text x="297" y="401.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#0d5f8d">ALT | VNAV | FLCH</text>
+<text x="36" y="432" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#64748b">LATERAL MODE</text>
+      <rect x="36" y="438" width="160" height="24" rx="5" fill="#f8fafc" stroke="#cbd5e1"/>
+      <text x="46" y="453.5" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="11" font-weight="700" fill="#0f172a">284° / LNAV</text>
+      <rect x="206" y="438" width="182" height="24" rx="5" fill="#e0f2fe" stroke="#0d5f8d" stroke-width="0.8"/>
+      <text x="297" y="453.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#0d5f8d">HDG | LNAV | HOLD</text>
+<text x="36" y="484" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#64748b">VERTICAL SPEED (FPM)</text>
+      <rect x="36" y="490" width="160" height="24" rx="5" fill="#f8fafc" stroke="#cbd5e1"/>
+      <text x="46" y="505.5" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="11" font-weight="700" fill="#0f172a">+1,500 fpm</text>
+      <rect x="206" y="490" width="182" height="24" rx="5" fill="#e0f2fe" stroke="#0d5f8d" stroke-width="0.8"/>
+      <text x="297" y="505.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#0d5f8d">AUTO V/S</text>
+  
+    
+</svg>

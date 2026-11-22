@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="484" height="392" viewBox="0 0 484 392" role="img">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowRed" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  
+  
+  <g filter="url(#shadow)">
+    <rect x="12" y="12" width="460" height="330" rx="15" fill="rgba(0,0,0,0.88)" stroke="#888888" stroke-width="1"/>
+  </g>
+  <text x="28" y="38" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="#ffffff">FAILURE SIMULATOR</text>
+  <rect x="242" y="22" width="96" height="22" rx="11" fill="#000000" stroke="#eab308"/>
+  <text x="290" y="36" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#ffc107">RANDOM: OFF</text>
+  <rect x="344" y="22" width="84" height="22" rx="11" fill="#000000" stroke="#4caf50"/>
+  <text x="386" y="36" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#4ade80">CLEAR ALL</text>
+  <text x="454" y="38" text-anchor="end" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#94a3b8">✕</text>
+  <line x1="12" y1="52" x2="472" y2="52" stroke="rgba(136,136,136,0.4)"/>
+  <text x="28" y="72" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#94a3b8">PROPULSION &amp; ADVANCED EMERGENCIES</text>
+  <rect x="26" y="82" width="208" height="72" rx="10" fill="rgba(255,255,255,0.05)" stroke="#ef4444"/>
+      <circle cx="40" cy="98" r="4" fill="#ef4444" filter="url(#glowRed)"/>
+      <text x="50" y="101" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10.5" font-weight="700" fill="#ffffff">Engine 1</text>
+      <text x="224" y="101" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="8" font-weight="700" fill="#f87171">FAILED</text>
+      <rect x="36" y="112" width="188" height="4" rx="2" fill="#334155"/>
+      <rect x="36" y="126" width="56" height="19" rx="9.5" fill="#000000" stroke="#ef4444"/><text x="64" y="138.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ff6b6b">FAIL</text>
+      <rect x="98" y="126" width="66" height="19" rx="9.5" fill="#000000" stroke="#eab308"/><text x="131" y="138.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ffc107">RECOVER</text>
+      <rect x="170" y="126" width="54" height="19" rx="9.5" fill="#000000" stroke="#4caf50"/><text x="197" y="138.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#4ade80">FIX</text>
+<rect x="244" y="82" width="208" height="72" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(136,136,136,0.45)"/>
+      <circle cx="258" cy="98" r="4" fill="#22c55e" filter="url(#glowGreen)"/>
+      <text x="268" y="101" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10.5" font-weight="700" fill="#ffffff">Engine 2</text>
+      <text x="442" y="101" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="8" font-weight="700" fill="#86efac">NOMINAL</text>
+      <rect x="254" y="112" width="188" height="4" rx="2" fill="#334155"/>
+      <rect x="254" y="126" width="56" height="19" rx="9.5" fill="#000000" stroke="#ef4444"/><text x="282" y="138.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ff6b6b">FAIL</text>
+      <rect x="316" y="126" width="66" height="19" rx="9.5" fill="#000000" stroke="#eab308"/><text x="349" y="138.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ffc107">RECOVER</text>
+      <rect x="388" y="126" width="54" height="19" rx="9.5" fill="#000000" stroke="#4caf50"/><text x="415" y="138.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#4ade80">FIX</text>
+<rect x="26" y="164" width="208" height="72" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(136,136,136,0.45)"/>
+      <circle cx="40" cy="180" r="4" fill="#22c55e" filter="url(#glowGreen)"/>
+      <text x="50" y="183" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10.5" font-weight="700" fill="#ffffff">Electrical</text>
+      <text x="224" y="183" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="8" font-weight="700" fill="#86efac">NOMINAL</text>
+      <rect x="36" y="194" width="188" height="4" rx="2" fill="#334155"/>
+      <rect x="36" y="208" width="56" height="19" rx="9.5" fill="#000000" stroke="#ef4444"/><text x="64" y="220.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ff6b6b">FAIL</text>
+      <rect x="98" y="208" width="66" height="19" rx="9.5" fill="#000000" stroke="#eab308"/><text x="131" y="220.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ffc107">RECOVER</text>
+      <rect x="170" y="208" width="54" height="19" rx="9.5" fill="#000000" stroke="#4caf50"/><text x="197" y="220.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#4ade80">FIX</text>
+<rect x="244" y="164" width="208" height="72" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(136,136,136,0.45)"/>
+      <circle cx="258" cy="180" r="4" fill="#22c55e" filter="url(#glowGreen)"/>
+      <text x="268" y="183" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10.5" font-weight="700" fill="#ffffff">Pitot-Static</text>
+      <text x="442" y="183" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="8" font-weight="700" fill="#86efac">NOMINAL</text>
+      <rect x="254" y="194" width="188" height="4" rx="2" fill="#334155"/>
+      <rect x="254" y="208" width="56" height="19" rx="9.5" fill="#000000" stroke="#ef4444"/><text x="282" y="220.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ff6b6b">FAIL</text>
+      <rect x="316" y="208" width="66" height="19" rx="9.5" fill="#000000" stroke="#eab308"/><text x="349" y="220.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ffc107">RECOVER</text>
+      <rect x="388" y="208" width="54" height="19" rx="9.5" fill="#000000" stroke="#4caf50"/><text x="415" y="220.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#4ade80">FIX</text>
+<rect x="26" y="246" width="208" height="72" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(136,136,136,0.45)"/>
+      <circle cx="40" cy="262" r="4" fill="#22c55e" filter="url(#glowGreen)"/>
+      <text x="50" y="265" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10.5" font-weight="700" fill="#ffffff">MCAS</text>
+      <text x="224" y="265" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="8" font-weight="700" fill="#86efac">NOMINAL</text>
+      <rect x="36" y="276" width="188" height="4" rx="2" fill="#334155"/>
+      <rect x="36" y="290" width="56" height="19" rx="9.5" fill="#000000" stroke="#ef4444"/><text x="64" y="302.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ff6b6b">FAIL</text>
+      <rect x="98" y="290" width="66" height="19" rx="9.5" fill="#000000" stroke="#eab308"/><text x="131" y="302.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ffc107">RECOVER</text>
+      <rect x="170" y="290" width="54" height="19" rx="9.5" fill="#000000" stroke="#4caf50"/><text x="197" y="302.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#4ade80">FIX</text>
+<rect x="244" y="246" width="208" height="72" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(136,136,136,0.45)"/>
+      <circle cx="258" cy="262" r="4" fill="#22c55e" filter="url(#glowGreen)"/>
+      <text x="268" y="265" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10.5" font-weight="700" fill="#ffffff">Structural</text>
+      <text x="442" y="265" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="8" font-weight="700" fill="#86efac">PERMANENT</text>
+      <rect x="254" y="276" width="188" height="4" rx="2" fill="#334155"/>
+      <rect x="254" y="290" width="56" height="19" rx="9.5" fill="#000000" stroke="#ef4444"/><text x="282" y="302.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ff6b6b">FAIL</text>
+      <rect x="316" y="290" width="66" height="19" rx="9.5" fill="#000000" stroke="#eab308"/><text x="349" y="302.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#ffc107">RECOVER</text>
+      <rect x="388" y="290" width="54" height="19" rx="9.5" fill="#000000" stroke="#4caf50"/><text x="415" y="302.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#4ade80">FIX</text>
+  <!-- Floating FAILURES pill -->
+  <rect x="358" y="354" width="114" height="26" rx="13" fill="rgba(0,0,0,0.88)" stroke="#ef4444" stroke-width="1.5" filter="url(#glowRed)"/>
+  <text x="415" y="371" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="700" fill="#ff8d8d">FAILURES (1)</text>
+  
+</svg>

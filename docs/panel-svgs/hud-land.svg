@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="274" height="310" viewBox="0 0 274 310" role="img">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowRed" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  
+  
+    <g filter="url(#shadow)">
+      <rect x="12" y="12" width="250" height="286" rx="15" fill="#ffffff" fill-opacity="0.96" stroke="#cbd5e1" stroke-width="1"/>
+    </g>
+    <!-- Drag grip -->
+    <g fill="#94a3b8">
+      <circle cx="23" cy="28" r="1.2"/><circle cx="27" cy="28" r="1.2"/>
+      <circle cx="23" cy="32" r="1.2"/><circle cx="27" cy="32" r="1.2"/>
+      <circle cx="23" cy="36" r="1.2"/><circle cx="27" cy="36" r="1.2"/>
+    </g>
+    <rect x="34" y="22" width="44" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="56" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">INFO</text>
+<rect x="81" y="22" width="44" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="103" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">CHECKS</text>
+<rect x="128" y="22" width="44" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="150" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#475569">FUEL</text>
+<rect x="175" y="22" width="44" height="20" rx="10" fill="#0d5f8d" stroke="#0d5f8d" stroke-width="1"/>
+      <text x="197" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" font-weight="700" fill="#ffffff">LAND</text>
+    <!-- + and - buttons -->
+    <circle cx="228" cy="32" r="9" fill="#f1f5f9" stroke="#cbd5e1"/>
+    <text x="228" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="700" fill="#334155">+</text>
+    <circle cx="248" cy="32" r="9" fill="#111827"/>
+    <text x="248" y="35.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="#ffffff">−</text>
+    <line x1="22" y1="50" x2="252" y2="50" stroke="#e2e8f0" stroke-width="1"/>
+    
+  <text x="24" y="66" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9" font-weight="700" fill="#0f172a">LAST TOUCHDOWN</text>
+  <rect x="184" y="54" width="64" height="17" rx="8.5" fill="#dcfce7" stroke="#16a34a"/>
+  <text x="216" y="65.5" text-anchor="middle" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#15803d">AUTHENTIC</text>
+  <rect x="24" y="80" width="224" height="58" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+  <text x="36" y="102" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="800" fill="#15803d">BUTTER</text>
+  <text x="236" y="102" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="16" font-weight="800" fill="#15803d">9.6/10</text>
+  <text x="36" y="124" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" fill="#eab308">★★★★★</text>
+  <text x="236" y="124" text-anchor="end" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" fill="#475569">Airbus A321neo</text>
+  <!-- Metrics -->
+  <text x="24" y="158" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">VERTICAL SPEED</text>
+  <text x="248" y="158" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="10" font-weight="700" fill="#15803d">-48 fpm</text>
+  <text x="24" y="178" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">TOUCHDOWN G-FORCE</text>
+  <text x="248" y="178" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="10" font-weight="700" fill="#0f172a">1.08 G</text>
+  <text x="24" y="198" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" fill="#64748b">GROUND SPEED / ROLL</text>
+  <text x="248" y="198" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="10" font-weight="700" fill="#0f172a">131 kt · 0.6°</text>
+  <line x1="24" y1="210" x2="248" y2="210" stroke="#e2e8f0"/>
+  <text x="24" y="228" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8" font-weight="700" fill="#64748b">PHASE CRITIQUE</text>
+  <text x="24" y="244" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" fill="#334155">• Departure: Clean rotation on VR</text>
+  <text x="24" y="260" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" fill="#334155">• Approach: Stabilized on glideslope</text>
+  <text x="24" y="276" font-family="Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="8.5" fill="#334155">• Touchdown: Centerline, 0 bounces</text>
+  
+    
+</svg>
