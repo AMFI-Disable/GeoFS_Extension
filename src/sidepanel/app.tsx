@@ -269,7 +269,11 @@ export function App() {
         <span class={`badge ${live?.sasActive || settings.opStability ? 'badge--ok' : ''}`}>
           SAS: {live?.sasActive || settings.opStability ? 'ON' : 'OFF'}
         </span>
-        <span class={`badge ${live?.opSyncActive ? 'badge--info' : ''}`}>
+        <span
+          class={`badge ${
+            live?.opSyncActive ? 'badge--ok' : settings.opSyncPolicy === 'never' ? 'badge--disabled' : 'badge--idle'
+          }`}
+        >
           OP-SYNC: {settings.opSyncPolicy.toUpperCase()}
         </span>
         <span class={`badge ${(live?.activeFailures?.length ?? 0) > 0 ? 'badge--danger' : 'badge--ok'}`}>

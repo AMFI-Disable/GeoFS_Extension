@@ -58,12 +58,12 @@ export function buildTopbarPadStyles(selector: string): string {
     color: #ffffff;
   }
   ${selector}.green-pad {
-    background-color: rgba(46, 125, 50, 0.38) !important;
-    border-color: #4caf50 !important;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5) !important;
+    background-color: rgba(34, 197, 94, 0.28) !important;
+    border-color: #22c55e !important;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.45) !important;
   }
   ${selector}.green-pad:hover {
-    background-color: rgba(56, 142, 60, 0.52) !important;
+    background-color: rgba(34, 197, 94, 0.42) !important;
   }
   ${selector}.amber-pad {
     background-color: rgba(245, 158, 11, 0.22) !important;
@@ -71,7 +71,9 @@ export function buildTopbarPadStyles(selector: string): string {
     box-shadow: 0 0 8px rgba(251, 191, 36, 0.38) !important;
   }
   ${selector}.red-pad {
-    background-color: rgba(220, 38, 38, 0.28) !important;
+    background-color: rgba(239, 68, 68, 0.28) !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
   }
   `;
 }

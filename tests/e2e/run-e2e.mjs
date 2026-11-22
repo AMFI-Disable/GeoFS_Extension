@@ -510,7 +510,8 @@ async function run() {
       `OFF/ARM button size (${exp.offRect?.width}x${exp.offRect?.height}) must match KTS/M. (${exp.ktsRect?.width}x${exp.ktsRect?.height})`);
     assert.equal(exp.offFontSize, exp.ktsFontSize, 'OFF/ARM and KTS/M. button font sizes must match');
     assert.equal(exp.offWeight, '400', 'OFF/ARM switch must not be bold');
-    assert.equal(exp.offBorder, exp.ktsBorder, `Selected OFF border (${exp.offBorder}) must match selected KTS border (${exp.ktsBorder})`);
+    assert.equal(exp.offBorder, 'rgb(239, 68, 68)', `Selected OFF border (${exp.offBorder}) must be standardized red`);
+    assert.equal(exp.ktsBorder, 'rgb(76, 175, 80)', `Selected KTS border (${exp.ktsBorder}) must be standardized green`);
     assert.equal(exp.offBg, exp.ktsBg, `Selected OFF background (${exp.offBg}) must match selected KTS background (${exp.ktsBg})`);
     assert(collisionCheck.boxes.apBar.width < 700, `Autopilot bar expanded abnormally wide (${collisionCheck.boxes.apBar.width}px)`);
     assert.equal(collisionCheck.boxes.topHudBtn, null, 'Excessive unmovable top-bar HUD button must not be mounted');

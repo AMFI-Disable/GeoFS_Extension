@@ -147,15 +147,31 @@ export function mountApPpUi(
       fmaRow.textContent = s.engaged
         ? `${s.fma.thr} · ${s.fma.vert} · ${s.fma.lat}${s.fma.protection ? ` [${s.fma.protection}]` : ''}`
         : 'AP++ STBY';
-      const mark = (b: HTMLButtonElement, active: boolean) => {
-        b.style.borderColor = active ? 'var(--geofs-ext-accent, #ffc107)' : 'var(--geofs-ext-border, rgba(255,255,255,0.16))';
-        b.style.color = active ? 'var(--geofs-ext-accent, #ffc107)' : 'var(--geofs-ext-muted, #9e9e9e)';
+      fmaRow.style.color = s.fma.protection
+        ? '#f87171'
+        : s.engaged
+          ? '#4ade80'
+          : '#9ca3af';
+      const mark = (b: HTMLButtonElement, state: 'active' | 'disabled' | 'idle') => {
+        if (state === 'active') {
+          b.style.borderColor = '#22c55e';
+          b.style.color = '#4ade80';
+          b.style.background = 'rgba(34, 197, 94, 0.16)';
+        } else if (state === 'disabled') {
+          b.style.borderColor = '#ef4444';
+          b.style.color = '#f87171';
+          b.style.background = 'rgba(239, 68, 68, 0.16)';
+        } else {
+          b.style.borderColor = 'var(--geofs-ext-border, rgba(156, 163, 175, 0.35))';
+          b.style.color = '#9ca3af';
+          b.style.background = 'rgba(255, 255, 255, 0.04)';
+        }
       };
-      mark(masterBtn, s.engaged);
-      mark(raceBtn, s.engaged && s.lateralMode === 'hold');
-      mark(ldgBtn, s.landingArmed);
-      mark(hoverBtn, s.engaged && s.hoverMode);
-      mark(protBtn, s.envelopeProtection);
+      mark(masterBtn, s.engaged ? 'active' : 'idle');
+      mark(raceBtn, s.engaged && s.lateralMode === 'hold' ? 'active' : 'idle');
+      mark(ldgBtn, s.landingArmed ? 'active' : 'idle');
+      mark(hoverBtn, s.engaged && s.hoverMode ? 'active' : 'idle');
+      mark(protBtn, s.envelopeProtection ? 'active' : 'disabled');
     };
     hudTab.append(fmaRow, btnGrid);
     unmounts.push(context.anchors.registerHudTab('ap-pp', 'AP++', hudTab, false, { defaultClosed: true }));

@@ -89,7 +89,7 @@ export function ApPpPanel({ enabled, snapshot, tabId, onEnableBeta }: ApPpPanelP
           </button>
           <button
             type="button"
-            class={`chip-btn ${ap?.envelopeProtection ? 'active' : ''}`}
+            class={`chip-btn ${ap?.envelopeProtection === false ? 'is-disabled-state' : 'active'}`}
             onClick={() => send({ type: 'setEnvelopeProtection', enabled: !(ap?.envelopeProtection ?? true) })}
             title="Alpha-floor, Vne/Mmo overspeed, and bank-angle protection"
           >
@@ -127,7 +127,7 @@ export function ApPpPanel({ enabled, snapshot, tabId, onEnableBeta }: ApPpPanelP
             <button
               type="button"
               key={m}
-              class={`chip-btn ${ap?.speedMode === m ? 'active' : ''}`}
+              class={`chip-btn ${ap?.speedMode === m ? (m === 'off' ? 'is-disabled-state' : 'active') : ''}`}
               onClick={() => send({ type: 'setSpeedMode', mode: m })}
             >
               {m.toUpperCase()}
@@ -205,7 +205,7 @@ export function ApPpPanel({ enabled, snapshot, tabId, onEnableBeta }: ApPpPanelP
             <button
               type="button"
               key={m}
-              class={`chip-btn ${ap?.lateralMode === m ? 'active' : ''}`}
+              class={`chip-btn ${ap?.lateralMode === m ? (m === 'off' ? 'is-disabled-state' : 'active') : ''}`}
               onClick={() => send({ type: 'setLateralMode', mode: m })}
             >
               {m === 'latlon' ? 'LAT/LON' : m.toUpperCase()}
@@ -241,7 +241,11 @@ export function ApPpPanel({ enabled, snapshot, tabId, onEnableBeta }: ApPpPanelP
         </div>
 
         <div class="field-row" style="margin-top:6px">
-          <button type="button" class="btn-sm active" onClick={() => send({ type: 'holdHere' })}>
+          <button
+            type="button"
+            class={`btn-sm ${ap?.engaged && ap?.lateralMode === 'hold' ? 'active' : ''}`}
+            onClick={() => send({ type: 'holdHere' })}
+          >
             HOLD ({ap?.holdConfig.entryType?.toUpperCase() ?? 'DIR'} · {ap?.holdConfig.phase.toUpperCase() ?? 'IN'} · WCA {ap?.holdConfig.wcaDeg ?? 0}°)
           </button>
           <div class="chip-group">
@@ -320,7 +324,7 @@ export function ApPpPanel({ enabled, snapshot, tabId, onEnableBeta }: ApPpPanelP
             <button
               type="button"
               key={m}
-              class={`chip-btn ${ap?.verticalMode === m ? 'active' : ''}`}
+              class={`chip-btn ${ap?.verticalMode === m ? (m === 'off' ? 'is-disabled-state' : 'active') : ''}`}
               onClick={() => send({ type: 'setVerticalMode', mode: m })}
             >
               {m === 'gs' ? 'G/S' : m.toUpperCase()}
