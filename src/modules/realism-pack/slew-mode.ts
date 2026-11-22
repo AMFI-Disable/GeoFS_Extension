@@ -3,6 +3,7 @@
 
 import type { GeoFSAircraftInstance } from '../../types/geofs.d';
 import type { FlightTelemetry } from '../../types/module';
+import { ensureModeBanner, removeModeBanner } from '../../core/mode-banner';
 
 const DEG_TO_RAD = Math.PI / 180;
 const RAD_TO_DEG = 180 / Math.PI;
@@ -195,16 +196,7 @@ export class SlewModeController {
   }
 
   private ensureBanner(): void {
-    if (typeof document === 'undefined' || !document.body) return;
-    let el = document.getElementById('geofs-ext-mode-banner') as HTMLDivElement | null;
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'geofs-ext-mode-banner';
-      document.body.appendChild(el);
-    }
-    el.style.cssText =
-      'position:fixed;top:8px;left:10px;z-index:2147483640;padding:4px 8px;border-radius:4px;background:rgba(15,23,42,0.84);border:1px solid rgba(239,68,68,0.6);color:#f87171;font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;';
-    this.bannerEl = el;
+    this.bannerEl = ensureModeBanner('danger');
   }
 
   private renderBanner(): void {
@@ -215,7 +207,7 @@ export class SlewModeController {
   }
 
   private removeBanner(): void {
-    this.bannerEl?.remove();
+    removeModeBanner(this.bannerEl);
     this.bannerEl = null;
   }
 

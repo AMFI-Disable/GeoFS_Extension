@@ -1,5 +1,7 @@
 import type { FlightTelemetry } from '../../types/module';
 
+import { ensureModeBanner, removeModeBanner } from '../../core/mode-banner';
+
 export class WalkaroundController {
   private active = false;
   private offsetX = 12; // meters right of aircraft
@@ -123,20 +125,11 @@ export class WalkaroundController {
   }
 
   private showBanner(): void {
-    if (typeof document === 'undefined' || !document.body) return;
-    let el = document.getElementById('geofs-ext-mode-banner') as HTMLDivElement | null;
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'geofs-ext-mode-banner';
-      document.body.appendChild(el);
-    }
-    el.style.cssText =
-      'position:fixed;top:8px;left:10px;z-index:2147483640;padding:4px 8px;border-radius:4px;background:var(--geofs-ext-bg,rgba(0,0,0,0.8));border:1px solid var(--geofs-ext-accent,#ffc107);color:var(--geofs-ext-accent,#ffc107);font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;';
-    this.bannerEl = el;
+    this.bannerEl = ensureModeBanner('accent');
   }
 
   private removeBanner(): void {
-    this.bannerEl?.remove();
+    removeModeBanner(this.bannerEl);
     this.bannerEl = null;
   }
 
