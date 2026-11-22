@@ -17,6 +17,7 @@ import {
   type GeoFSTabInfo,
   type LiveTelemetrySummary
 } from '../shared/settings-store';
+import { getCachedUpdateInfo, type UpdateInfo } from '../shared/update-checker';
 import { ApPpPanel } from './ap-pp-panel';
 import {
   DEFAULT_SETTINGS,
@@ -38,6 +39,7 @@ export function App() {
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);
   const [diags, setDiags] = useState<DiagEntry[]>([]);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [panelTab, setActiveTab] = useState<'ap-pp' | 'realism' | 'diag'>(() => {
     try {
       const saved = localStorage.getItem('geofs_ext_sidepanel_tab');
@@ -58,6 +60,7 @@ export function App() {
 
   useEffect(() => {
     void loadSplitSettings().then(setSettings);
+    void getCachedUpdateInfo().then(setUpdateInfo);
     const unsubSettings = subscribeSettings(setSettings);
 
     const refreshLive = () => {
@@ -140,6 +143,20 @@ export function App() {
           </button>
         </div>
       </div>
+
+      {updateInfo && (
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;margin-bottom:8px;border-radius:6px;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.4);font-size:11px;">
+          <span>Update <strong>v{updateInfo.latestVersion}</strong> available</span>
+          <a
+            href={updateInfo.downloadUrl}
+            target="_blank"
+            rel="noreferrer"
+            style="color:#10b981;font-weight:700;text-decoration:none;white-space:nowrap;"
+          >
+            Download ↗
+          </a>
+        </div>
+      )}
 
       {effectiveOs === 'mac' && settings.macKeyboardType === null && (
         <div class="panel-card" style="border-color:var(--accent)">

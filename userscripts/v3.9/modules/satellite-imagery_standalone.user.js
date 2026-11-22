@@ -110,6 +110,8 @@
 // @match               https://www.geo-fs.com/geofs.php*
 // @require             https://update.greasyfork.org/scripts/581510/code.js
 // @require             https://update.greasyfork.org/scripts/581511/code.js
+// @updateURL           https://raw.githubusercontent.com/AMFI-Disable/GeoFS_Extension/main/userscripts/v3.9/modules/satellite-imagery_standalone.user.js
+// @downloadURL         https://raw.githubusercontent.com/AMFI-Disable/GeoFS_Extension/main/userscripts/v3.9/modules/satellite-imagery_standalone.user.js
 // @grant               none
 // @license             MIT
 // @copyright           2026, AMFI-Disable (https://greasyfork.org/users/1594049)

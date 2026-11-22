@@ -108,6 +108,8 @@
 // @icon         https://www.geo-fs.com/images/icons/favicon.ico
 // @match        https://beta.geo-fs.com/geofs.php*
 // @match        https://www.geo-fs.com/geofs.php*
+// @updateURL           https://raw.githubusercontent.com/AMFI-Disable/GeoFS_Extension/main/userscripts/v4.0/modules/core-library_standalone.user.js
+// @downloadURL         https://raw.githubusercontent.com/AMFI-Disable/GeoFS_Extension/main/userscripts/v4.0/modules/core-library_standalone.user.js
 // @grant        none
 // @run-at       document-idle
 // @license      MIT

@@ -39,6 +39,7 @@ import {
   type GeoFSTabInfo,
   type LiveTelemetrySummary
 } from '../shared/settings-store';
+import { getCachedUpdateInfo, type UpdateInfo } from '../shared/update-checker';
 import type { AircraftCategory, AircraftProfile } from '../types/module';
 import {
   DEFAULT_SETTINGS,
@@ -98,6 +99,7 @@ export function App() {
   const [logbook, setLogbook] = useState<LandingRecord[]>([]);
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);
   const [diags, setDiags] = useState<DiagEntry[]>([]);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [geofsTabs, setGeofsTabs] = useState<GeoFSTabInfo[]>([]);
   const [selectedTabId, setSelectedTabId] = useState<number | undefined>(undefined);
   const [displayInfo, setDisplayInfo] = useState(() => detectDisplayProfile());
@@ -142,6 +144,7 @@ export function App() {
   useEffect(() => {
     void loadSplitSettings().then(setSettings);
     void loadLogbook().then(setLogbook);
+    void getCachedUpdateInfo().then(setUpdateInfo);
     const unsubSettings = subscribeSettings(setSettings);
     const unsubLogbook = subscribeLogbook(setLogbook);
 
@@ -285,6 +288,22 @@ export function App() {
           <span class="badge">{os.toUpperCase()}</span>
         </div>
       </div>
+
+      {updateInfo && (
+        <div class="sync-banner" style="border-color:rgba(16,185,129,0.5);background:rgba(16,185,129,0.12);justify-content:space-between;">
+          <span>
+            A new release <strong>v{updateInfo.latestVersion}</strong> is available (current: v{updateInfo.currentVersion}).
+          </span>
+          <a
+            href={updateInfo.downloadUrl}
+            target="_blank"
+            rel="noreferrer"
+            style="color:#10b981;font-weight:700;text-decoration:none;white-space:nowrap;"
+          >
+            Download Latest ZIP ↗
+          </a>
+        </div>
+      )}
 
       <div class={`sync-banner ${activeTab ? 'sync-banner--live' : ''}`}>
         <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">

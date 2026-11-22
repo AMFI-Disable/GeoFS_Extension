@@ -111,6 +111,8 @@
 // @match               https://www.geo-fs.com/geofs.php*
 // @require             https://update.greasyfork.org/scripts/604885/code.js
 // @require             https://update.greasyfork.org/scripts/604887/code.js
+// @updateURL           https://raw.githubusercontent.com/AMFI-Disable/GeoFS_Extension/main/userscripts/v4.0/modules/checklist-system_standalone.user.js
+// @downloadURL         https://raw.githubusercontent.com/AMFI-Disable/GeoFS_Extension/main/userscripts/v4.0/modules/checklist-system_standalone.user.js
 // @grant               none
 // @license             MIT
 // @copyright           2026, AMFI-Disable (https://greasyfork.org/users/1594049)

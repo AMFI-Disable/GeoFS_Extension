@@ -108,6 +108,8 @@
 // @homepageURL         https://sites.google.com/view/geofs-v39-ecosystem/home
 // @icon                https://www.geo-fs.com/images/icons/favicon.ico
 // @match               https://www.geo-fs.com/geofs.php*
+// @updateURL           https://raw.githubusercontent.com/AMFI-Disable/GeoFS_Extension/main/userscripts/v3.9/modules/core-library_standalone.user.js
+// @downloadURL         https://raw.githubusercontent.com/AMFI-Disable/GeoFS_Extension/main/userscripts/v3.9/modules/core-library_standalone.user.js
 // @grant               none
 // @license             MIT
 // @copyright           2026, AMFI-Disable (https://greasyfork.org/users/1594049)

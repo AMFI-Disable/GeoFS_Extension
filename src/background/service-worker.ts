@@ -1,4 +1,5 @@
 import type { LandingRecord } from '../types/settings';
+import { checkForExtensionUpdate } from '../shared/update-checker';
 import { SerializedLogbookStore } from './logbook-store';
 
 interface CachedDiagEntry {
@@ -128,3 +129,29 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   return false;
 });
+
+async function refreshUpdateBadge(): Promise<void> {
+  const info = await checkForExtensionUpdate();
+  const action = (chrome as unknown as {
+    action?: {
+      setBadgeText?: (opts: { text: string }) => Promise<void> | void;
+      setBadgeBackgroundColor?: (opts: { color: string }) => Promise<void> | void;
+    };
+  })?.action;
+  if (!action?.setBadgeText) return;
+  if (info) {
+    await action.setBadgeBackgroundColor?.({ color: '#10b981' });
+    await action.setBadgeText({ text: 'UPD' });
+  } else {
+    await action.setBadgeText({ text: '' });
+  }
+}
+
+if (typeof chrome !== 'undefined' && chrome.runtime) {
+  chrome.runtime.onInstalled?.addListener(() => {
+    void refreshUpdateBadge();
+  });
+  chrome.runtime.onStartup?.addListener(() => {
+    void refreshUpdateBadge();
+  });
+}
