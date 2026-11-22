@@ -169,12 +169,12 @@ export class GateSpawnerModule implements IModule {
       chip.addEventListener('click', () => {
         if (this.activeFilters.has(f.key)) {
           this.activeFilters.delete(f.key);
-          chip.style.borderColor = 'rgba(136,136,136,0.3)';
-          chip.style.color = '#cbd5e1';
+          chip.style.borderColor = 'var(--geofs-ext-border, rgba(136,136,136,0.3))';
+          chip.style.color = 'var(--geofs-ext-muted, #9e9e9e)';
         } else {
           this.activeFilters.add(f.key);
-          chip.style.borderColor = '#10b981';
-          chip.style.color = '#10b981';
+          chip.style.borderColor = 'var(--geofs-ext-accent, #ffc107)';
+          chip.style.color = 'var(--geofs-ext-accent, #ffc107)';
         }
         renderGates();
       });
@@ -183,15 +183,15 @@ export class GateSpawnerModule implements IModule {
 
     const select = document.createElement('select');
     select.size = 4;
-    select.style.cssText = 'width:100%;background:rgba(0,0,0,0.5);color:#fff;border:1px solid rgba(136,136,136,0.35);border-radius:4px;font-size:9.5px;padding:2px;';
+    select.style.cssText = 'width:100%;background:var(--geofs-ext-surface,rgba(0,0,0,0.5));color:var(--geofs-ext-fg,#fff);border:1px solid var(--geofs-ext-border,rgba(136,136,136,0.35));border-radius:4px;font-size:9.5px;padding:2px;';
 
     const spawnBtn = document.createElement('button');
     spawnBtn.type = 'button';
     spawnBtn.textContent = 'Spawn At Selected Gate';
-    spawnBtn.style.cssText = 'width:100%;background:#10b981;color:#052e16;border:none;border-radius:4px;padding:4px 6px;font-size:9.5px;font-weight:800;cursor:pointer;';
+    spawnBtn.style.cssText = 'width:100%;background:var(--geofs-ext-accent,#ffc107);color:var(--geofs-ext-accent-fg,#000000);border:none;border-radius:4px;padding:4px 6px;font-size:9.5px;font-weight:800;cursor:pointer;';
 
     const status = document.createElement('div');
-    status.style.cssText = 'font-size:8.5px;color:#94a3b8;';
+    status.style.cssText = 'font-size:8.5px;color:var(--geofs-ext-muted,#9e9e9e);';
     status.textContent = 'Click Load to fetch gate database on demand.';
 
     let currentGates: GateEntry[] = [];

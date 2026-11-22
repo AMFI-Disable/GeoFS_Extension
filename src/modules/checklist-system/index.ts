@@ -112,7 +112,7 @@ const CHECKLIST_STYLES = `
     background: #000000;
     border: 1px solid #eab308;
     border-radius: 15px;
-    color: #facc15;
+    color: var(--geofs-ext-accent, #ffc107);
     font-size: 10px;
     font-weight: 700;
     cursor: pointer;
@@ -566,7 +566,7 @@ export class ChecklistSystemModule implements IModule {
 
       if (entry.item.sync) {
         const badge = document.createElement('span');
-        badge.style.cssText = 'font-size:9px;flex-shrink:0;color:' + (entry.hardware ? '#facc15' : '#38bdf8') + ';';
+        badge.style.cssText = 'font-size:9px;flex-shrink:0;color:' + (entry.hardware ? 'var(--geofs-ext-accent, #ffc107)' : 'var(--geofs-ext-sky, #00bbff)') + ';';
         badge.textContent = entry.hardware ? '⚡' : '⏱';
         badge.title = entry.hardware ? 'Click to execute simulator control' : 'Auto-verified by live flight telemetry';
         titleRow.appendChild(badge);

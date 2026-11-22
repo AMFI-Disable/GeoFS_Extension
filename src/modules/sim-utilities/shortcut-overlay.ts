@@ -76,17 +76,17 @@ export class ShortcutOverlay {
     }
 
     this.el.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid rgba(148,163,184,0.2);padding-bottom:6px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid var(--geofs-ext-divider,rgba(255,255,255,0.14));padding-bottom:6px;">
         <span style="font-size:12px;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;">Keyboard Shortcuts</span>
-        <button type="button" data-close-shortcuts style="background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;line-height:1;">✕</button>
+        <button type="button" data-close-shortcuts style="background:none;border:none;color:var(--geofs-ext-muted,#9e9e9e);font-size:14px;cursor:pointer;line-height:1;">✕</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;font-size:11px;">
         ${rows
           .map(
             ([label, key]) => `
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-              <span style="color:#cbd5e1;">${label}</span>
-              <kbd style="background:rgba(255,255,255,0.08);border:1px solid rgba(148,163,184,0.3);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;color:#38bdf8;white-space:nowrap;">${key}</kbd>
+              <span style="color:var(--geofs-ext-fg,#ffffff);">${label}</span>
+              <kbd style="background:var(--geofs-ext-surface,rgba(255,255,255,0.08));border:1px solid var(--geofs-ext-border,#888888);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;color:var(--geofs-ext-accent,#ffc107);white-space:nowrap;">${key}</kbd>
             </div>
           `
           )

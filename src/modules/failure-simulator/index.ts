@@ -504,7 +504,7 @@ const FAILURE_STYLES = `
   }
   .geofs-ext-fail-btn--warn {
     border-color: #eab308;
-    color: #facc15;
+    color: #ffc107;
   }
 `;
 

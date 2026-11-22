@@ -261,7 +261,7 @@ html[data-surface="options"] .title {
 }
 
 .update-banner-link {
-  color: var(--accent-strong, #10b981);
+  color: var(--accent-strong, #ffc107);
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;

@@ -316,7 +316,7 @@ export class InformationDisplayModule implements IModule {
     const svg = this.cells.get('minimap-svg');
     if (mapPanel && !mapPanel.hidden && svg) {
       const linesHtml = runwayLines
-        .map((r) => `<line x1="${r.x1.toFixed(1)}" y1="${r.y1.toFixed(1)}" x2="${r.x2.toFixed(1)}" y2="${r.y2.toFixed(1)}" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>`)
+        .map((r) => `<line x1="${r.x1.toFixed(1)}" y1="${r.y1.toFixed(1)}" x2="${r.x2.toFixed(1)}" y2="${r.y2.toFixed(1)}" stroke="#00bbff" stroke-width="2.2" stroke-linecap="round"/>`)
         .join('');
 
       // TCAS / Nearby Multiplayer Traffic
@@ -341,7 +341,7 @@ export class InformationDisplayModule implements IModule {
           const relHundreds = Math.round((uAltFt - telemetry.altitude) / 100);
           const relTag = `${relHundreds >= 0 ? '+' : ''}${relHundreds}`;
           trafficHtmlParts.push(
-            `<g transform="translate(${tx.toFixed(1)},${ty.toFixed(1)})"><polygon points="0,-3 3,0 0,3 -3,0" fill="#f59e0b"/><text x="4" y="2.5" font-size="6" fill="#fbbf24" font-weight="700">${relTag}</text></g>`
+            `<g transform="translate(${tx.toFixed(1)},${ty.toFixed(1)})"><polygon points="0,-3 3,0 0,3 -3,0" fill="#ffc107"/><text x="4" y="2.5" font-size="6" fill="#ffc107" font-weight="700">${relTag}</text></g>`
           );
         }
       }
@@ -357,19 +357,19 @@ export class InformationDisplayModule implements IModule {
             : mode === 'right'
               ? 'M 0 5 Q 0 22 18 22'
               : 'M 0 5 L 0 26';
-        const stroke = mode === 'off' ? 'rgba(56,189,248,0.55)' : '#38bdf8';
+        const stroke = mode === 'off' ? 'rgba(0,187,255,0.55)' : '#00bbff';
         pushArcHtml = `<path d="${pathD}" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-dasharray="3,2" stroke-linecap="round"/>`;
       }
 
       const hdg = Number.isFinite(telemetry.heading) ? telemetry.heading : 0;
       svg.innerHTML = `
-        <circle cx="0" cy="0" r="30" fill="none" stroke="rgba(148,163,184,0.22)" stroke-width="0.8" stroke-dasharray="2,2"/>
-        <circle cx="0" cy="0" r="60" fill="none" stroke="rgba(148,163,184,0.14)" stroke-width="0.8"/>
+        <circle cx="0" cy="0" r="30" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.8" stroke-dasharray="2,2"/>
+        <circle cx="0" cy="0" r="60" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.8"/>
         ${linesHtml}
         ${trafficHtmlParts.join('')}
         <g transform="rotate(${hdg.toFixed(1)})">
           ${pushArcHtml}
-          <polygon points="0,-6 4,5 0,2 -4,5" fill="#10b981"/>
+          <polygon points="0,-6 4,5 0,2 -4,5" fill="#ffffff" stroke="#0d5f8d" stroke-width="0.8"/>
         </g>
       `;
       const rwInfo = nearestIcao ? `${nearestIcao} · ${nearestDistNm.toFixed(1)} NM` : 'No runway < 20 NM';

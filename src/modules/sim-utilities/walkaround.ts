@@ -131,7 +131,7 @@ export class WalkaroundController {
       document.body.appendChild(el);
     }
     el.style.cssText =
-      'position:fixed;top:8px;left:10px;z-index:2147483640;padding:4px 8px;border-radius:4px;background:rgba(15,23,42,0.88);border:1px solid rgba(56,189,248,0.6);color:#38bdf8;font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;';
+      'position:fixed;top:8px;left:10px;z-index:2147483640;padding:4px 8px;border-radius:4px;background:var(--geofs-ext-bg,rgba(0,0,0,0.8));border:1px solid var(--geofs-ext-accent,#ffc107);color:var(--geofs-ext-accent,#ffc107);font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;';
     this.bannerEl = el;
   }
 

@@ -132,7 +132,7 @@ export function EfbPanel({ ownCallsign }: EfbPanelProps) {
             </button>
           </div>
         )}
-        {jobMsg && <div style="font-size:10.5px;color:#10b981;margin-top:4px;font-weight:700;">{jobMsg}</div>}
+        {jobMsg && <div style="font-size:10.5px;color:var(--accent-strong);margin-top:4px;font-weight:700;">{jobMsg}</div>}
       </div>
 
       {/* 2. Free Airport Charts & Crosswind Calculator */}
@@ -169,7 +169,7 @@ export function EfbPanel({ ownCallsign }: EfbPanelProps) {
                 href={c.pdfUrl}
                 target="_blank"
                 rel="noreferrer"
-                style="display:flex;justify-content:space-between;font-size:10.5px;padding:3px 6px;border-radius:4px;background:rgba(255,255,255,0.04);color:#38bdf8;text-decoration:none;"
+                style="display:flex;justify-content:space-between;font-size:10.5px;padding:3px 6px;border-radius:4px;background:var(--surface-alt);color:var(--info);text-decoration:none;"
               >
                 <span>{c.chartName}</span>
                 <span style="color:var(--muted);">{c.chartCode} ↗</span>
@@ -193,7 +193,7 @@ export function EfbPanel({ ownCallsign }: EfbPanelProps) {
         </div>
         <div style="margin-top:5px;font-size:11px;display:flex;justify-content:space-between;">
           <span>{wind.headwindKts >= 0 ? `Headwind: ${wind.headwindKts} kt` : `Tailwind: ${Math.abs(wind.headwindKts)} kt`}</span>
-          <span style={`font-weight:700;color:${wind.crosswindKts > 15 ? '#f59e0b' : '#10b981'};`}>
+          <span style={`font-weight:700;color:${wind.crosswindKts > 15 ? 'var(--warn)' : 'var(--info)'};`}>
             X-Wind: {wind.crosswindKts} kt ({wind.side})
           </span>
         </div>
@@ -222,7 +222,7 @@ export function EfbPanel({ ownCallsign }: EfbPanelProps) {
             </button>
           ))}
         </div>
-        {copiedMsg && <div style="font-size:10.5px;color:#38bdf8;margin-top:4px;">{copiedMsg}</div>}
+        {copiedMsg && <div style="font-size:10.5px;color:var(--info);margin-top:4px;">{copiedMsg}</div>}
       </div>
     </div>
   );

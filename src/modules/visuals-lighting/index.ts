@@ -137,8 +137,8 @@ export class VisualsLightingModule implements IModule {
         const opts = context.getSettings().realismOptions;
         for (const [key, btn] of btns) {
           const active = isOptEnabled(opts, key);
-          btn.style.borderColor = active ? '#10b981' : 'rgba(255,255,255,0.16)';
-          btn.style.color = active ? '#10b981' : '#a1a1aa';
+          btn.style.borderColor = active ? 'var(--geofs-ext-accent, #ffc107)' : 'var(--geofs-ext-border, rgba(255,255,255,0.16))';
+          btn.style.color = active ? 'var(--geofs-ext-accent, #ffc107)' : 'var(--geofs-ext-muted, #9e9e9e)';
         }
       };
       this.syncHudTab = sync;

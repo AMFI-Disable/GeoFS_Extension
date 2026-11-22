@@ -1436,22 +1436,26 @@ export class AnchorManager {
       :root {
         --geofs-ext-scale: 1;
         --geofs-ext-bg: rgba(0, 0, 0, 0.8);
+        --geofs-ext-surface: rgba(255, 255, 255, 0.08);
         --geofs-ext-fg: #ffffff;
         --geofs-ext-muted: rgba(255, 255, 255, 0.58);
         --geofs-ext-border: #888888;
         --geofs-ext-divider: rgba(255, 255, 255, 0.14);
         --geofs-ext-accent: #ffc107;
+        --geofs-ext-accent-fg: #000000;
         --geofs-ext-blue: #0d5f8d;
         --geofs-ext-sky: #00bbff;
         --geofs-ext-radar-bg: #000000;
       }
       :root[data-geofs-ext-theme="light"] {
         --geofs-ext-bg: rgba(255, 255, 255, 0.92);
+        --geofs-ext-surface: rgba(0, 0, 0, 0.05);
         --geofs-ext-fg: #000000;
         --geofs-ext-muted: rgba(0, 0, 0, 0.56);
         --geofs-ext-border: rgba(0, 0, 0, 0.22);
         --geofs-ext-divider: rgba(0, 0, 0, 0.12);
         --geofs-ext-accent: #0d5f8d;
+        --geofs-ext-accent-fg: #ffffff;
         --geofs-ext-blue: #0d5f8d;
         --geofs-ext-sky: #0d5f8d;
         --geofs-ext-radar-bg: #ffffff;
@@ -1599,8 +1603,8 @@ export class AnchorManager {
         color: #ff6b6b;
       }
       #flightDataDisplay.geofs-ext-hud .unified-tab.is-drag-over {
-        border-color: #22d3ee;
-        box-shadow: 0 0 6px rgba(34, 211, 238, 0.45);
+        border-color: var(--geofs-ext-sky);
+        box-shadow: 0 0 6px rgba(0, 187, 255, 0.45);
       }
       #flightDataDisplay.geofs-ext-hud .unified-tab.is-tab-dragging {
         opacity: 0.5;
@@ -1614,7 +1618,7 @@ export class AnchorManager {
         background: var(--geofs-ext-accent);
         border-color: var(--geofs-ext-accent);
         border-radius: 15px;
-        color: #ffffff;
+        color: var(--geofs-ext-accent-fg);
       }
       #flightDataDisplay.geofs-ext-hud .geofs-ext-hud-add {
         flex: 0 0 auto;
@@ -1650,7 +1654,7 @@ export class AnchorManager {
         padding: 6px;
         border: 1px solid var(--geofs-ext-border);
         border-radius: 8px;
-        background: rgba(17, 19, 24, 0.96);
+        background: var(--geofs-ext-bg);
         cursor: default !important;
       }
       #flightDataDisplay.geofs-ext-hud .geofs-ext-hud-menu * {
@@ -1687,7 +1691,7 @@ export class AnchorManager {
         text-overflow: ellipsis;
       }
       .geofs-ext-hud-menu-name:hover {
-        color: #22d3ee;
+        color: var(--geofs-ext-sky);
       }
       .geofs-ext-hud-menu-actions {
         display: inline-flex;
@@ -1700,22 +1704,22 @@ export class AnchorManager {
         gap: 4px;
       }
       .geofs-ext-hud-menu-chip {
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--geofs-ext-surface);
         color: var(--geofs-ext-fg);
-        border: 1px solid rgba(255, 255, 255, 0.16);
+        border: 1px solid var(--geofs-ext-border);
         border-radius: 4px;
         padding: 2px 5px;
         font-size: 9px;
         font-weight: 700;
       }
       .geofs-ext-hud-menu-chip.is-active {
-        border-color: #10b981;
-        color: #10b981;
+        border-color: var(--geofs-ext-accent);
+        color: var(--geofs-ext-accent);
       }
       .geofs-ext-hud-menu-reset {
         background: transparent;
         color: var(--geofs-ext-muted);
-        border: 1px solid rgba(255, 255, 255, 0.14);
+        border: 1px solid var(--geofs-ext-border);
         border-radius: 4px;
         padding: 3px 6px;
         font-size: 9.5px;

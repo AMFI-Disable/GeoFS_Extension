@@ -140,7 +140,7 @@ async function refreshUpdateBadge(): Promise<void> {
   })?.action;
   if (!action?.setBadgeText) return;
   if (info) {
-    await action.setBadgeBackgroundColor?.({ color: '#10b981' });
+    await action.setBadgeBackgroundColor?.({ color: '#0d5f8d' });
     await action.setBadgeText({ text: 'UPD' });
   } else {
     await action.setBadgeText({ text: '' });
