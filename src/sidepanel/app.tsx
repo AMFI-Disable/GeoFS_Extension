@@ -26,6 +26,7 @@ import {
 } from '../shared/simbrief';
 import { getCachedUpdateInfo, type UpdateInfo } from '../shared/update-checker';
 import { ApPpPanel } from './ap-pp-panel';
+import { RadarPanel } from './radar-panel';
 import {
   DEFAULT_SETTINGS,
   type ExtensionSettings,
@@ -50,10 +51,10 @@ export function App() {
   const [simbriefUser, setSimbriefUser] = useState('');
   const [simbriefOfp, setSimbriefOfp] = useState<SimBriefOfp | null>(null);
   const [simbriefStatus, setSimbriefStatus] = useState('');
-  const [panelTab, setActiveTab] = useState<'ap-pp' | 'realism' | 'diag'>(() => {
+  const [panelTab, setActiveTab] = useState<'ap-pp' | 'radar' | 'realism' | 'diag'>(() => {
     try {
       const saved = localStorage.getItem('geofs_ext_sidepanel_tab');
-      return saved === 'realism' || saved === 'diag' ? saved : 'ap-pp';
+      return saved === 'radar' || saved === 'realism' || saved === 'diag' ? saved : 'ap-pp';
     } catch {
       return 'ap-pp';
     }
@@ -266,7 +267,14 @@ export function App() {
           class={`tab-btn ${panelTab === 'ap-pp' ? 'active' : ''}`}
           onClick={() => setActiveTab('ap-pp')}
         >
-          AP++ (Beta)
+          AP++
+        </button>
+        <button
+          type="button"
+          class={`tab-btn ${panelTab === 'radar' ? 'active' : ''}`}
+          onClick={() => setActiveTab('radar')}
+        >
+          Radar
         </button>
         <button
           type="button"
@@ -283,6 +291,16 @@ export function App() {
           OP / Diag
         </button>
       </div>
+
+      {panelTab === 'radar' && (
+        <RadarPanel
+          radar={live?.radar}
+          ownAltFt={live?.altitude ?? 0}
+          ownKias={live?.kias ?? 0}
+          ownName={live?.aircraftProfile?.name ?? 'Ownship'}
+          simbriefOfp={simbriefOfp}
+        />
+      )}
 
       {panelTab === 'ap-pp' && (
         <>

@@ -406,17 +406,38 @@
                     const linesHtml = runwayLines
                         .map((r) => `<line x1="${r.x1.toFixed(1)}" y1="${r.y1.toFixed(1)}" x2="${r.x2.toFixed(1)}" y2="${r.y2.toFixed(1)}" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>`)
                         .join('');
+                    const trafficParts = [];
+                    let trafficCount = 0;
+                    const mpUsers = window.geofs?.multiplayer?.users;
+                    if (mpUsers && Number.isFinite(lat) && Number.isFinite(lon)) {
+                        const cosLat = Math.max(0.1, Math.cos((lat * Math.PI) / 180));
+                        const scale = 6;
+                        for (const u of Object.values(mpUsers)) {
+                            const co = u?.lla || u?.lastUpdate?.co;
+                            if (!Array.isArray(co) || co.length < 2) continue;
+                            const tx = (Number(co[1]) - lon) * 60 * cosLat * scale;
+                            const ty = -(Number(co[0]) - lat) * 60 * scale;
+                            const distNm = Math.hypot(tx, ty) / scale;
+                            if (!Number.isFinite(distNm) || distNm > 20 || distNm < 0.01) continue;
+                            trafficCount++;
+                            const uAltFt = Number.isFinite(co[2]) ? Number(co[2]) * 3.28084 : (v.altitude || 0);
+                            const rel = Math.round((uAltFt - (v.altitude || 0)) / 100);
+                            trafficParts.push(`<g transform="translate(${tx.toFixed(1)},${ty.toFixed(1)})"><polygon points="0,-3 3,0 0,3 -3,0" fill="#f59e0b"/><text x="4" y="2.5" font-size="6" fill="#fbbf24" font-weight="700">${rel >= 0 ? '+' : ''}${rel}</text></g>`);
+                        }
+                    }
                     const hdg = Number.isFinite(v.heading360) ? v.heading360 : 0;
                     svg.innerHTML = `
                         <circle cx="0" cy="0" r="30" fill="none" stroke="rgba(148,163,184,0.22)" stroke-width="0.8" stroke-dasharray="2,2"/>
                         <circle cx="0" cy="0" r="60" fill="none" stroke="rgba(148,163,184,0.14)" stroke-width="0.8"/>
                         ${linesHtml}
+                        ${trafficParts.join('')}
                         <g transform="rotate(${hdg.toFixed(1)})">
                             <polygon points="0,-6 4,5 0,2 -4,5" fill="#10b981"/>
                         </g>
                     `;
                     if (info) {
-                        info.textContent = nearestIcao ? `${nearestIcao} · ${nearestDistNm.toFixed(1)} NM` : 'No runway within 20 NM';
+                        const rwTxt = nearestIcao ? `${nearestIcao} · ${nearestDistNm.toFixed(1)} NM` : 'No runway < 20 NM';
+                        info.textContent = trafficCount > 0 ? `${rwTxt} · ${trafficCount} TFC` : rwTxt;
                     }
                 }
             }

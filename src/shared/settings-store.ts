@@ -15,6 +15,33 @@ import {
   type ScriptConfig
 } from '../types/settings';
 
+export interface RadarTraffic {
+  id: string;
+  callsign: string;
+  aircraft: string;
+  lat: number;
+  lon: number;
+  altFt: number;
+  heading: number;
+  speedKts: number;
+  vsFpm: number;
+}
+
+export interface RadarRunway {
+  icao: string;
+  t1: [number, number];
+  t2: [number, number];
+}
+
+export interface RadarSnapshot {
+  lat: number;
+  lon: number;
+  heading: number;
+  groundSpeed: number;
+  traffic: RadarTraffic[];
+  runways: RadarRunway[];
+}
+
 export interface LiveTelemetrySummary {
   simMajor?: number;
   aircraftProfile?: AircraftProfile | null;
@@ -31,6 +58,7 @@ export interface LiveTelemetrySummary {
   checklistPhase?: string;
   checklistPending?: number;
   apPp?: ApPpSnapshot | null;
+  radar?: RadarSnapshot | null;
 }
 
 export interface DiagEntry {

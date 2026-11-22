@@ -12,6 +12,7 @@ import {
   resolveEffectiveOs,
   resolveEffectiveSimRemaps
 } from '../core/keyboard-translator';
+import { downloadFlightCardPng } from '../core/flight-card';
 import { landingReplayCsv } from '../core/landing-replay';
 import { formatLogbookCsv, triggerDownload } from '../core/logbook-export';
 import { getAllCatalogAircraft, type StaticAircraftSpec } from '../core/sim-adapter';
@@ -1308,6 +1309,13 @@ export function App() {
                         <td>{rec.replay?.length ?? 0}</td>
                         <td>
                           <div class="chip-group">
+                            <button
+                              type="button"
+                              class="chip-btn"
+                              onClick={() => downloadFlightCardPng(rec)}
+                            >
+                              PNG
+                            </button>
                             <button
                               type="button"
                               class="chip-btn"
