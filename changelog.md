@@ -5,7 +5,27 @@
 
 ---
 
-## [Unreleased]
+## [0.3.0] - 5-Category Architecture, Community Integrations & AP++
+
+> [!CAUTION]
+> **Educational And Fair-Play Disclaimer**. Use this extension for education and single-player simulation. Respect GeoFS subscriptions, ad-reward entitlements, multiplayer rules, and access controls.
+
+### Changed
+
+- Organized the extension into **5 categories** (*Flight Control & Avionics*, *Flight Deck & Operations*, *Environment & Visuals*, *Immersion & Failures*, and *Utilities & QoL*) with Airliner IFR and VFR/Glider presets in the Popup and Full Settings.
+- Split `RealismPackModule` into focused **Visuals & Lighting** (`visuals-lighting`, `LIGHTS` HUD tab), **Sim Utilities** (`sim-utilities`), and **Realism Pack** (`realism-pack`) modules, and grouped Realism/Visual/Utility toggles in Options and the Side Panel.
+- Removed redundant HUD tabs (`FAILS`, `FPV`, `OP ENG`) where dedicated pills, widgets, or top-bar controls already exist.
+- Integrated **AP++** (`autopilot-pp`) with ICAO Direct/Parallel/Teardrop holds + WCA, Rotorcraft Auto-Hover & SAS, and exponential Autoland flare.
+- Added **1–5 Star Ratings**, **Authentic vs. Practice** flight session tracking, and phase-by-phase critique in `#statsCard`, `LAND` HUD tab, Options Logbook, and CSV/JSON exports.
+- Added **Visuals & Lighting** (aircraft ground headlights, runway glow, opt-in OSM taxiway lights, Night VFR LiDAR, Wind & Thermals), **Generic GPWS + V-Speed Takeoff Callouts**, **METAR & MINI-MAP** in `INFO`, **Gate Spawner** (`GATES`), **FSX Slew Mode** (`Shift+Y`), and **Middle-Click Camera Reset**.
+
+### Fixed
+
+- Connected `AutopilotPlusModule` (`AP++`) directly to `window.geofs.autopilot.turnOn()` / `turnOff()` / `setCourse()` / `setAltitude()`, automatically yielding native autopilot whenever custom PID modes (`HOLD`, `VNAV`, `FLCH`, `HOVER`) are active, and routed Side Panel commands to the selected GeoFS tab.
+
+---
+
+## [0.2.1] - Unification Polish And Verification Fixes
 
 ### Added
 
