@@ -67,5 +67,24 @@ export const siteConfig = {
     "Chrome, Edge, or Brave (Manifest V3)",
     "Node.js 20+ (to build from source)",
     "Educational & single-player simulation use"
+  ],
+  "hubName": "AMFI Hangar",
+  "hubHash": "hangar",
+  "previewTabs": [
+    {
+      "tab": "Cockpit HUD",
+      "title": "Flight Path Vector & PFD",
+      "body": "Projects true ECEF velocity vectors, airspeed, attitude, and wind telemetry in native dark-glass panels."
+    },
+    {
+      "tab": "Autothrottle",
+      "title": "Closed-Loop PID Speed",
+      "body": "Holds target IAS/Mach with automated retard logic during landing flare on GeoFS V3.9 & V4.0."
+    },
+    {
+      "tab": "Live Toggles",
+      "title": "Zero-Reload Modules",
+      "body": "Enable or disable Realism Pack, Fuel Simulator, Failures, and Checklists mid-flight from the popup."
+    }
   ]
 } as const;
