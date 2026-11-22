@@ -2,7 +2,7 @@ export const SETTING_TIPS: Record<string, string> = {
   // Display & UI
   calibratorPreset:
     'Automatically sizes the in-game cockpit panels to fit your screen—including when you move GeoFS onto an external monitor.',
-  themeMode: 'Matches GeoFS dark glass panels by default, or lets you force Dark or Light mode.',
+  themeMode: 'Auto adapts the in-game HUD to GeoFS day/night time (white by day, black at night) and extension pages to your OS theme, or lets you force Dark or Light mode.',
   showStartupDiagnostics: 'Shows a brief notification in GeoFS when the extension finishes loading.',
   sidePanelAutoTelemetry: 'Keeps the Chrome Side Panel updated with your live speed, altitude, and fuel while you fly.',
   hudPositionFallback:

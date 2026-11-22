@@ -424,18 +424,18 @@ export function RadarPanel({
           {/* Runways & extended final approach cones */}
           {projected.runways.map((rw, idx) => (
             <g key={`${rw.icao}-${idx}`}>
-              <line x1={rw.ext1.x} y1={rw.ext1.y} x2={rw.p1.x} y2={rw.p1.y} stroke="rgba(56,189,248,0.28)" stroke-width="0.9" stroke-dasharray="3,2" />
-              <line x1={rw.p2.x} y1={rw.p2.y} x2={rw.ext2.x} y2={rw.ext2.y} stroke="rgba(56,189,248,0.28)" stroke-width="0.9" stroke-dasharray="3,2" />
-              <line x1={rw.p1.x} y1={rw.p1.y} x2={rw.p2.x} y2={rw.p2.y} stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
+              <line x1={rw.ext1.x} y1={rw.ext1.y} x2={rw.p1.x} y2={rw.p1.y} stroke="rgba(0,187,255,0.28)" stroke-width="0.9" stroke-dasharray="3,2" />
+              <line x1={rw.p2.x} y1={rw.p2.y} x2={rw.ext2.x} y2={rw.ext2.y} stroke="rgba(0,187,255,0.28)" stroke-width="0.9" stroke-dasharray="3,2" />
+              <line x1={rw.p1.x} y1={rw.p1.y} x2={rw.p2.x} y2={rw.p2.y} stroke="#00bbff" stroke-width="2" stroke-linecap="round" />
             </g>
           ))}
 
-          {/* SimBrief LNAV route overlay */}
+          {/* SimBrief LNAV route overlay (GeoFS Yellow #ffc107) */}
           {projected.routePts.length > 1 && (
             <polyline
               fill="none"
-              stroke="#e879f9"
-              stroke-width="1.2"
+              stroke="#ffc107"
+              stroke-width="1.4"
               stroke-dasharray="4,2"
               points={projected.routePts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}
             />
@@ -443,8 +443,8 @@ export function RadarPanel({
           {projected.routePts.map((w, i) =>
             Math.abs(w.x) <= 115 && Math.abs(w.y) <= 115 ? (
               <g key={`${w.ident}-${i}`} transform={`translate(${w.x.toFixed(1)},${w.y.toFixed(1)})`}>
-                <polygon points="0,-2.5 2.5,0 0,2.5 -2.5,0" fill="#e879f9" />
-                <text x="4" y="2" font-size="5.5" fill="#f0abfc">{w.ident}</text>
+                <circle cx="0" cy="0" r="2.2" fill="#ffc107" />
+                <text x="4" y="2" font-size="5.5" fill="#ffc107" font-weight="700">{w.ident}</text>
               </g>
             ) : null
           )}
@@ -454,18 +454,18 @@ export function RadarPanel({
             <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={s.color} stroke-width="1.4" opacity="0.85" />
           ))}
 
-          {/* Traffic targets (GeoFS MP = cyan, ADS-B = gold, Relay = green, Watched Friend = magenta) */}
+          {/* Traffic targets (GeoFS MP = #00bbff, ADS-B = neutral gray, Relay = #0d5f8d, Pinned Friend = #ffc107) */}
           {projected.traffic.map((t) => {
             if (Math.abs(t.x) > 116 || Math.abs(t.y) > 116) return null;
             const isFriend = watchlist.includes(t.callsign.toUpperCase());
             const baseColor = isFriend
-              ? '#ec4899'
+              ? '#ffc107'
               : t.source === 'adsb'
-                ? '#facc15'
+                ? '#9e9e9e'
                 : t.source === 'relay'
-                  ? '#4ade80'
-                  : '#22d3ee';
-            const color = t.tcas === 'RA' ? '#ef4444' : t.tcas === 'TA' ? '#f59e0b' : t.id === selectedId ? '#ffffff' : baseColor;
+                  ? '#0d5f8d'
+                  : '#00bbff';
+            const color = t.tcas === 'RA' ? '#d50000' : t.tcas === 'TA' ? '#ffc107' : t.id === selectedId ? '#ffffff' : baseColor;
             const arrow = t.vsFpm > 200 ? '↑' : t.vsFpm < -200 ? '↓' : '';
             return (
               <g key={t.id} style="cursor:pointer;" onClick={() => setSelectedId(t.id)}>
@@ -476,9 +476,9 @@ export function RadarPanel({
                   fill={color}
                 />
                 <text x={t.x + 4.5} y={t.y - 1} font-size="5.2" fill={color} font-weight="700">
-                  {isFriend ? '★ ' : ''}{t.callsign.slice(0, 8)}
+                  {t.callsign.slice(0, 8)}
                 </text>
-                <text x={t.x + 4.5} y={t.y + 5.2} font-size="4.8" fill="#94a3b8">
+                <text x={t.x + 4.5} y={t.y + 5.2} font-size="4.8" fill="#9e9e9e">
                   {formatFl(t.altFt)}{arrow} {t.speedKts}kt
                 </text>
               </g>
@@ -488,7 +488,7 @@ export function RadarPanel({
           {/* Ownship icon */}
           {projected.ownPt && Math.abs(projected.ownPt.x) <= 116 && Math.abs(projected.ownPt.y) <= 116 && (
             <g transform={`translate(${projected.ownPt.x.toFixed(1)},${projected.ownPt.y.toFixed(1)}) rotate(${projected.useHdgUp ? 0 : radar?.heading ?? 0})`}>
-              <polygon points="0,-7 5,5 0,2 -5,5" fill="#10b981" stroke="#022c22" stroke-width="0.7" />
+              <polygon points="0,-7 5,5 0,2 -5,5" fill="#ffffff" stroke="#0d5f8d" stroke-width="0.8" />
             </g>
           )}
         </svg>
@@ -498,7 +498,7 @@ export function RadarPanel({
             {panCenter ? `PAN: ${panCenter.label}` : radar ? `OWN: ${formatFl(ownAltFt)} · ${ownKias}kt · ${radar.heading}°` : 'VIEW: KSFO'}
           </span>
           <span>
-            <span style="color:#22d3ee;">■ MP</span> · <span style="color:#facc15;">■ ADS-B</span> · <span style="color:#ec4899;">★ FRD</span> · {projected.traffic.length} TFC
+            <span style="color:#00bbff;">MP</span> · <span style="color:#9e9e9e;">ADS-B</span> · <span style="color:#ffc107;">PIN</span> · {projected.traffic.length} TFC
           </span>
         </div>
 
@@ -562,10 +562,10 @@ export function RadarPanel({
                   key={t.id}
                   type="button"
                   onClick={() => setSelectedId(t.id)}
-                  style={`display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:4px 6px;border-radius:4px;border:1px solid ${t.id === selectedId ? '#38bdf8' : 'rgba(148,163,184,0.18)'};background:rgba(255,255,255,0.03);color:inherit;font-size:10.5px;cursor:pointer;`}
+                  style={`display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:4px 6px;border-radius:4px;border:1px solid ${t.id === selectedId ? 'var(--geofs-sky)' : 'var(--border-soft)'};background:var(--surface-alt);color:inherit;font-size:10.5px;cursor:pointer;`}
                 >
                   <span style="font-weight:700;display:flex;align-items:center;gap:4px;">
-                    <span style={`color:${t.source === 'adsb' ? '#facc15' : t.source === 'relay' ? '#4ade80' : '#22d3ee'};`}>●</span>
+                    <span style={`color:${watchlist.includes(t.callsign.toUpperCase()) ? '#ffc107' : t.source === 'adsb' ? '#9e9e9e' : t.source === 'relay' ? '#0d5f8d' : '#00bbff'};`}>●</span>
                     {t.callsign}
                   </span>
                   <span style="color:var(--muted);">

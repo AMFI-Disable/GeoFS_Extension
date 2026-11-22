@@ -24,9 +24,9 @@ function pickDeterministicJoke(id: string): string {
 
 function buildCell(label: string, field: string): string {
   return `
-    <div style="min-width:0;overflow:hidden;padding:3px 4px;background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.22);border-radius:6px;">
-      <div style="font-size:8px;color:#9ca3af;letter-spacing:0.4px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</div>
-      <div data-field="${field}" style="font-size:11px;font-weight:700;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">--</div>
+    <div style="min-width:0;overflow:hidden;padding:2px 2px;">
+      <div style="font-size:8px;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));letter-spacing:0.5px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</div>
+      <div data-field="${field}" style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--geofs-ext-fg,#ffffff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">--</div>
     </div>
   `;
 }
@@ -48,28 +48,28 @@ export class InformationDisplayModule implements IModule {
 
   public init(context: ModuleContext): void {
     const root = document.createElement('div');
-    root.style.cssText = 'display:flex;flex-direction:column;gap:5px;width:100%;';
+    root.style.cssText = 'display:flex;flex-direction:column;gap:5px;width:100%;color:var(--geofs-ext-fg,#ffffff);';
     root.innerHTML = `
-      <div id="hud-ac-header" style="padding-bottom:6px;border-bottom:1px solid rgba(136,136,136,0.35);">
-        <div id="hud-ac-name" data-field="ac-name" style="font-size:11px;font-weight:700;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Loading Aircraft...</div>
+      <div id="hud-ac-header" style="padding-bottom:5px;border-bottom:1px solid var(--geofs-ext-divider,rgba(255,255,255,0.14));">
+        <div id="hud-ac-name" data-field="ac-name" style="font-size:11px;font-weight:700;color:var(--geofs-ext-fg,#ffffff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Loading Aircraft...</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:3px;">
-          <span id="hud-ac-id-badge" data-field="ac-id" style="display:inline-block;font-size:9px;padding:1px 5px;background:#dddddd;color:#000000;border-radius:3px;font-weight:800;white-space:nowrap;">ID: --</span>
-          <span data-field="ac-cat" style="font-size:9px;color:#aaaaaa;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">--</span>
+          <span id="hud-ac-id-badge" data-field="ac-id" style="display:inline-block;font-size:9px;padding:1px 5px;background:#0d5f8d;color:#ffffff;border-radius:2px;font-weight:700;white-space:nowrap;">ID: --</span>
+          <span data-field="ac-cat" style="font-size:9px;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">--</span>
         </div>
       </div>
-      <div class="hud-section-header" style="font-size:9px;font-weight:700;color:#aaaaaa;text-transform:uppercase;letter-spacing:0.6px;">Performance</div>
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;">
+      <div class="hud-section-header" style="font-size:8.5px;font-weight:700;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));text-transform:uppercase;letter-spacing:0.6px;">Performance</div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 8px;">
         ${buildCell('KTS KIAS', 'kias')}
         ${buildCell('FT ALT', 'alt')}
         ${buildCell('FPM V/S', 'vs')}
         ${buildCell('DEG HDG', 'hdg')}
-        <div style="grid-column:span 2;min-width:0;overflow:hidden;padding:3px 4px;background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.22);border-radius:6px;display:flex;justify-content:space-between;align-items:center;gap:6px;">
-          <span data-field="power-label" style="font-size:8px;color:#9ca3af;letter-spacing:0.4px;text-transform:uppercase;white-space:nowrap;">% THR</span>
-          <strong data-field="thr" style="font-size:11px;font-weight:700;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">--</strong>
+        <div style="grid-column:span 2;min-width:0;overflow:hidden;padding:3px 2px;border-top:1px solid var(--geofs-ext-divider,rgba(255,255,255,0.14));display:flex;justify-content:space-between;align-items:center;gap:6px;">
+          <span data-field="power-label" style="font-size:8px;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));letter-spacing:0.5px;text-transform:uppercase;white-space:nowrap;">% THR</span>
+          <strong data-field="thr" style="font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--geofs-ext-fg,#ffffff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">--</strong>
         </div>
       </div>
-      <div class="hud-section-header" style="font-size:9px;font-weight:700;color:#aaaaaa;text-transform:uppercase;letter-spacing:0.6px;margin-top:2px;">Additional Data</div>
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;">
+      <div class="hud-section-header" style="font-size:8.5px;font-weight:700;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));text-transform:uppercase;letter-spacing:0.6px;margin-top:1px;padding-top:3px;border-top:1px solid var(--geofs-ext-divider,rgba(255,255,255,0.14));">Additional Data</div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 8px;">
         ${buildCell('M MACH', 'mach')}
         ${buildCell('DEG AOA', 'aoa')}
         ${buildCell('G G-FORCE', 'g')}
@@ -77,29 +77,29 @@ export class InformationDisplayModule implements IModule {
         ${buildCell('KTS GS', 'gs')}
         ${buildCell('DEG GSLOPE', 'glideslope')}
       </div>
-      <div style="display:flex;justify-content:space-between;gap:6px;font-size:9px;color:#cccccc;padding-top:2px;border-top:1px solid rgba(136,136,136,0.25);">
-        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">FLAPS: <strong data-field="flaps">--</strong></span>
-        <span style="white-space:nowrap;">GEAR: <strong data-field="gear">--</strong></span>
-        <span style="white-space:nowrap;">BRK: <strong data-field="brk">--</strong></span>
+      <div style="display:flex;justify-content:space-between;gap:6px;font-size:9px;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));padding-top:4px;border-top:1px solid var(--geofs-ext-divider,rgba(255,255,255,0.14));">
+        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">FLAPS: <strong data-field="flaps" style="color:var(--geofs-ext-fg,#ffffff);">--</strong></span>
+        <span style="white-space:nowrap;">GEAR: <strong data-field="gear" style="color:var(--geofs-ext-fg,#ffffff);">--</strong></span>
+        <span style="white-space:nowrap;">BRK: <strong data-field="brk" style="color:var(--geofs-ext-fg,#ffffff);">--</strong></span>
       </div>
-      <div data-field="rotor-torque" hidden style="font-size:9px;color:#38bdf8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-      <div data-field="v-speeds" style="font-size:9px;color:#aaaaaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-      <div style="display:flex;gap:4px;padding-top:2px;border-top:1px solid rgba(136,136,136,0.25);">
-        <button type="button" data-toggle="metar" style="flex:1;background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(136,136,136,0.3);border-radius:4px;padding:2px 4px;font-size:8.5px;font-weight:700;cursor:pointer;">METAR</button>
-        <button type="button" data-toggle="minimap" style="flex:1;background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(136,136,136,0.3);border-radius:4px;padding:2px 4px;font-size:8.5px;font-weight:700;cursor:pointer;">MINI-MAP</button>
-        <button type="button" data-toggle="tug" style="flex:1;background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(136,136,136,0.3);border-radius:4px;padding:2px 4px;font-size:8.5px;font-weight:700;cursor:pointer;">TUG</button>
+      <div data-field="rotor-torque" hidden style="font-size:9px;color:var(--geofs-ext-sky,#00bbff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+      <div data-field="v-speeds" style="font-size:9px;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+      <div style="display:flex;gap:2px;padding-top:3px;border-top:1px solid var(--geofs-ext-divider,rgba(255,255,255,0.14));">
+        <button type="button" data-toggle="metar" style="flex:1;background:transparent;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));border:none;border-bottom:2px solid transparent;padding:3px 4px;font-size:8.5px;font-weight:700;cursor:pointer;">METAR</button>
+        <button type="button" data-toggle="minimap" style="flex:1;background:transparent;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));border:none;border-bottom:2px solid transparent;padding:3px 4px;font-size:8.5px;font-weight:700;cursor:pointer;">MINI-MAP</button>
+        <button type="button" data-toggle="tug" style="flex:1;background:transparent;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));border:none;border-bottom:2px solid transparent;padding:3px 4px;font-size:8.5px;font-weight:700;cursor:pointer;">TUG</button>
       </div>
-      <div data-panel="metar" hidden style="font-size:8.5px;line-height:1.35;color:#cbd5e1;background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.22);border-radius:6px;padding:4px 5px;word-break:break-word;">--</div>
-      <div data-panel="minimap" hidden style="background:rgba(2,6,23,0.75);border:1px solid rgba(136,136,136,0.25);border-radius:6px;padding:3px;">
-        <svg data-field="minimap-svg" viewBox="-90 -48 180 96" style="width:100%;height:90px;display:block;"></svg>
-        <div data-field="minimap-info" style="font-size:8px;color:#94a3b8;text-align:center;margin-top:2px;">No runway nearby</div>
+      <div data-panel="metar" hidden style="font-size:8.5px;line-height:1.35;color:var(--geofs-ext-fg,#ffffff);padding:4px 2px;word-break:break-word;">--</div>
+      <div data-panel="minimap" hidden style="background:var(--geofs-ext-radar-bg,#000000);border:1px solid var(--geofs-ext-divider,rgba(255,255,255,0.14));border-radius:6px;padding:3px;">
+        <svg data-field="minimap-svg" viewBox="-90 -48 180 96" style="width:100%;height:88px;display:block;"></svg>
+        <div data-field="minimap-info" style="font-size:8px;color:var(--geofs-ext-muted,rgba(255,255,255,0.58));text-align:center;margin-top:2px;">No runway nearby</div>
       </div>
-      <div data-panel="tug" hidden style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;background:rgba(255,255,255,0.03);border:1px solid rgba(136,136,136,0.22);border-radius:6px;padding:4px;">
-        <button type="button" data-push="left" style="background:rgba(255,255,255,0.08);color:#e2e8f0;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">L</button>
-        <button type="button" data-push="straight" style="background:rgba(255,255,255,0.08);color:#e2e8f0;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">BACK</button>
-        <button type="button" data-push="right" style="background:rgba(255,255,255,0.08);color:#e2e8f0;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">R</button>
-        <button type="button" data-push="off" style="background:rgba(239,68,68,0.2);color:#fca5a5;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">STOP</button>
-        <button type="button" data-walk-toggle style="background:rgba(56,189,248,0.16);color:#38bdf8;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;" title="Pre-Flight Walkaround (Shift+W)">WALK</button>
+      <div data-panel="tug" hidden style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:3px 0;">
+        <button type="button" data-push="left" style="background:var(--geofs-ext-divider,rgba(255,255,255,0.12));color:var(--geofs-ext-fg,#ffffff);border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">L</button>
+        <button type="button" data-push="straight" style="background:var(--geofs-ext-divider,rgba(255,255,255,0.12));color:var(--geofs-ext-fg,#ffffff);border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">BACK</button>
+        <button type="button" data-push="right" style="background:var(--geofs-ext-divider,rgba(255,255,255,0.12));color:var(--geofs-ext-fg,#ffffff);border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">R</button>
+        <button type="button" data-push="off" style="background:#d50000;color:#ffffff;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;">STOP</button>
+        <button type="button" data-walk-toggle style="background:#0d5f8d;color:#ffffff;border:none;border-radius:3px;padding:3px 2px;font-size:8px;font-weight:700;cursor:pointer;" title="Pre-Flight Walkaround (Alt+W)">WALK</button>
       </div>
     `;
 
@@ -127,8 +127,8 @@ export class InformationDisplayModule implements IModule {
         if (!panel || !btn) return;
         const open = idx === targetIdx ? nextOpen : false;
         panel.hidden = !open;
-        btn.style.color = open ? '#10b981' : '#9ca3af';
-        btn.style.borderColor = open ? '#10b981' : 'rgba(136,136,136,0.3)';
+        btn.style.color = open ? 'var(--geofs-ext-accent,#ffc107)' : 'var(--geofs-ext-muted,rgba(255,255,255,0.58))';
+        btn.style.borderBottomColor = open ? 'var(--geofs-ext-accent,#ffc107)' : 'transparent';
       });
     };
     metarBtn?.addEventListener('click', () => toggleDrawer(0));
@@ -141,8 +141,8 @@ export class InformationDisplayModule implements IModule {
         root.querySelectorAll<HTMLButtonElement>('[data-push]').forEach((b) => {
           const isStop = b.dataset.push === 'off';
           const isActive = !isStop && b.dataset.push === mode;
-          b.style.outline = isActive ? '1px solid #38bdf8' : 'none';
-          b.style.color = isStop ? '#fca5a5' : isActive ? '#38bdf8' : '#e2e8f0';
+          b.style.outline = isActive ? '1px solid #ffc107' : 'none';
+          b.style.color = isStop ? '#ffffff' : isActive ? '#ffc107' : 'var(--geofs-ext-fg,#ffffff)';
         });
         window.dispatchEvent(new CustomEvent('geofs-ext:pushback', { detail: { mode } }));
       });
@@ -169,26 +169,27 @@ export class InformationDisplayModule implements IModule {
         if (!ac.isDynamic) {
           nameEl.textContent = ac.name;
           nameEl.title = ac.name;
-          badgeEl.style.background = '#dddddd';
-          badgeEl.style.color = '#000000';
+          badgeEl.style.background = '#0d5f8d';
+          badgeEl.style.color = '#ffffff';
           badgeEl.textContent = `REG: ${ac.id}`;
         } else if (!isGenericUnknown) {
           nameEl.textContent = ac.name;
           nameEl.title = `${ac.name} (Dynamic Profile)`;
-          badgeEl.style.background = '#38bdf8';
+          badgeEl.style.background = '#00bbff';
           badgeEl.style.color = '#000000';
           badgeEl.textContent = `AUTO: ${ac.id}`;
         } else {
           const joke = pickDeterministicJoke(ac.id);
           nameEl.textContent = `${joke} (${ac.name})`;
           nameEl.title = `${joke} (${ac.name})`;
-          badgeEl.style.background = '#94a3b8';
-          badgeEl.style.color = '#000000';
+          badgeEl.style.background = 'var(--geofs-ext-surface)';
+          badgeEl.style.color = 'var(--geofs-ext-fg)';
           badgeEl.textContent = `ID: ${ac.id}`;
         }
       } else if (nameEl && badgeEl) {
         nameEl.textContent = 'No Aircraft';
-        badgeEl.style.background = '#94a3b8';
+        badgeEl.style.background = 'var(--geofs-ext-surface)';
+        badgeEl.style.color = 'var(--geofs-ext-fg)';
         badgeEl.textContent = 'ID: --';
       }
     }
@@ -205,7 +206,7 @@ export class InformationDisplayModule implements IModule {
     this.setText('mach', telemetry.mach.toFixed(2));
     this.setText('alt', `${Math.round(telemetry.altitude).toLocaleString()}`);
 
-    const vsColor = telemetry.vs > 100 ? '#22c55e' : telemetry.vs < -1000 ? '#ef4444' : '#ffffff';
+    const vsColor = telemetry.vs > 100 ? '#16a34a' : telemetry.vs < -1000 ? '#d50000' : 'var(--geofs-ext-fg)';
     this.setText('vs', `${Math.round(telemetry.vs)}`, vsColor);
 
     this.setText('hdg', `${Math.round(telemetry.heading).toString().padStart(3, '0')}°`);
@@ -216,15 +217,15 @@ export class InformationDisplayModule implements IModule {
       telemetry.glideslopeDeviation === undefined ? '--' : `${telemetry.glideslopeDeviation.toFixed(1)}°`
     );
 
-    const aoaColor = telemetry.aoa > 16 ? '#ef4444' : telemetry.aoa > 12 ? '#eab308' : '#ffffff';
+    const aoaColor = telemetry.aoa > 16 ? '#d50000' : telemetry.aoa > 12 ? '#d97706' : 'var(--geofs-ext-fg)';
     this.setText('aoa', `${telemetry.aoa.toFixed(1)}°`, aoaColor);
 
-    const gColor = telemetry.gForce > 3 || telemetry.gForce < -1 ? '#ef4444' : '#ffffff';
+    const gColor = telemetry.gForce > 3 || telemetry.gForce < -1 ? '#d50000' : 'var(--geofs-ext-fg)';
     this.setText('g', telemetry.gForce.toFixed(1), gColor);
 
     this.setText('flaps', `${telemetry.flapsTarget}/${ac?.maxFlaps ?? 0}`);
-    this.setText('gear', telemetry.gearDown ? 'DOWN' : 'UP', telemetry.gearDown ? '#22c55e' : '#ffffff');
-    this.setText('brk', telemetry.parkingBrake ? 'PARK' : 'OFF', telemetry.parkingBrake ? '#eab308' : '#ffffff');
+    this.setText('gear', telemetry.gearDown ? 'DOWN' : 'UP', telemetry.gearDown ? '#16a34a' : 'var(--geofs-ext-fg)');
+    this.setText('brk', telemetry.parkingBrake ? 'PARK' : 'OFF', telemetry.parkingBrake ? '#d97706' : 'var(--geofs-ext-fg)');
 
     const vSpeedsText = formatVSpeeds(ac?.vSpeeds, ac?.machSpeeds);
     this.setText('v-speeds', vSpeedsText);
@@ -246,7 +247,7 @@ export class InformationDisplayModule implements IModule {
 
     const rev = telemetry.reverserActive ? '[REV] ' : '';
     const thrText = telemetry.throttles.map((t) => `${Math.round(t * 100)}%`).join('/');
-    this.setText('thr', `${rev}${thrText}`, telemetry.reverserActive ? '#f97316' : '#ffffff');
+    this.setText('thr', `${rev}${thrText}`, telemetry.reverserActive ? '#d97706' : 'var(--geofs-ext-fg)');
     this.updateMetarAndMinimap(telemetry);
   }
 
@@ -258,8 +259,8 @@ export class InformationDisplayModule implements IModule {
       tugBtn.hidden = airborne;
       if (airborne && tugPanel && !tugPanel.hidden) {
         tugPanel.hidden = true;
-        tugBtn.style.color = '#9ca3af';
-        tugBtn.style.borderColor = 'rgba(136,136,136,0.3)';
+        tugBtn.style.color = 'var(--geofs-ext-muted)';
+        tugBtn.style.borderBottomColor = 'transparent';
       }
     }
 

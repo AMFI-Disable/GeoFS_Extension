@@ -1437,16 +1437,24 @@ export class AnchorManager {
         --geofs-ext-scale: 1;
         --geofs-ext-bg: rgba(0, 0, 0, 0.8);
         --geofs-ext-fg: #ffffff;
-        --geofs-ext-muted: rgba(255, 255, 255, 0.65);
+        --geofs-ext-muted: rgba(255, 255, 255, 0.58);
         --geofs-ext-border: #888888;
-        --geofs-ext-accent: #4caf50;
+        --geofs-ext-divider: rgba(255, 255, 255, 0.14);
+        --geofs-ext-accent: #ffc107;
+        --geofs-ext-blue: #0d5f8d;
+        --geofs-ext-sky: #00bbff;
+        --geofs-ext-radar-bg: #000000;
       }
       :root[data-geofs-ext-theme="light"] {
-        --geofs-ext-bg: rgba(248, 250, 252, 0.92);
-        --geofs-ext-fg: #0f172a;
-        --geofs-ext-muted: #475569;
-        --geofs-ext-border: #64748b;
-        --geofs-ext-accent: #16a34a;
+        --geofs-ext-bg: rgba(255, 255, 255, 0.92);
+        --geofs-ext-fg: #000000;
+        --geofs-ext-muted: rgba(0, 0, 0, 0.56);
+        --geofs-ext-border: rgba(0, 0, 0, 0.22);
+        --geofs-ext-divider: rgba(0, 0, 0, 0.12);
+        --geofs-ext-accent: #0d5f8d;
+        --geofs-ext-blue: #0d5f8d;
+        --geofs-ext-sky: #0d5f8d;
+        --geofs-ext-radar-bg: #ffffff;
       }
       html.geofs-ext-dragging,
       html.geofs-ext-dragging *,

@@ -1,50 +1,59 @@
 :root {
   color-scheme: dark;
-  --bg: #111318;
-  --surface: #181b21;
-  --surface-alt: #1f232b;
-  --fg: #f4f4f5;
-  --muted: #a1a1aa;
-  --border: rgba(255, 255, 255, 0.1);
-  --border-soft: rgba(255, 255, 255, 0.08);
-  --accent: #10b981;
-  --accent-strong: #34d399;
-  --warn: #f59e0b;
-  --danger: #ef4444;
-  --info: #22d3ee;
+  --bg: #111111;
+  --surface: #1a1a1a;
+  --surface-alt: #242424;
+  --fg: #ffffff;
+  --muted: rgba(255, 255, 255, 0.6);
+  --border: rgba(255, 255, 255, 0.14);
+  --border-soft: rgba(255, 255, 255, 0.09);
+  --accent: #0d5f8d;
+  --accent-strong: #ffc107;
+  --warn: #ffc107;
+  --danger: #d50000;
+  --info: #00bbff;
+  --geofs-blue: #0d5f8d;
+  --geofs-sky: #00bbff;
+  --geofs-yellow: #ffc107;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f4f4f5;
+  --bg: #f4f4f4;
   --surface: #ffffff;
-  --surface-alt: #e4e4e7;
-  --fg: #18181b;
-  --muted: #52525b;
-  --border: rgba(24, 24, 27, 0.14);
-  --border-soft: rgba(24, 24, 27, 0.08);
-  --accent: #059669;
-  --accent-strong: #047857;
+  --surface-alt: #eeeeee;
+  --fg: #000000;
+  --muted: rgba(0, 0, 0, 0.56);
+  --border: rgba(0, 0, 0, 0.16);
+  --border-soft: rgba(0, 0, 0, 0.1);
+  --accent: #0d5f8d;
+  --accent-strong: #0d5f8d;
   --warn: #d97706;
-  --danger: #dc2626;
-  --info: #0891b2;
+  --danger: #d50000;
+  --info: #0d5f8d;
+  --geofs-blue: #0d5f8d;
+  --geofs-sky: #0d5f8d;
+  --geofs-yellow: #ffc107;
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     color-scheme: light;
-    --bg: #f4f4f5;
+    --bg: #f4f4f4;
     --surface: #ffffff;
-    --surface-alt: #e4e4e7;
-    --fg: #18181b;
-    --muted: #52525b;
-    --border: rgba(24, 24, 27, 0.14);
-    --border-soft: rgba(24, 24, 27, 0.08);
-    --accent: #059669;
-    --accent-strong: #047857;
+    --surface-alt: #eeeeee;
+    --fg: #000000;
+    --muted: rgba(0, 0, 0, 0.56);
+    --border: rgba(0, 0, 0, 0.16);
+    --border-soft: rgba(0, 0, 0, 0.1);
+    --accent: #0d5f8d;
+    --accent-strong: #0d5f8d;
     --warn: #d97706;
-    --danger: #dc2626;
-    --info: #0891b2;
+    --danger: #d50000;
+    --info: #0d5f8d;
+    --geofs-blue: #0d5f8d;
+    --geofs-sky: #0d5f8d;
+    --geofs-yellow: #ffc107;
   }
 }
 

@@ -176,7 +176,7 @@ async function run() {
     assert.deepEqual(hudAudit.tabIds, ['tab-btn-info', 'tab-btn-checks', 'tab-btn-fuel', 'tab-btn-land', 'hud-tab-add-btn']);
     assert.deepEqual(hudAudit.headerChildIds, ['geofs-ext-hud-grip', 'hud-unified-tabs', 'geofs-ext-hud-min']);
     assert.equal(hudAudit.headerText.toUpperCase(), 'INFO×CHECKS×FUEL×LAND×+−', 'HUD header must contain only the 4 tab labels with close buttons, +, and minimize symbol (no title)');
-    assert.equal(hudAudit.bg, 'rgba(0, 0, 0, 0.8)');
+    assert.equal(hudAudit.bg, 'rgba(255, 255, 255, 0.92)');
     assert.equal(hudAudit.borderRadius, '15px');
     assert.equal(hudAudit.backdropFilter, 'none');
     assert(hudAudit.hudWidth >= 248 && hudAudit.hudWidth <= 255, `Expected 250px HUD width, got ${hudAudit.hudWidth}`);
@@ -659,13 +659,20 @@ async function run() {
     assert(fpvAudit.gsFont && fpvAudit.gsFont.includes('Roboto'), `Expected native Roboto font for Glideslope, got ${fpvAudit.gsFont}`);
     assert(fpvAudit.gsText && /^Glideslope\s+-?\d+\.\d+$/i.test(fpvAudit.gsText), `Expected legacy Glideslope readout, got ${fpvAudit.gsText}`);
 
-    // Verify Glideslope text adapts automatically to in-game night/twilight lighting for readability
+    // Verify Glideslope text & HUD panel adapt automatically to in-game night/twilight lighting for readability
     await simV3.evaluate(() => {
       window.weather = { ...(window.weather || {}), localTime: 22.5 };
     });
     await simV3.waitForFunction(() => {
       const span = document.querySelector('#flightDataDisplay0 span');
-      return span?.getAttribute('data-time-phase') === 'night' && getComputedStyle(span).color === 'rgb(255, 255, 255)';
+      const hud = document.getElementById('flightDataDisplay');
+      const hudStyle = hud ? getComputedStyle(hud) : null;
+      return (
+        span?.getAttribute('data-time-phase') === 'night' &&
+        getComputedStyle(span).color === 'rgb(255, 255, 255)' &&
+        hudStyle?.backgroundColor === 'rgba(0, 0, 0, 0.8)' &&
+        hudStyle?.color === 'rgb(255, 255, 255)'
+      );
     }, { timeout: 3000 });
 
     await simV3.evaluate(() => {
@@ -681,7 +688,14 @@ async function run() {
     });
     await simV3.waitForFunction(() => {
       const span = document.querySelector('#flightDataDisplay0 span');
-      return span?.getAttribute('data-time-phase') === 'day' && getComputedStyle(span).color === 'rgb(0, 0, 0)';
+      const hud = document.getElementById('flightDataDisplay');
+      const hudStyle = hud ? getComputedStyle(hud) : null;
+      return (
+        span?.getAttribute('data-time-phase') === 'day' &&
+        getComputedStyle(span).color === 'rgb(0, 0, 0)' &&
+        hudStyle?.backgroundColor === 'rgba(255, 255, 255, 0.92)' &&
+        hudStyle?.color === 'rgb(0, 0, 0)'
+      );
     }, { timeout: 3000 });
 
     // Verify FPV color coding does not lock red during normal -3000 fpm descent or ground AoA spikes, and turns red only on valid airborne stall

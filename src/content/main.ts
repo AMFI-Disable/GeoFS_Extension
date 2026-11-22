@@ -89,9 +89,19 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
           : settings.realismOptions
       });
 
+      let lastHudTheme: 'dark' | 'light' | null = null;
+      const syncHudTheme = (cfg: ExtensionSettings, isNight: boolean) => {
+        const nextTheme: 'dark' | 'light' =
+          cfg.themeMode === 'light' ? 'light' : cfg.themeMode === 'dark' ? 'dark' : isNight ? 'dark' : 'light';
+        if (nextTheme !== lastHudTheme) {
+          lastHudTheme = nextTheme;
+          anchors.setTheme(nextTheme);
+        }
+      };
+
       const applyGlobalVisuals = (cfg: ExtensionSettings) => {
-        // Keep native GeoFS dark translucent glass styling in auto/dark mode; allow explicit light theme.
-        anchors.setTheme(cfg.themeMode === 'light' ? 'light' : 'dark');
+        // In auto mode, the in-game HUD adapts dynamically to GeoFS day/night time (black at night, white by day).
+        syncHudTheme(cfg, sim.isNight());
         anchors.setCalibratorPreset(cfg.calibratorPreset);
         translator.updateConfig({
           enabled: cfg.simKeyTranslatorEnabled,
@@ -269,6 +279,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
       };
 
       bus.subscribe((telemetry) => {
+        syncHudTheme(settings, telemetry.isNight);
         manager.dispatchTelemetry(telemetry);
 
         if (telemetry.timestamp - lastRadarSyncMs >= 1000) {
