@@ -1,6 +1,6 @@
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +11,24 @@ const distDir = resolve(rootDir, 'dist');
 const harnessHtml = readFileSync(resolve(__dirname, 'mock-geofs-harness.html'), 'utf8');
 
 function findChromiumExecutable() {
-  return process.env.CHROME_BIN || '/usr/bin/chromium';
+  const candidates = [
+    process.env.CHROME_BIN,
+    (() => {
+      try {
+        return chromium.executablePath();
+      } catch {
+        return null;
+      }
+    })(),
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome'
+  ].filter(Boolean);
+
+  for (const path of candidates) {
+    if (existsSync(path)) return path;
+  }
+  return '/usr/bin/chromium';
 }
 
 async function assertNoHorizontalOverflow(page, label) {
