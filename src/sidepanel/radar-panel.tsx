@@ -16,6 +16,8 @@ interface RadarPanelProps {
   ownKias: number;
   ownName: string;
   simbriefOfp: SimBriefOfp | null;
+  fullTab?: boolean;
+  onPopOut?: () => void;
 }
 
 const RANGES_NM = [5, 15, 40, 100, 200] as const;
@@ -31,7 +33,7 @@ function formatFl(altFt: number): string {
   return `${Math.max(0, Math.round(altFt / 100)).toString().padStart(3, '0')}`;
 }
 
-export function RadarPanel({ radar, ownAltFt, ownKias, ownName, simbriefOfp }: RadarPanelProps) {
+export function RadarPanel({ radar, ownAltFt, ownKias, ownName, simbriefOfp, fullTab = false, onPopOut }: RadarPanelProps) {
   const [rangeNm, setRangeNm] = useState<number>(40);
   const [hdgUp, setHdgUp] = useState(false);
   const [filterText, setFilterText] = useState('');
@@ -164,11 +166,17 @@ export function RadarPanel({ radar, ownAltFt, ownKias, ownName, simbriefOfp }: R
   const hasRa = projected.alerts.some((a) => a.tcas === 'RA');
 
   return (
-    <div style="display:flex;flex-direction:column;gap:8px;">
+    <div
+      style={
+        fullTab
+          ? 'display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,1fr);gap:12px;align-items:start;'
+          : 'display:flex;flex-direction:column;gap:8px;'
+      }
+    >
       <div class="panel-card" style="padding:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:4px;flex-wrap:wrap;">
           <span class="section-heading" style="margin:0;">ATC Live Radar</span>
-          <div style="display:flex;gap:3px;align-items:center;">
+          <div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">
             {RANGES_NM.map((r) => (
               <button
                 key={r}
@@ -188,6 +196,17 @@ export function RadarPanel({ radar, ownAltFt, ownKias, ownName, simbriefOfp }: R
             >
               {hdgUp ? 'HDG' : 'N-UP'}
             </button>
+            {!fullTab && onPopOut && (
+              <button
+                type="button"
+                class="chip-btn"
+                style="padding:2px 5px;font-size:10px;"
+                title="Open full-screen ATC Radar tab"
+                onClick={onPopOut}
+              >
+                ↗
+              </button>
+            )}
           </div>
         </div>
 
@@ -201,7 +220,7 @@ export function RadarPanel({ radar, ownAltFt, ownKias, ownName, simbriefOfp }: R
 
         <svg
           viewBox="-120 -120 240 240"
-          style="width:100%;height:240px;display:block;background:#020617;border-radius:8px;border:1px solid rgba(56,189,248,0.25);"
+          style={`width:100%;height:${fullTab ? '520px' : '240px'};display:block;background:#020617;border-radius:8px;border:1px solid rgba(56,189,248,0.25);`}
         >
           {/* Range rings */}
           <circle cx="0" cy="0" r="36.6" fill="none" stroke="rgba(56,189,248,0.16)" stroke-width="0.7" stroke-dasharray="2,2" />
@@ -293,48 +312,50 @@ export function RadarPanel({ radar, ownAltFt, ownKias, ownName, simbriefOfp }: R
         </div>
       </div>
 
-      {selectedTraffic && (
-        <div class="panel-card" style="padding:8px;font-size:11px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <strong>{selectedTraffic.callsign} ({selectedTraffic.aircraft})</strong>
-            <button type="button" class="chip-btn" onClick={() => setSelectedId(null)}>✕</button>
-          </div>
-          <div class="muted-hint">
-            DIST {selectedTraffic.distNm.toFixed(1)} NM · BRG {Math.round(selectedTraffic.brgDeg)}° · ALT {selectedTraffic.altFt.toLocaleString()} ft · GS {selectedTraffic.speedKts} kt · HDG {selectedTraffic.heading}°
-          </div>
-        </div>
-      )}
-
-      <div class="panel-card" style="padding:8px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
-          <span class="section-heading" style="margin:0;">ATC Traffic Strip</span>
-          <input
-            type="text"
-            placeholder="Filter callsign..."
-            value={filterText}
-            onInput={(e) => setFilterText((e.target as HTMLInputElement).value)}
-            style="width:110px;padding:2px 6px;font-size:11px;"
-          />
-        </div>
-        {projected.traffic.length === 0 ? (
-          <div class="muted-hint" style="font-size:11px;">No multiplayer aircraft within 220 NM.</div>
-        ) : (
-          <div style="max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;">
-            {projected.traffic.slice(0, 20).map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setSelectedId(t.id)}
-                style={`display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:4px 6px;border-radius:4px;border:1px solid ${t.id === selectedId ? '#38bdf8' : 'rgba(148,163,184,0.18)'};background:rgba(255,255,255,0.03);color:inherit;font-size:10.5px;cursor:pointer;`}
-              >
-                <span style="font-weight:700;">{t.callsign}</span>
-                <span style="color:var(--muted);">
-                  {formatFl(t.altFt)} · {t.speedKts}kt · {t.distNm.toFixed(1)}NM
-                </span>
-              </button>
-            ))}
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        {selectedTraffic && (
+          <div class="panel-card" style="padding:8px;font-size:11px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <strong>{selectedTraffic.callsign} ({selectedTraffic.aircraft})</strong>
+              <button type="button" class="chip-btn" onClick={() => setSelectedId(null)}>✕</button>
+            </div>
+            <div class="muted-hint">
+              DIST {selectedTraffic.distNm.toFixed(1)} NM · BRG {Math.round(selectedTraffic.brgDeg)}° · ALT {selectedTraffic.altFt.toLocaleString()} ft · GS {selectedTraffic.speedKts} kt · HDG {selectedTraffic.heading}°
+            </div>
           </div>
         )}
+
+        <div class="panel-card" style="padding:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
+            <span class="section-heading" style="margin:0;">ATC Traffic Strip</span>
+            <input
+              type="text"
+              placeholder="Filter callsign..."
+              value={filterText}
+              onInput={(e) => setFilterText((e.target as HTMLInputElement).value)}
+              style="width:120px;padding:2px 6px;font-size:11px;"
+            />
+          </div>
+          {projected.traffic.length === 0 ? (
+            <div class="muted-hint" style="font-size:11px;">No multiplayer aircraft within 220 NM.</div>
+          ) : (
+            <div style={`max-height:${fullTab ? '430px' : '150px'};overflow-y:auto;display:flex;flex-direction:column;gap:3px;`}>
+              {projected.traffic.slice(0, fullTab ? 40 : 20).map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setSelectedId(t.id)}
+                  style={`display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:4px 6px;border-radius:4px;border:1px solid ${t.id === selectedId ? '#38bdf8' : 'rgba(148,163,184,0.18)'};background:rgba(255,255,255,0.03);color:inherit;font-size:10.5px;cursor:pointer;`}
+                >
+                  <span style="font-weight:700;">{t.callsign}</span>
+                  <span style="color:var(--muted);">
+                    {formatFl(t.altFt)} · {t.speedKts}kt · {t.distNm.toFixed(1)}NM
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

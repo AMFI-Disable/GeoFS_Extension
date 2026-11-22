@@ -51,8 +51,14 @@ export function App() {
   const [simbriefUser, setSimbriefUser] = useState('');
   const [simbriefOfp, setSimbriefOfp] = useState<SimBriefOfp | null>(null);
   const [simbriefStatus, setSimbriefStatus] = useState('');
+  const isFullTab =
+    typeof window !== 'undefined' &&
+    (new URLSearchParams(window.location.search).get('mode') === 'tab' || window.innerWidth >= 720);
+
   const [panelTab, setActiveTab] = useState<'ap-pp' | 'radar' | 'realism' | 'diag'>(() => {
     try {
+      const qTab = new URLSearchParams(window.location.search).get('tab');
+      if (qTab === 'ap-pp' || qTab === 'radar' || qTab === 'realism' || qTab === 'diag') return qTab;
       const saved = localStorage.getItem('geofs_ext_sidepanel_tab');
       return saved === 'radar' || saved === 'realism' || saved === 'diag' ? saved : 'ap-pp';
     } catch {
@@ -66,6 +72,15 @@ export function App() {
       // ignore storage errors
     }
   }, [panelTab]);
+
+  const openPopOutTab = (targetTab: 'ap-pp' | 'radar' | 'realism' | 'diag' = panelTab) => {
+    const rel = `sidepanel/index.html?tab=${targetTab}&mode=tab`;
+    if (typeof chrome !== 'undefined' && chrome.tabs?.create && chrome.runtime?.getURL) {
+      chrome.tabs.create({ url: chrome.runtime.getURL(rel) });
+    } else {
+      window.open(`?tab=${targetTab}&mode=tab`, '_blank', 'noopener');
+    }
+  };
   const [geofsTabs, setGeofsTabs] = useState<GeoFSTabInfo[]>([]);
   const [selectedTabId, setSelectedTabId] = useState<number | undefined>(undefined);
 
@@ -138,7 +153,7 @@ export function App() {
   const effectiveOs = resolveEffectiveOs(settings.keyboardOsProfile);
 
   return (
-    <div class="surface-shell">
+    <div class="surface-shell" style={isFullTab ? 'max-width:1240px;margin:0 auto;padding:14px 18px;' : undefined}>
       <div class="header">
         <div style="min-width:0">
           <div class="title">Cockpit Companion</div>
@@ -153,6 +168,16 @@ export function App() {
           {activeTab && !activeTab.active && (
             <button type="button" class="chip-btn" onClick={() => void focusGeoFSTab(activeTab.id)}>
               Focus
+            </button>
+          )}
+          {!isFullTab && (
+            <button
+              type="button"
+              class="btn-sm"
+              title="Open full-screen Cockpit & Radar tab"
+              onClick={() => openPopOutTab(panelTab)}
+            >
+              Pop Out ↗
             </button>
           )}
           <button type="button" class="btn-sm" onClick={() => openOptionsPage()}>
@@ -299,6 +324,8 @@ export function App() {
           ownKias={live?.kias ?? 0}
           ownName={live?.aircraftProfile?.name ?? 'Ownship'}
           simbriefOfp={simbriefOfp}
+          fullTab={isFullTab}
+          onPopOut={() => openPopOutTab('radar')}
         />
       )}
 
