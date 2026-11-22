@@ -39,13 +39,14 @@ export class ShortcutOverlay {
   public show(): void {
     const kb = this.getKeybinds() ?? {};
     const rows: Array<[string, string]> = [
-      ['Toggle Autothrottle', kb.toggleAutothrottle || 'Shift+A'],
-      ['Toggle OP Engines', kb.toggleOpEngines || 'Shift+O'],
-      ['Toggle Shared HUD', kb.toggleHud || 'Shift+H'],
-      ['Toggle Flight Path Vector', kb.toggleFpv || 'Shift+V'],
-      ['Open / Advance Checklists', kb.toggleChecklist || 'Shift+C'],
-      ['Toggle Landing Lights', kb.toggleLandingLights || 'Shift+L'],
-      ['Toggle FSX Slew Mode', kb.toggleSlewMode || 'Shift+Y'],
+      ['Toggle Autothrottle', kb.toggleAutothrottle || 'Alt+A'],
+      ['Toggle OP Engines', kb.toggleOpEngines || 'Alt+O'],
+      ['Toggle Shared HUD', kb.toggleHud || 'Alt+H'],
+      ['Toggle Flight Path Vector', kb.toggleFpv || 'Alt+F'],
+      ['Open / Advance Checklists', kb.toggleChecklist || 'Alt+C'],
+      ['Toggle Landing Lights', kb.toggleLandingLights || 'Alt+L'],
+      ['Toggle FSX Slew Mode', kb.toggleSlewMode || 'Alt+Y'],
+      ['Pre-Flight Walkaround', 'Alt+W'],
       ['Camera Reset', 'Double Middle-Click'],
       ['Shortcut Cheatsheet', '? (Shift+/)']
     ];

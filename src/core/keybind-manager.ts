@@ -114,6 +114,7 @@ const GEOFS_DEFAULT_KEYS: Record<string, string> = {
   f: 'Flaps',
   g: 'Landing Gear',
   m: 'Map',
+  o: 'Options / Settings',
   p: 'Pause Simulator',
   s: 'Toggle Sound',
   v: 'Cockpit View',
@@ -150,6 +151,7 @@ export function detectGeoFSKeyCollision(combo: string): string | null {
 export class KeybindManager {
   public readonly os: OsPlatform = detectOsPlatform();
   private bindings = new Map<string, { combo: string; handler: () => void }>();
+  private consumedCodes = new Set<string>();
   private listening = false;
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -161,15 +163,30 @@ export class KeybindManager {
     for (const entry of this.bindings.values()) {
       if (matchesKeyEvent(e, entry.combo)) {
         e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        if (e.code) this.consumedCodes.add(e.code);
         entry.handler();
         return;
       }
     }
   };
 
+  private onKeyPressOrUp = (e: KeyboardEvent) => {
+    if (!e.code || !this.consumedCodes.has(e.code)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    if (e.type === 'keyup') {
+      this.consumedCodes.delete(e.code);
+    }
+  };
+
   public start(): void {
     if (this.listening || typeof window === 'undefined') return;
-    window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('keydown', this.onKeyDown, { capture: true });
+    window.addEventListener('keypress', this.onKeyPressOrUp, { capture: true });
+    window.addEventListener('keyup', this.onKeyPressOrUp, { capture: true });
     this.listening = true;
   }
 
@@ -185,9 +202,12 @@ export class KeybindManager {
 
   public destroy(): void {
     if (this.listening && typeof window !== 'undefined') {
-      window.removeEventListener('keydown', this.onKeyDown);
+      window.removeEventListener('keydown', this.onKeyDown, { capture: true });
+      window.removeEventListener('keypress', this.onKeyPressOrUp, { capture: true });
+      window.removeEventListener('keyup', this.onKeyPressOrUp, { capture: true });
       this.listening = false;
     }
+    this.consumedCodes.clear();
     this.bindings.clear();
   }
 }

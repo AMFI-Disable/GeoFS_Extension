@@ -40,6 +40,7 @@ import {
   type GeoFSTabInfo,
   type LiveTelemetrySummary
 } from '../shared/settings-store';
+import { UpdateBanner } from '../shared/update-banner';
 import {
   checkForExtensionUpdate,
   getCachedUpdateInfo,
@@ -314,26 +315,7 @@ export function App() {
         </div>
       )}
 
-      {updateInfo && (
-        <div class="sync-banner" style="border-color:rgba(16,185,129,0.5);background:rgba(16,185,129,0.12);justify-content:space-between;align-items:flex-start;">
-          <div style="min-width:0;flex:1;">
-            <div>
-              A new release <strong>v{updateInfo.latestVersion}</strong> is available (current: v{updateInfo.currentVersion}).
-            </div>
-            {updateInfo.releaseNotes && (
-              <div class="muted-hint" style="margin-top:3px;font-size:11px;">{updateInfo.releaseNotes}</div>
-            )}
-          </div>
-          <a
-            href={updateInfo.downloadUrl}
-            target="_blank"
-            rel="noreferrer"
-            style="color:#10b981;font-weight:700;text-decoration:none;white-space:nowrap;margin-left:10px;"
-          >
-            Download Latest ZIP ↗
-          </a>
-        </div>
-      )}
+      <UpdateBanner info={updateInfo} showNotes />
 
       <div class={`sync-banner ${activeTab ? 'sync-banner--live' : ''}`}>
         <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">

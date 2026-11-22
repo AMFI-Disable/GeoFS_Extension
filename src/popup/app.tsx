@@ -15,6 +15,7 @@ import {
   subscribeSettings,
   type LiveTelemetrySummary
 } from '../shared/settings-store';
+import { UpdateBanner } from '../shared/update-banner';
 import { getCachedUpdateInfo, type UpdateInfo } from '../shared/update-checker';
 import { detectDisplayProfile } from '../shared/display-calibrator';
 import {
@@ -133,19 +134,7 @@ export function App() {
 
       {panelHint && <p class="reload-notice">{panelHint}</p>}
 
-      {updateInfo && (
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;margin-bottom:6px;border-radius:6px;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.4);font-size:11px;">
-          <span>Update <strong>v{updateInfo.latestVersion}</strong> available</span>
-          <a
-            href={updateInfo.downloadUrl}
-            target="_blank"
-            rel="noreferrer"
-            style="color:#10b981;font-weight:700;text-decoration:none;white-space:nowrap;"
-          >
-            Download ↗
-          </a>
-        </div>
-      )}
+      <UpdateBanner info={updateInfo} />
 
       {live ? (
         <div class="telemetry-strip" style="grid-template-columns:repeat(4,minmax(0,1fr))">

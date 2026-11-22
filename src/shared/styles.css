@@ -224,11 +224,38 @@ html[data-surface="options"] .title {
 
 .tabs {
   display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
   gap: 2px;
   padding: 2px;
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: 6px;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.update-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.42);
+  font-size: 11px;
+}
+
+.update-banner-link {
+  color: var(--accent-strong, #10b981);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 .tab-btn {

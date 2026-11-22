@@ -114,24 +114,26 @@ export class InformationDisplayModule implements IModule {
     const metarPanel = root.querySelector<HTMLDivElement>('[data-panel="metar"]');
     const mapPanel = root.querySelector<HTMLDivElement>('[data-panel="minimap"]');
     const tugPanel = root.querySelector<HTMLDivElement>('[data-panel="tug"]');
-    metarBtn?.addEventListener('click', () => {
-      if (!metarPanel) return;
-      metarPanel.hidden = !metarPanel.hidden;
-      metarBtn.style.color = metarPanel.hidden ? '#9ca3af' : '#10b981';
-      metarBtn.style.borderColor = metarPanel.hidden ? 'rgba(136,136,136,0.3)' : '#10b981';
-    });
-    mapBtn?.addEventListener('click', () => {
-      if (!mapPanel) return;
-      mapPanel.hidden = !mapPanel.hidden;
-      mapBtn.style.color = mapPanel.hidden ? '#9ca3af' : '#10b981';
-      mapBtn.style.borderColor = mapPanel.hidden ? 'rgba(136,136,136,0.3)' : '#10b981';
-    });
-    tugBtn?.addEventListener('click', () => {
-      if (!tugPanel) return;
-      tugPanel.hidden = !tugPanel.hidden;
-      tugBtn.style.color = tugPanel.hidden ? '#9ca3af' : '#10b981';
-      tugBtn.style.borderColor = tugPanel.hidden ? 'rgba(136,136,136,0.3)' : '#10b981';
-    });
+    const drawers: Array<[HTMLButtonElement | null, HTMLDivElement | null]> = [
+      [metarBtn, metarPanel],
+      [mapBtn, mapPanel],
+      [tugBtn, tugPanel]
+    ];
+    const toggleDrawer = (targetIdx: number) => {
+      const targetPanel = drawers[targetIdx]?.[1];
+      if (!targetPanel) return;
+      const nextOpen = targetPanel.hidden;
+      drawers.forEach(([btn, panel], idx) => {
+        if (!panel || !btn) return;
+        const open = idx === targetIdx ? nextOpen : false;
+        panel.hidden = !open;
+        btn.style.color = open ? '#10b981' : '#9ca3af';
+        btn.style.borderColor = open ? '#10b981' : 'rgba(136,136,136,0.3)';
+      });
+    };
+    metarBtn?.addEventListener('click', () => toggleDrawer(0));
+    mapBtn?.addEventListener('click', () => toggleDrawer(1));
+    tugBtn?.addEventListener('click', () => toggleDrawer(2));
     root.querySelectorAll<HTMLButtonElement>('[data-push]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const mode = (btn.dataset.push as 'off' | 'straight' | 'left' | 'right') || 'off';
@@ -249,6 +251,18 @@ export class InformationDisplayModule implements IModule {
   }
 
   private updateMetarAndMinimap(telemetry: FlightTelemetry): void {
+    const tugBtn = this.rootEl?.querySelector<HTMLButtonElement>('[data-toggle="tug"]');
+    const tugPanel = this.rootEl?.querySelector<HTMLDivElement>('[data-panel="tug"]');
+    const airborne = !telemetry.groundContact && telemetry.aglFeet > 50;
+    if (tugBtn) {
+      tugBtn.hidden = airborne;
+      if (airborne && tugPanel && !tugPanel.hidden) {
+        tugPanel.hidden = true;
+        tugBtn.style.color = '#9ca3af';
+        tugBtn.style.borderColor = 'rgba(136,136,136,0.3)';
+      }
+    }
+
     const metarPanel = this.rootEl?.querySelector<HTMLDivElement>('[data-panel="metar"]');
     const nearRunways = window.geofs?.runways?.nearRunways;
 

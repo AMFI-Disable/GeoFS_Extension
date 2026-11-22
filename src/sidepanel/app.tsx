@@ -24,6 +24,7 @@ import {
   loadCachedSimBriefOfp,
   type SimBriefOfp
 } from '../shared/simbrief';
+import { UpdateBanner } from '../shared/update-banner';
 import { getCachedUpdateInfo, type UpdateInfo } from '../shared/update-checker';
 import { ApPpPanel } from './ap-pp-panel';
 import { EfbPanel } from './efb-panel';
@@ -187,19 +188,7 @@ export function App() {
         </div>
       </div>
 
-      {updateInfo && (
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;margin-bottom:8px;border-radius:6px;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.4);font-size:11px;">
-          <span>Update <strong>v{updateInfo.latestVersion}</strong> available</span>
-          <a
-            href={updateInfo.downloadUrl}
-            target="_blank"
-            rel="noreferrer"
-            style="color:#10b981;font-weight:700;text-decoration:none;white-space:nowrap;"
-          >
-            Download ↗
-          </a>
-        </div>
-      )}
+      <UpdateBanner info={updateInfo} />
 
       {effectiveOs === 'mac' && settings.macKeyboardType === null && (
         <div class="panel-card" style="border-color:var(--accent)">

@@ -60,7 +60,7 @@ export class SimUtilitiesModule implements IModule {
     this.unbindSlewKey =
       context.keybinds?.register?.(
         'utilities-slew-toggle',
-        context.getSettings().keybindings?.toggleSlewMode ?? 'Shift+Y',
+        context.getSettings().keybindings?.toggleSlewMode ?? 'Alt+Y',
         () => {
           const current = context.getSettings().realismOptions ?? {};
           const nextOn = !isSlewEnabled(current);
@@ -70,7 +70,7 @@ export class SimUtilitiesModule implements IModule {
       ) ?? null;
 
     this.unbindWalkKey =
-      context.keybinds?.register?.('utilities-walkaround-toggle', 'Shift+W', () => {
+      context.keybinds?.register?.('utilities-walkaround-toggle', 'Alt+W', () => {
         const on = this.walkaround.toggle();
         this.ctx?.anchors.showToast(on ? 'Walkaround ON (WASD)' : 'Walkaround OFF');
       }) ?? null;
@@ -78,7 +78,7 @@ export class SimUtilitiesModule implements IModule {
 
   public onSettingsChange(settings: ExtensionSettings): void {
     const options = settings.realismOptions;
-    this.ctx?.keybinds?.updateCombo?.('utilities-slew-toggle', settings.keybindings?.toggleSlewMode ?? 'Shift+Y');
+    this.ctx?.keybinds?.updateCombo?.('utilities-slew-toggle', settings.keybindings?.toggleSlewMode ?? 'Alt+Y');
     this.cameraReset.setEnabled(isCameraResetEnabled(options));
     const slewEnabled = isSlewEnabled(options);
     if (slewEnabled && !this.slewMode.isActive()) {

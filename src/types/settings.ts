@@ -171,13 +171,13 @@ export const DEFAULT_EXTENSION_CONFIG: ExtensionConfig = {
   themeMode: 'auto',
   calibratorPreset: 'auto',
   keybindings: {
-    toggleAutothrottle: 'Shift+A',
-    toggleOpEngines: 'Shift+O',
-    toggleHud: 'Shift+H',
-    toggleFpv: 'Shift+F',
-    toggleChecklist: 'Shift+C',
-    toggleLandingLights: 'Shift+L',
-    toggleSlewMode: 'Shift+Y'
+    toggleAutothrottle: 'Alt+A',
+    toggleOpEngines: 'Alt+O',
+    toggleHud: 'Alt+H',
+    toggleFpv: 'Alt+F',
+    toggleChecklist: 'Alt+C',
+    toggleLandingLights: 'Alt+L',
+    toggleSlewMode: 'Alt+Y'
   },
   imageryProvider: 'native',
   customImageryUrl: '',

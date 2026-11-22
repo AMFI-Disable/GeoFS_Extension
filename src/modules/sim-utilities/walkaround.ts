@@ -86,7 +86,7 @@ export class WalkaroundController {
     }
     if (this.bannerEl) {
       const dist = Math.hypot(this.offsetX, this.offsetY).toFixed(0);
-      this.bannerEl.textContent = `WALKAROUND · DIST ${dist}m · EYE ${this.offsetZ.toFixed(1)}m · [WASD Move · Q/E Height · Shift+W Exit]`;
+      this.bannerEl.textContent = `WALKAROUND · DIST ${dist}m · EYE ${this.offsetZ.toFixed(1)}m · [WASD Move · Q/E Height · Alt+W Exit]`;
     }
   }
 
@@ -123,12 +123,15 @@ export class WalkaroundController {
   }
 
   private showBanner(): void {
-    if (this.bannerEl || typeof document === 'undefined' || !document.body) return;
-    const el = document.createElement('div');
-    el.id = 'geofs-ext-walkaround-banner';
+    if (typeof document === 'undefined' || !document.body) return;
+    let el = document.getElementById('geofs-ext-mode-banner') as HTMLDivElement | null;
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'geofs-ext-mode-banner';
+      document.body.appendChild(el);
+    }
     el.style.cssText =
-      'position:fixed;top:38px;left:10px;z-index:2147483640;padding:4px 8px;border-radius:4px;background:rgba(15,23,42,0.88);border:1px solid rgba(56,189,248,0.6);color:#38bdf8;font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;';
-    document.body.appendChild(el);
+      'position:fixed;top:8px;left:10px;z-index:2147483640;padding:4px 8px;border-radius:4px;background:rgba(15,23,42,0.88);border:1px solid rgba(56,189,248,0.6);color:#38bdf8;font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;';
     this.bannerEl = el;
   }
 
