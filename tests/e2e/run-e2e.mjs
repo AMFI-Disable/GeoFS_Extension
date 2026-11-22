@@ -881,7 +881,7 @@ async function run() {
     await sidePage.waitForSelector('.badge--ok:has-text("V4")', { timeout: 10000 });
     await sidePage.click('button.tab-btn:has-text("OP / Diag")');
     await sidePage.waitForSelector('text=UI_MOUNT', { timeout: 10000 });
-    await sidePage.waitForSelector('.diag-line--error:has-text("REALISM_FEATURE_ERROR")', { timeout: 10000 });
+    await sidePage.waitForSelector('.diag-line:has-text("REALISM_FEATURE_ERROR")', { timeout: 10000 });
     const sideText = await sidePage.locator('body').textContent();
     assert(!/unavailable/i.test(sideText || ''), `Side panel must not contain 'unavailable' text, got: ${sideText}`);
     await assertNoHorizontalOverflow(sidePage, 'sidepanel');

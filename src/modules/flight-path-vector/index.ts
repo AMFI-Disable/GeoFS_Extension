@@ -218,7 +218,7 @@ export class FlightPathVectorModule implements IModule {
       document.body.appendChild(el);
     }
     el.style.cssText =
-      'position:fixed;bottom:40px;right:calc(10px + 48px + 16px);height:36px;min-width:64px;padding:0 16px;' +
+      'position:fixed;bottom:84px;right:calc(10px + 48px + 16px);height:36px;min-width:64px;padding:0 16px;' +
       'display:inline-block;background:0 0;border:none;border-radius:0;box-shadow:none;' +
       'backdrop-filter:none;-webkit-backdrop-filter:none;' +
       'font-family:"Roboto","Helvetica","Arial",sans-serif;font-size:14px;font-weight:400;text-transform:uppercase;' +

@@ -9,7 +9,13 @@
     "128": "icons/icon128.png"
   },
   "permissions": ["storage", "tabs", "sidePanel"],
-  "host_permissions": ["*://*.geo-fs.com/*", "*://geo-fs.com/*"],
+  "host_permissions": [
+    "*://*.geo-fs.com/*",
+    "*://geo-fs.com/*",
+    "https://api.airplanes.live/*",
+    "https://www.simbrief.com/*",
+    "https://api.aviationapi.com/*"
+  ],
   "action": {
     "default_popup": "popup/index.html",
     "default_title": "GeoFS Extension",

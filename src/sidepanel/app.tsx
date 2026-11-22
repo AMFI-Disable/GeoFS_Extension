@@ -176,10 +176,11 @@ export function App() {
             <button
               type="button"
               class="btn-sm"
+              style="padding:3px 6px;white-space:nowrap;"
               title="Open full-screen Cockpit & Radar tab"
               onClick={() => openPopOutTab(panelTab)}
             >
-              Pop Out ↗
+              Popout ↗
             </button>
           )}
           <button type="button" class="btn-sm" onClick={() => openOptionsPage()}>

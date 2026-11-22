@@ -269,16 +269,18 @@ html[data-surface="options"] .title {
 
 .tab-btn {
   flex: 1;
-  min-width: 64px;
+  min-width: 0;
   background: transparent;
   color: var(--muted);
   border: 1px solid transparent;
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 4px 5px;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 10.5px;
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: color 0.12s ease, background 0.12s ease;
 }
 
@@ -780,14 +782,6 @@ html[data-surface="sidepanel"] .help-bubble {
   font-size: 10px;
   color: var(--muted);
   line-height: 1.35;
-}
-
-input[type="checkbox"] {
-  accent-color: var(--accent);
-  width: 15px;
-  height: 15px;
-  cursor: pointer;
-  flex-shrink: 0;
 }
 
 input[type="range"] {

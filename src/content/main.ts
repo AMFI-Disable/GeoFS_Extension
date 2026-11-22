@@ -45,7 +45,7 @@ import { DEFAULT_SETTINGS, type ExtensionSettings } from '../types/settings';
           ? (payload as { level?: unknown }).level
           : undefined;
       const level: 'info' | 'warn' | 'error' =
-        payloadLevel === 'error' || payloadLevel === 'warn'
+        payloadLevel === 'error' || payloadLevel === 'warn' || payloadLevel === 'info'
           ? payloadLevel
           : code.endsWith('_ERROR')
             ? 'error'

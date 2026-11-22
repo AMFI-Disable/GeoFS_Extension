@@ -79,7 +79,7 @@ export function applyDockPresetStyles(root: HTMLElement, preset: HudDockPreset):
   root.style.left = 'auto';
   if (preset === 'top-right') {
     root.style.top = '70px';
-    root.style.right = '20px';
+    root.style.right = '54px';
     root.style.transformOrigin = 'top right';
   } else if (preset === 'top-left') {
     root.style.top = '70px';
@@ -87,7 +87,7 @@ export function applyDockPresetStyles(root: HTMLElement, preset: HudDockPreset):
     root.style.transformOrigin = 'top left';
   } else if (preset === 'bottom-right') {
     root.style.bottom = '20px';
-    root.style.right = '20px';
+    root.style.right = '54px';
     root.style.transformOrigin = 'bottom right';
   } else {
     root.style.bottom = '20px';
