@@ -3,6 +3,7 @@ export interface UpdateInfo {
   currentVersion: string;
   releaseUrl: string;
   downloadUrl: string;
+  releaseNotes?: string;
   checkedAt: number;
 }
 
@@ -81,6 +82,7 @@ export async function checkForExtensionUpdate(force = false): Promise<UpdateInfo
     const data = (await resp.json()) as {
       tag_name?: string;
       html_url?: string;
+      body?: string;
       assets?: Array<{ name?: string; browser_download_url?: string }>;
     };
     const latestVersion = (data.tag_name ?? '').replace(/^v/i, '').trim();
@@ -89,6 +91,8 @@ export async function checkForExtensionUpdate(force = false): Promise<UpdateInfo
     const zipAsset = data.assets?.find((a) => a.name?.endsWith('.zip') && a.browser_download_url);
     const releaseUrl = data.html_url || LATEST_RELEASE_PAGE;
     const downloadUrl = zipAsset?.browser_download_url || releaseUrl;
+    const rawNotes = (data.body ?? '').replace(/\s+/g, ' ').trim();
+    const releaseNotes = rawNotes ? (rawNotes.length > 220 ? `${rawNotes.slice(0, 217)}...` : rawNotes) : undefined;
 
     const info: UpdateInfo | null =
       compareSemver(latestVersion, currentVersion) > 0
@@ -97,6 +101,7 @@ export async function checkForExtensionUpdate(force = false): Promise<UpdateInfo
             currentVersion,
             releaseUrl,
             downloadUrl,
+            releaseNotes,
             checkedAt: Date.now()
           }
         : null;

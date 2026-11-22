@@ -12,11 +12,18 @@ import {
   requestActiveTabTelemetry,
   saveExtensionPatch,
   saveScriptPatch,
+  sendApPpCommand,
   subscribeSettings,
   type DiagEntry,
   type GeoFSTabInfo,
   type LiveTelemetrySummary
 } from '../shared/settings-store';
+import {
+  clearCachedSimBriefOfp,
+  fetchSimBriefOfp,
+  loadCachedSimBriefOfp,
+  type SimBriefOfp
+} from '../shared/simbrief';
 import { getCachedUpdateInfo, type UpdateInfo } from '../shared/update-checker';
 import { ApPpPanel } from './ap-pp-panel';
 import {
@@ -40,6 +47,9 @@ export function App() {
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);
   const [diags, setDiags] = useState<DiagEntry[]>([]);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [simbriefUser, setSimbriefUser] = useState('');
+  const [simbriefOfp, setSimbriefOfp] = useState<SimBriefOfp | null>(null);
+  const [simbriefStatus, setSimbriefStatus] = useState('');
   const [panelTab, setActiveTab] = useState<'ap-pp' | 'realism' | 'diag'>(() => {
     try {
       const saved = localStorage.getItem('geofs_ext_sidepanel_tab');
@@ -61,6 +71,12 @@ export function App() {
   useEffect(() => {
     void loadSplitSettings().then(setSettings);
     void getCachedUpdateInfo().then(setUpdateInfo);
+    void loadCachedSimBriefOfp().then((ofp) => {
+      if (ofp) {
+        setSimbriefOfp(ofp);
+        setSimbriefUser(ofp.username);
+      }
+    });
     const unsubSettings = subscribeSettings(setSettings);
 
     const refreshLive = () => {
@@ -269,16 +285,80 @@ export function App() {
       </div>
 
       {panelTab === 'ap-pp' && (
-        <ApPpPanel
-          enabled={Boolean(settings.modules['autopilot-pp'])}
-          snapshot={live?.apPp}
-          tabId={activeTab?.id}
-          onEnableBeta={() => {
-            const nextModules = { ...settings.modules, 'autopilot-pp': true, 'autothrottle': false };
-            setSettings((prev) => ({ ...prev, modules: nextModules }));
-            void saveExtensionPatch({ modules: nextModules }).then(setSettings);
-          }}
-        />
+        <>
+          <ApPpPanel
+            enabled={Boolean(settings.modules['autopilot-pp'])}
+            snapshot={live?.apPp}
+            tabId={activeTab?.id}
+            onEnableBeta={() => {
+              const nextModules = { ...settings.modules, 'autopilot-pp': true, 'autothrottle': false };
+              setSettings((prev) => ({ ...prev, modules: nextModules }));
+              void saveExtensionPatch({ modules: nextModules }).then(setSettings);
+            }}
+          />
+          <div class="panel-card" style="margin-top:8px;">
+            <div class="section-heading">SimBrief OFP Importer</div>
+            <div style="display:flex;gap:6px;margin-bottom:6px;">
+              <input
+                type="text"
+                placeholder="SimBrief Username / Pilot ID"
+                value={simbriefUser}
+                onInput={(e) => setSimbriefUser((e.target as HTMLInputElement).value)}
+                style="flex:1;min-width:0;"
+              />
+              <button
+                type="button"
+                class="btn-sm"
+                onClick={async () => {
+                  setSimbriefStatus('Fetching...');
+                  try {
+                    const ofp = await fetchSimBriefOfp(simbriefUser);
+                    setSimbriefOfp(ofp);
+                    setSimbriefStatus('');
+                  } catch (err) {
+                    setSimbriefStatus(err instanceof Error ? err.message : 'Fetch failed');
+                  }
+                }}
+              >
+                Import
+              </button>
+            </div>
+            {simbriefStatus && <div class="muted-hint" style="font-size:11px;">{simbriefStatus}</div>}
+            {simbriefOfp && (
+              <div style="font-size:11px;display:flex;flex-direction:column;gap:4px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong>{simbriefOfp.origin} → {simbriefOfp.destination}</strong>
+                  <span class="badge">{simbriefOfp.aircraftIcao} · {simbriefOfp.callsign}</span>
+                </div>
+                <div class="muted-hint" style="word-break:break-word;">{simbriefOfp.route}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                  <span>CRZ: {simbriefOfp.cruiseAltFt.toLocaleString()} ft · Fuel: {simbriefOfp.blockFuelKg.toLocaleString()} kg</span>
+                  <div style="display:flex;gap:4px;">
+                    {simbriefOfp.cruiseAltFt > 0 && (
+                      <button
+                        type="button"
+                        class="chip-btn"
+                        onClick={() => void sendApPpCommand({ type: 'setAltitude', feet: simbriefOfp.cruiseAltFt }, activeTab?.id)}
+                      >
+                        Set CRZ Alt
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      class="chip-btn"
+                      onClick={() => {
+                        void clearCachedSimBriefOfp();
+                        setSimbriefOfp(null);
+                      }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {panelTab === 'diag' && (

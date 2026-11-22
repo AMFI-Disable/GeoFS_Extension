@@ -39,7 +39,12 @@ import {
   type GeoFSTabInfo,
   type LiveTelemetrySummary
 } from '../shared/settings-store';
-import { getCachedUpdateInfo, type UpdateInfo } from '../shared/update-checker';
+import {
+  checkForExtensionUpdate,
+  getCachedUpdateInfo,
+  getCurrentExtensionVersion,
+  type UpdateInfo
+} from '../shared/update-checker';
 import type { AircraftCategory, AircraftProfile } from '../types/module';
 import {
   DEFAULT_SETTINGS,
@@ -100,6 +105,7 @@ export function App() {
   const [live, setLive] = useState<LiveTelemetrySummary | null>(null);
   const [diags, setDiags] = useState<DiagEntry[]>([]);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [updateStatus, setUpdateStatus] = useState('');
   const [geofsTabs, setGeofsTabs] = useState<GeoFSTabInfo[]>([]);
   const [selectedTabId, setSelectedTabId] = useState<number | undefined>(undefined);
   const [displayInfo, setDisplayInfo] = useState(() => detectDisplayProfile());
@@ -286,19 +292,42 @@ export function App() {
             {live?.simMajor ? `Live · GeoFS V${live.simMajor}` : 'GeoFS Standby'}
           </span>
           <span class="badge">{os.toUpperCase()}</span>
+          <button
+            type="button"
+            class="btn-sm"
+            onClick={async () => {
+              setUpdateStatus('Checking...');
+              const info = await checkForExtensionUpdate(true);
+              setUpdateInfo(info);
+              setUpdateStatus(info ? `Update v${info.latestVersion} found!` : `Up to date (v${getCurrentExtensionVersion()})`);
+            }}
+          >
+            Check Updates
+          </button>
         </div>
       </div>
 
+      {updateStatus && !updateInfo && (
+        <div class="muted-hint" style="margin-bottom:6px;text-align:right;font-size:11px;">
+          {updateStatus}
+        </div>
+      )}
+
       {updateInfo && (
-        <div class="sync-banner" style="border-color:rgba(16,185,129,0.5);background:rgba(16,185,129,0.12);justify-content:space-between;">
-          <span>
-            A new release <strong>v{updateInfo.latestVersion}</strong> is available (current: v{updateInfo.currentVersion}).
-          </span>
+        <div class="sync-banner" style="border-color:rgba(16,185,129,0.5);background:rgba(16,185,129,0.12);justify-content:space-between;align-items:flex-start;">
+          <div style="min-width:0;flex:1;">
+            <div>
+              A new release <strong>v{updateInfo.latestVersion}</strong> is available (current: v{updateInfo.currentVersion}).
+            </div>
+            {updateInfo.releaseNotes && (
+              <div class="muted-hint" style="margin-top:3px;font-size:11px;">{updateInfo.releaseNotes}</div>
+            )}
+          </div>
           <a
             href={updateInfo.downloadUrl}
             target="_blank"
             rel="noreferrer"
-            style="color:#10b981;font-weight:700;text-decoration:none;white-space:nowrap;"
+            style="color:#10b981;font-weight:700;text-decoration:none;white-space:nowrap;margin-left:10px;"
           >
             Download Latest ZIP ↗
           </a>
