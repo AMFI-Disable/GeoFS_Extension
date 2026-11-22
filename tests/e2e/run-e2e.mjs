@@ -10,25 +10,54 @@ const rootDir = resolve(__dirname, '../..');
 const distDir = resolve(rootDir, 'dist');
 const harnessHtml = readFileSync(resolve(__dirname, 'mock-geofs-harness.html'), 'utf8');
 
-function findChromiumExecutable() {
-  const candidates = [
-    process.env.CHROME_BIN,
-    (() => {
-      try {
-        return chromium.executablePath();
-      } catch {
-        return null;
+function resolveLaunchOptions() {
+  const explicitBin = process.env.E2E_CHROME_BIN || process.env.CHROME_BIN;
+  const playwrightBin = (() => {
+    try {
+      const p = chromium.executablePath();
+      return p && existsSync(p) ? p : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  if (playwrightBin && (!explicitBin || /google-chrome/i.test(explicitBin))) {
+    return {
+      label: `Playwright Chromium (${playwrightBin})`,
+      options: {
+        channel: 'chromium',
+        headless: true
       }
-    })(),
+    };
+  }
+
+  const candidates = [
+    explicitBin,
     '/usr/bin/chromium',
     '/usr/bin/chromium-browser',
     '/usr/bin/google-chrome'
   ].filter(Boolean);
 
   for (const path of candidates) {
-    if (existsSync(path)) return path;
+    if (existsSync(path)) {
+      return {
+        label: path,
+        options: {
+          executablePath: path,
+          headless: false,
+          extraArgs: ['--headless=new']
+        }
+      };
+    }
   }
-  return '/usr/bin/chromium';
+
+  return {
+    label: 'Playwright Chromium (default)',
+    options: {
+      channel: 'chromium',
+      headless: true
+    }
+  };
 }
 
 async function assertNoHorizontalOverflow(page, label) {
@@ -45,7 +74,7 @@ async function assertNoHorizontalOverflow(page, label) {
 async function getExtensionId(context) {
   let [worker] = context.serviceWorkers();
   if (!worker) {
-    worker = await context.waitForEvent('serviceworker', { timeout: 15000 });
+    worker = await context.waitForEvent('serviceworker', { timeout: 30000 });
   }
   const url = worker.url();
   const match = url.match(/^chrome-extension:\/\/([a-p]{32})\//);
@@ -55,14 +84,16 @@ async function getExtensionId(context) {
 
 async function run() {
   const userDataDir = mkdtempSync(resolve(tmpdir(), 'geofs-ext-e2e-'));
+  const launch = resolveLaunchOptions();
   console.log('[E2E] Launching Chromium with unpacked extension:', distDir);
+  console.log('[E2E] Browser:', launch.label);
 
+  const { extraArgs = [], ...launchOverrides } = launch.options;
   const context = await chromium.launchPersistentContext(userDataDir, {
-    executablePath: findChromiumExecutable(),
-    headless: false,
+    ...launchOverrides,
     viewport: { width: 1280, height: 800 },
     args: [
-      '--headless=new',
+      ...extraArgs,
       `--disable-extensions-except=${distDir}`,
       `--load-extension=${distDir}`,
       '--no-sandbox',

@@ -127,4 +127,6 @@ jobs:
       - name: Build Extension
         run: npm run build
       - name: Run Extension E2E Suite
+        env:
+          CHROME_BIN: ""
         run: npm run test:e2e
