@@ -74,6 +74,29 @@ describe('Split Settings Schema & Legacy Migration', () => {
     expect(overridden.opSyncPolicy).toBe('allow');
     expect(overridden.opThrustMultiplier).toBe(500);
   });
+
+  it('sanitizes out-of-range or NaN persisted values back to safe defaults', () => {
+    expect(DEFAULT_SETTINGS.fuelDynamicSfc).toBe(true);
+    const sanitized = mergeSettings(
+      { themeMode: 'neon' as ExtensionSettings['themeMode'], imageryProvider: 'unknown' as ExtensionSettings['imageryProvider'] },
+      {
+        autothrottleResponsiveness: Number.NaN,
+        sasStrength: 99,
+        opThrustMultiplier: -5,
+        failureRecoveryChancePct: 250,
+        landingReportSeconds: 0,
+        lightIntensity: -1
+      }
+    );
+    expect(sanitized.themeMode).toBe('auto');
+    expect(sanitized.imageryProvider).toBe('native');
+    expect(sanitized.autothrottleResponsiveness).toBe(DEFAULT_SCRIPT_CONFIG.autothrottleResponsiveness);
+    expect(sanitized.sasStrength).toBe(2.5);
+    expect(sanitized.opThrustMultiplier).toBe(1);
+    expect(sanitized.failureRecoveryChancePct).toBe(100);
+    expect(sanitized.landingReportSeconds).toBe(3);
+    expect(sanitized.lightIntensity).toBe(0.2);
+  });
 });
 
 describe('Effective Closed-Loop SAS Controller', () => {

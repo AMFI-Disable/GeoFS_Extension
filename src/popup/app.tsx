@@ -19,6 +19,7 @@ import { UpdateBanner } from '../shared/update-banner';
 import { getCachedUpdateInfo, type UpdateInfo } from '../shared/update-checker';
 import { detectDisplayProfile } from '../shared/display-calibrator';
 import {
+  DEFAULT_EXTENSION_CONFIG,
   DEFAULT_SETTINGS,
   type CalibratorPreset,
   type ExtensionSettings,
@@ -77,10 +78,11 @@ export function App() {
     void saveExtensionPatch({ modules: nextModules }).then(setSettings);
   };
 
-  const applyPreset = (mode: 'all' | 'minimal' | 'none') => {
+  const applyPreset = (mode: 'default' | 'all' | 'minimal' | 'none') => {
     const nextModules: Record<string, boolean> = {};
     for (const m of MODULE_META) {
-      if (mode === 'all') nextModules[m.id] = true;
+      if (mode === 'default') nextModules[m.id] = Boolean(DEFAULT_EXTENSION_CONFIG.modules[m.id]);
+      else if (mode === 'all') nextModules[m.id] = true;
       else if (mode === 'none') nextModules[m.id] = false;
       else nextModules[m.id] = ['information-display', 'autothrottle', 'landing-statistics'].includes(m.id);
     }
@@ -173,6 +175,9 @@ export function App() {
           <div class="preset-bar">
             <span class="preset-bar-label">Avionics & Addons</span>
             <div class="preset-links">
+              <button type="button" class="link-btn" onClick={() => applyPreset('default')}>
+                Default
+              </button>
               <button type="button" class="link-btn" onClick={() => applyPreset('all')}>
                 All On
               </button>

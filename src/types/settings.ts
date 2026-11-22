@@ -202,7 +202,7 @@ export const DEFAULT_SCRIPT_CONFIG: ScriptConfig = {
   sasStrength: 1.0,
   checklistAutoAdvance: true,
   checklistEnforceMandatoryGates: true,
-  fuelDynamicSfc: false,
+  fuelDynamicSfc: true,
   fuelRealisticTanks: false,
   fuelAutoRefuel: false,
   failureProbabilitiesEnabled: false,
@@ -273,6 +273,15 @@ export function splitSettings(settings: ExtensionSettings): {
   };
 }
 
+function clampNum(value: unknown, fallback: number, min: number, max: number): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+}
+
+function pickEnum<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
 export function mergeSettings(
   extRaw?: Partial<ExtensionConfig> | null,
   scriptRaw?: Partial<ScriptConfig> | null,
@@ -281,11 +290,68 @@ export function mergeSettings(
   const legacy = legacyRaw ?? {};
   const ext = extRaw ?? {};
   const scr = scriptRaw ?? {};
-  return {
+  const combined = {
     ...DEFAULT_SETTINGS,
     ...legacy,
     ...scr,
-    ...ext,
+    ...ext
+  };
+  return {
+    ...combined,
+    themeMode: pickEnum(combined.themeMode, ['auto', 'dark', 'light'] as const, DEFAULT_EXTENSION_CONFIG.themeMode),
+    calibratorPreset: pickEnum(
+      combined.calibratorPreset,
+      ['auto', '1080p', '1440p', '4k', 'ultrawide', 'laptop'] as const,
+      DEFAULT_EXTENSION_CONFIG.calibratorPreset
+    ),
+    imageryProvider: pickEnum(
+      combined.imageryProvider,
+      ['native', 'esri', 'bing', 'osm', 'custom'] as const,
+      DEFAULT_EXTENSION_CONFIG.imageryProvider
+    ),
+    keyboardOsProfile: pickEnum(
+      combined.keyboardOsProfile,
+      ['auto', 'mac', 'windows', 'linux'] as const,
+      DEFAULT_EXTENSION_CONFIG.keyboardOsProfile
+    ),
+    macKeyboardType:
+      combined.macKeyboardType === 'macbook' || combined.macKeyboardType === 'magic' ? combined.macKeyboardType : null,
+    opSyncPolicy: pickEnum(combined.opSyncPolicy, ['ask', 'allow', 'never'] as const, DEFAULT_SCRIPT_CONFIG.opSyncPolicy),
+    fpvResolutionMode: pickEnum(
+      combined.fpvResolutionMode,
+      ['auto', 'hires', 'lowres'] as const,
+      DEFAULT_SCRIPT_CONFIG.fpvResolutionMode
+    ),
+    headlightMode: pickEnum(
+      combined.headlightMode,
+      ['auto', 'on', 'off'] as const,
+      DEFAULT_SCRIPT_CONFIG.headlightMode
+    ),
+    autothrottleResponsiveness: clampNum(
+      combined.autothrottleResponsiveness,
+      DEFAULT_SCRIPT_CONFIG.autothrottleResponsiveness,
+      0.5,
+      2.0
+    ),
+    opDeltaThresholdKts: clampNum(combined.opDeltaThresholdKts, DEFAULT_SCRIPT_CONFIG.opDeltaThresholdKts, 20, 1000),
+    opThrustMultiplier: clampNum(combined.opThrustMultiplier, DEFAULT_SCRIPT_CONFIG.opThrustMultiplier, 1, 1e9),
+    opCeilingFeet: clampNum(combined.opCeilingFeet, DEFAULT_SCRIPT_CONFIG.opCeilingFeet, 50_000, 1e12),
+    sasStrength: clampNum(combined.sasStrength, DEFAULT_SCRIPT_CONFIG.sasStrength, 0.25, 2.5),
+    failureProbabilityIntervalSec: clampNum(
+      combined.failureProbabilityIntervalSec,
+      DEFAULT_SCRIPT_CONFIG.failureProbabilityIntervalSec,
+      5,
+      3600
+    ),
+    failureRecoveryChancePct: clampNum(
+      combined.failureRecoveryChancePct,
+      DEFAULT_SCRIPT_CONFIG.failureRecoveryChancePct,
+      0,
+      100
+    ),
+    landingReportSeconds: clampNum(combined.landingReportSeconds, DEFAULT_SCRIPT_CONFIG.landingReportSeconds, 3, 120),
+    fpvProjectionFactor: clampNum(combined.fpvProjectionFactor, DEFAULT_SCRIPT_CONFIG.fpvProjectionFactor, 5, 50),
+    lightIntensity: clampNum(combined.lightIntensity, DEFAULT_SCRIPT_CONFIG.lightIntensity, 0.2, 5.0),
     modules: {
       ...DEFAULT_EXTENSION_CONFIG.modules,
       ...(legacy.modules ?? {}),
