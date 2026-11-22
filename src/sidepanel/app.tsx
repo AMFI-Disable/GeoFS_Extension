@@ -331,9 +331,26 @@ export function App() {
                   <span class="badge">{simbriefOfp.aircraftIcao} · {simbriefOfp.callsign}</span>
                 </div>
                 <div class="muted-hint" style="word-break:break-word;">{simbriefOfp.route}</div>
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-                  <span>CRZ: {simbriefOfp.cruiseAltFt.toLocaleString()} ft · Fuel: {simbriefOfp.blockFuelKg.toLocaleString()} kg</span>
-                  <div style="display:flex;gap:4px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
+                  <span>
+                    CRZ: {simbriefOfp.cruiseAltFt.toLocaleString()} ft · Fuel: {simbriefOfp.blockFuelKg.toLocaleString()} kg
+                    {simbriefOfp.waypoints.length > 0 ? ` · ${simbriefOfp.waypoints.length} WPTs` : ''}
+                  </span>
+                  <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                    {simbriefOfp.waypoints.length > 0 && (
+                      <button
+                        type="button"
+                        class="chip-btn active"
+                        onClick={() =>
+                          void sendApPpCommand(
+                            { type: 'setRoute', waypoints: simbriefOfp.waypoints },
+                            activeTab?.id
+                          )
+                        }
+                      >
+                        Load LNAV
+                      </button>
+                    )}
                     {simbriefOfp.cruiseAltFt > 0 && (
                       <button
                         type="button"

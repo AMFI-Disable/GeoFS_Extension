@@ -44,6 +44,7 @@ export class InformationDisplayModule implements IModule {
   private lastAcKey = '';
   private lastKias = 0;
   private trend = '';
+  private activePushMode: 'off' | 'straight' | 'left' | 'right' = 'off';
 
   public init(context: ModuleContext): void {
     const root = document.createElement('div');
@@ -132,7 +133,15 @@ export class InformationDisplayModule implements IModule {
     });
     root.querySelectorAll<HTMLButtonElement>('[data-push]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        window.dispatchEvent(new CustomEvent('geofs-ext:pushback', { detail: { mode: btn.dataset.push || 'off' } }));
+        const mode = (btn.dataset.push as 'off' | 'straight' | 'left' | 'right') || 'off';
+        this.activePushMode = mode;
+        root.querySelectorAll<HTMLButtonElement>('[data-push]').forEach((b) => {
+          const isStop = b.dataset.push === 'off';
+          const isActive = !isStop && b.dataset.push === mode;
+          b.style.outline = isActive ? '1px solid #38bdf8' : 'none';
+          b.style.color = isStop ? '#fca5a5' : isActive ? '#38bdf8' : '#e2e8f0';
+        });
+        window.dispatchEvent(new CustomEvent('geofs-ext:pushback', { detail: { mode } }));
       });
     });
 
@@ -318,6 +327,21 @@ export class InformationDisplayModule implements IModule {
         }
       }
 
+      const tugPanel = this.rootEl?.querySelector<HTMLDivElement>('[data-panel="tug"]');
+      const showTugPreview = Boolean((tugPanel && !tugPanel.hidden) || this.activePushMode !== 'off');
+      let pushArcHtml = '';
+      if (showTugPreview) {
+        const mode = this.activePushMode;
+        const pathD =
+          mode === 'left'
+            ? 'M 0 5 Q 0 22 -18 22'
+            : mode === 'right'
+              ? 'M 0 5 Q 0 22 18 22'
+              : 'M 0 5 L 0 26';
+        const stroke = mode === 'off' ? 'rgba(56,189,248,0.55)' : '#38bdf8';
+        pushArcHtml = `<path d="${pathD}" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-dasharray="3,2" stroke-linecap="round"/>`;
+      }
+
       const hdg = Number.isFinite(telemetry.heading) ? telemetry.heading : 0;
       svg.innerHTML = `
         <circle cx="0" cy="0" r="30" fill="none" stroke="rgba(148,163,184,0.22)" stroke-width="0.8" stroke-dasharray="2,2"/>
@@ -325,6 +349,7 @@ export class InformationDisplayModule implements IModule {
         ${linesHtml}
         ${trafficHtmlParts.join('')}
         <g transform="rotate(${hdg.toFixed(1)})">
+          ${pushArcHtml}
           <polygon points="0,-6 4,5 0,2 -4,5" fill="#10b981"/>
         </g>
       `;

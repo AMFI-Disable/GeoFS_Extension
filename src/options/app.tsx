@@ -705,6 +705,56 @@ export function App() {
                 />
               )}
             </div>
+
+            <div class="panel-card">
+              <div class="section-heading">Profile Backup &amp; Share (JSON)</div>
+              <div class="muted-hint" style="margin-bottom:8px;">
+                Export your modules, keybindings, realism toggles, and custom aircraft overrides to a shareable JSON file, or import a saved profile.
+              </div>
+              <div class="chip-group">
+                <button
+                  type="button"
+                  class="btn-sm"
+                  onClick={() =>
+                    triggerDownload(
+                      `geofs-extension-profile-${new Date().toISOString().slice(0, 10)}.json`,
+                      JSON.stringify(settings, null, 2),
+                      'application/json'
+                    )
+                  }
+                >
+                  Export Profile JSON
+                </button>
+                <label class="btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;">
+                  Import Profile JSON
+                  <input
+                    type="file"
+                    accept="application/json,.json"
+                    style="display:none;"
+                    onChange={(e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        try {
+                          const parsed = JSON.parse(String(reader.result || '{}')) as Partial<ExtensionSettings>;
+                          const merged = mergeExtensionPatch(DEFAULT_SETTINGS, parsed);
+                          setSettings(merged);
+                          const { extensionConfig, scriptConfig } = splitSettings(merged);
+                          void saveExtensionPatch(extensionConfig);
+                          void saveScriptPatch(scriptConfig);
+                          setUpdateStatus(`Imported profile "${file.name}"`);
+                        } catch {
+                          setUpdateStatus('Invalid profile JSON file.');
+                        }
+                      };
+                      reader.readAsText(file);
+                      (e.target as HTMLInputElement).value = '';
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
           </div>
         </div>
       )}

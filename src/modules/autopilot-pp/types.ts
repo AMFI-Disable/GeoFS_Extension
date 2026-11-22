@@ -30,6 +30,13 @@ export interface ApPpFmaState {
   protection: 'ALPHA FLOOR' | 'OVERSPEED' | 'BANK LIMIT' | 'STICK DISC' | null;
 }
 
+export interface ApPpRouteWaypoint {
+  ident: string;
+  lat: number;
+  lon: number;
+  altitudeFt?: number;
+}
+
 export interface ApPpSnapshot {
   engaged: boolean;
   beta: true;
@@ -45,6 +52,8 @@ export interface ApPpSnapshot {
   targetLat: number;
   targetLon: number;
   waypointName: string;
+  routeIndex?: number;
+  routeLength?: number;
   landingArmed: boolean;
   landingRetarded: boolean;
   envelopeProtection: boolean;
@@ -71,6 +80,9 @@ export type ApPpCommand =
   | { type: 'setVs'; fpm: number | null }
   | { type: 'setVerticalMode'; mode: ApPpVerticalMode }
   | { type: 'setLatLon'; lat: number; lon: number; name?: string }
+  | { type: 'setRoute'; waypoints: ApPpRouteWaypoint[] }
+  | { type: 'advanceWaypoint' }
+  | { type: 'clearRoute' }
   | { type: 'holdHere'; legMinutes?: number; turnDir?: ApPpHoldTurnDir }
   | { type: 'setHoldConfig'; legMinutes?: number; turnDir?: ApPpHoldTurnDir }
   | { type: 'holdPresent'; axis: 'alt' | 'hdg' | 'spd' | 'all' }

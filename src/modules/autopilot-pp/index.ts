@@ -100,6 +100,8 @@ export class AutopilotPlusModule implements IModule {
   private targetLat = 0;
   private targetLon = 0;
   private waypointName = 'CUSTOM';
+  private routeWaypoints: Array<{ ident: string; lat: number; lon: number; altitudeFt?: number }> = [];
+  private routeIndex = 0;
   private landingArmed = false;
   private landingRetarded = false;
   private envelopeProtection = true;
@@ -401,6 +403,45 @@ export class AutopilotPlusModule implements IModule {
           this.lateralMode = 'latlon';
         }
         break;
+      case 'setRoute': {
+        const valid = (cmd.waypoints || []).filter(
+          (w) => Number.isFinite(w.lat) && Number.isFinite(w.lon)
+        );
+        if (valid.length > 0) {
+          this.routeWaypoints = valid.map((w) => ({
+            ident: w.ident || 'WPT',
+            lat: clamp(w.lat, -90, 90),
+            lon: clamp(w.lon, -180, 180),
+            altitudeFt: w.altitudeFt
+          }));
+          this.routeIndex = 0;
+          const first = this.routeWaypoints[0];
+          this.targetLat = first.lat;
+          this.targetLon = first.lon;
+          this.waypointName = first.ident;
+          this.lateralMode = 'wpt';
+          if (first.altitudeFt && first.altitudeFt > 0) {
+            this.targetAltFt = clamp(Math.round(first.altitudeFt), 0, 80000);
+          }
+          this.ctx?.anchors.showToast(`LNAV Route Loaded (${this.routeWaypoints.length} WPTs) → ${first.ident}`);
+        }
+        break;
+      }
+      case 'advanceWaypoint':
+        if (this.routeIndex + 1 < this.routeWaypoints.length) {
+          this.routeIndex++;
+          const next = this.routeWaypoints[this.routeIndex];
+          this.targetLat = next.lat;
+          this.targetLon = next.lon;
+          this.waypointName = next.ident;
+          this.ctx?.anchors.showToast(`LNAV → ${next.ident} (${this.routeIndex + 1}/${this.routeWaypoints.length})`);
+        }
+        break;
+      case 'clearRoute':
+        this.routeWaypoints = [];
+        this.routeIndex = 0;
+        if (this.lateralMode === 'wpt') this.lateralMode = 'hdg';
+        break;
       case 'holdHere': {
         if (this.lastTelemetry) {
           this.initHoldAtCurrent(this.lastTelemetry, cmd.legMinutes, cmd.turnDir);
@@ -701,6 +742,21 @@ export class AutopilotPlusModule implements IModule {
       });
       desiredHeading = res.targetHeadingDeg;
     } else if (this.lateralMode === 'latlon' || this.lateralMode === 'wpt') {
+      if (this.lateralMode === 'wpt' && this.routeWaypoints.length > 0) {
+        const distNm = greatCircleDistanceNm(t.lat, t.lon, this.targetLat, this.targetLon);
+        const captureNm = Math.max(0.8, (Math.max(0, t.groundSpeed) / 3600) * 15);
+        if (distNm <= captureNm && this.routeIndex + 1 < this.routeWaypoints.length) {
+          this.routeIndex++;
+          const next = this.routeWaypoints[this.routeIndex];
+          this.targetLat = next.lat;
+          this.targetLon = next.lon;
+          this.waypointName = next.ident;
+          if (next.altitudeFt && next.altitudeFt > 0 && this.verticalMode === 'vnav') {
+            this.targetAltFt = clamp(Math.round(next.altitudeFt), 0, 80000);
+          }
+          this.ctx?.anchors.showToast(`LNAV → ${next.ident} (${this.routeIndex + 1}/${this.routeWaypoints.length})`);
+        }
+      }
       desiredHeading = greatCircleBearingDeg(t.lat, t.lon, this.targetLat, this.targetLon);
     }
 
@@ -884,6 +940,8 @@ export class AutopilotPlusModule implements IModule {
       targetLat: this.targetLat,
       targetLon: this.targetLon,
       waypointName: this.waypointName,
+      routeIndex: this.routeWaypoints.length > 0 ? this.routeIndex : undefined,
+      routeLength: this.routeWaypoints.length > 0 ? this.routeWaypoints.length : undefined,
       landingArmed: this.landingArmed,
       landingRetarded: this.landingRetarded,
       envelopeProtection: this.envelopeProtection,
