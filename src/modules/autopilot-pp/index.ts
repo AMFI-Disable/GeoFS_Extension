@@ -1,4 +1,3 @@
-import { buildTopbarPadStyles } from '../../shared/topbar-styles';
 import type { FlightTelemetry, IModule, ModuleContext } from '../../types/module';
 import type { ExtensionSettings } from '../../types/settings';
 import {
@@ -23,52 +22,7 @@ import type {
   ApPpSpeedMode,
   ApPpVerticalMode
 } from './types';
-
-const AP_PP_PAD_STYLES = `
-  .ext-ap-pp-bar,
-  .ext-ap-pp-bar * {
-    box-sizing: border-box;
-  }
-  .ext-ap-pp-bar {
-    display: inline-flex;
-    align-items: center;
-    vertical-align: var(--geofs-ext-ap-valign, middle);
-    pointer-events: all;
-  }
-  ${buildTopbarPadStyles('#ap-pp-button.ext-ap-pp-pad')}
-  #ap-pp-button.ext-ap-pp-pad {
-    position: relative;
-  }
-  #ap-pp-button .ext-ap-pp-label {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    line-height: 1.05;
-    gap: 1px;
-  }
-  #ap-pp-button .ext-ap-pp-title-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-  }
-  #ap-pp-button .ext-ap-pp-beta {
-    font-size: 7px;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    padding: 0 3px;
-    border-radius: 3px;
-    background: rgba(245, 158, 11, 0.25);
-    border: 1px solid rgba(245, 158, 11, 0.7);
-    color: #fbbf24;
-  }
-  #ap-pp-button .ext-ap-pp-fma {
-    font-size: 8px;
-    letter-spacing: 0.3px;
-    opacity: 0.85;
-    font-family: monospace;
-  }
-`;
+import { mountApPpUi } from './ui';
 
 export class AutopilotPlusModule implements IModule {
   public readonly id = 'autopilot-pp';
@@ -137,88 +91,25 @@ export class AutopilotPlusModule implements IModule {
   public init(context: ModuleContext): void {
     this.ctx = context;
 
-    if (typeof document !== 'undefined') {
-      const style = document.createElement('style');
-      style.id = 'geofs-ext-ap-pp-styles';
-      style.textContent = AP_PP_PAD_STYLES;
-      document.head?.append(style);
-      this.unmounts.push(() => style.remove());
-
-      const bar = document.createElement('div');
-      bar.className = 'ext-ap-pp-bar';
-      bar.innerHTML = `
-      <div class="control-pad ext-ap-pp-pad" id="ap-pp-button"
-           role="button" tabindex="0" aria-pressed="false"
-           title="AP++ (Beta): Toggle master autopilot & open Side Panel">
-        <div class="control-pad-label transp-pad ext-ap-pp-label">
-          <span class="ext-ap-pp-title-row">AP++ <span class="ext-ap-pp-beta">BETA</span></span>
-          <span class="ext-ap-pp-fma">STBY</span>
-        </div>
-      </div>
-    `;
-
-      const pad = bar.querySelector<HTMLElement>('#ap-pp-button')!;
-      this.fmaLineEl = bar.querySelector<HTMLElement>('.ext-ap-pp-fma');
-      pad.addEventListener('click', (event) => {
-        event.stopPropagation();
-        this.toggleMaster();
-        window.postMessage({ type: 'GEOFS_EXT_OPEN_SIDEPANEL' }, '*');
-      });
-      pad.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        if (!event.repeat) pad.click();
-      });
-
-      this.barEl = bar;
-      this.padEl = pad;
-      this.unmounts.push(context.anchors.mountControl('autopilot-pp-pad', 'autopilot', bar));
-      context.anchors.syncAutopilotPad(pad, bar, true);
-
-      if (typeof context.anchors?.registerHudTab === 'function') {
-        const hudTab = document.createElement('div');
-        hudTab.style.cssText = 'display:flex;flex-direction:column;gap:5px;font-size:10px;color:#e5e7eb;';
-        const fmaRow = document.createElement('div');
-        fmaRow.style.cssText = 'font-family:monospace;font-size:10px;font-weight:700;color:#fbbf24;display:flex;justify-content:space-between;';
-        fmaRow.textContent = 'AP++ STBY';
-        this.hudFmaEl = fmaRow;
-
-        const btnGrid = document.createElement('div');
-        btnGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;';
-        const makeBtn = (label: string, onClick: () => void) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.textContent = label;
-          b.style.cssText = 'background:rgba(255,255,255,0.06);color:#e5e7eb;border:1px solid rgba(255,255,255,0.16);border-radius:4px;padding:4px 4px;font-size:9px;font-weight:700;cursor:pointer;';
-          b.addEventListener('click', onClick);
-          return b;
-        };
-
-        const masterBtn = makeBtn('AP++', () => this.handleCommand({ type: 'toggle' }));
-        const holdAllBtn = makeBtn('HOLD ALL', () => this.handleCommand({ type: 'holdPresent', axis: 'all' }));
-        const raceBtn = makeBtn('RACETRACK', () => this.handleCommand({ type: 'holdHere' }));
-        const ldgBtn = makeBtn('LDG ARM', () => this.handleCommand({ type: 'setLandingArm', armed: !this.landingArmed }));
-        const hoverBtn = makeBtn('HOVER', () => this.handleCommand({ type: 'setHoverMode', enabled: !this.hoverMode }));
-        const protBtn = makeBtn('PROT', () => this.handleCommand({ type: 'setEnvelopeProtection', enabled: !this.envelopeProtection }));
-        btnGrid.append(masterBtn, holdAllBtn, raceBtn, ldgBtn, hoverBtn, protBtn);
-
-        this.syncHudTab = () => {
-          fmaRow.textContent = this.engaged
-            ? `${this.fma.thr} · ${this.fma.vert} · ${this.fma.lat}${this.fma.protection ? ` [${this.fma.protection}]` : ''}`
-            : 'AP++ STBY';
-          const mark = (b: HTMLButtonElement, active: boolean) => {
-            b.style.borderColor = active ? 'var(--geofs-ext-accent, #ffc107)' : 'var(--geofs-ext-border, rgba(255,255,255,0.16))';
-            b.style.color = active ? 'var(--geofs-ext-accent, #ffc107)' : 'var(--geofs-ext-muted, #9e9e9e)';
-          };
-          mark(masterBtn, this.engaged);
-          mark(raceBtn, this.engaged && this.lateralMode === 'hold');
-          mark(ldgBtn, this.landingArmed);
-          mark(hoverBtn, this.engaged && this.hoverMode);
-          mark(protBtn, this.envelopeProtection);
-        };
-        hudTab.append(fmaRow, btnGrid);
-        this.unmounts.push(context.anchors.registerHudTab('ap-pp', 'AP++', hudTab, false, { defaultClosed: true }));
-      }
+    const ui = mountApPpUi(context, {
+      onToggleMaster: () => this.toggleMaster(),
+      onCommand: (cmd) => this.handleCommand(cmd),
+      getState: () => ({
+        engaged: this.engaged,
+        lateralMode: this.lateralMode,
+        landingArmed: this.landingArmed,
+        hoverMode: this.hoverMode,
+        envelopeProtection: this.envelopeProtection,
+        fma: this.fma
+      })
+    });
+    if (ui) {
+      this.barEl = ui.barEl;
+      this.padEl = ui.padEl;
+      this.fmaLineEl = ui.fmaLineEl;
+      this.hudFmaEl = ui.hudFmaEl;
+      this.syncHudTab = ui.syncHudTab;
+      this.unmounts.push(...ui.unmounts);
     }
 
     if (typeof window !== 'undefined') {
