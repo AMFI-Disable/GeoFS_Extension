@@ -25,6 +25,7 @@ export interface RadarTraffic {
   heading: number;
   speedKts: number;
   vsFpm: number;
+  source?: 'geofs' | 'adsb' | 'relay';
 }
 
 export interface RadarRunway {
