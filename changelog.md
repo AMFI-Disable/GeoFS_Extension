@@ -16,6 +16,7 @@
 
 ### Changed
 
+- Restored the Star History chart section in `readme.md` and `website/src/main.ts`, updated `.github/workflows/release.yml` to use `actions/checkout@v7`, `actions/setup-node@v7`, and `softprops/action-gh-release@v3`, and tracked live V4 verification checks in `docs/live-v4-status.md` and `docs/todo.md`.
 - Migrated default extension keybindings from `Shift+` to `Alt+` (`Alt+A`, `Alt+O`, `Alt+H`, `Alt+F`, `Alt+C`, `Alt+L`, `Alt+Y`, `Alt+W`) to avoid conflicts with native GeoFS controls, and harmonized the GeoFS palette across all UI surfaces.
 
 ### Fixed
