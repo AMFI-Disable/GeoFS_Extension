@@ -14,6 +14,20 @@
 
 </div>
 
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?type=date&repos=amfi-disable%2Fgeofs_extension">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=amfi-disable%2Fgeofs_extension&type=date&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=amfi-disable%2Fgeofs_extension&type=date&legend=top-left" />
+    <img alt="AMFI-Disable/GeoFS_Extension Star History Chart" src="https://api.star-history.com/chart?repos=amfi-disable%2Fgeofs_extension&type=date&legend=top-left" />
+  </picture>
+</a>
+
+---
+
 > [!CAUTION]
 > **Educational And Fair-Play Disclaimer**: `GeoFS_Extension` is an open-source, client-side flight instrumentation and realism enhancement suite intended strictly for educational and single-player simulation enjoyment. It does **not** bypass GeoFS subscriptions, ad-reward entitlements, multiplayer server rules, or platform access controls.
 
@@ -139,15 +153,3 @@ npm run test:e2e
 ```
 
 Load the generated `dist/` folder via `chrome://extensions` (**Load unpacked**) and follow the [Live Verification Guide](docs/live-verification-guide.md) when testing live flights. To generate a release ZIP in `release/`, run `npm run package`.
-
----
-
-## Star History
-
-<a href="https://www.star-history.com/#AMFI-Disable/GeoFS_Extension&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=AMFI-Disable/GeoFS_Extension&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=AMFI-Disable/GeoFS_Extension&type=Date" />
-    <img alt="AMFI-Disable/GeoFS_Extension Star History Chart" src="https://api.star-history.com/svg?repos=AMFI-Disable/GeoFS_Extension&type=Date" />
-  </picture>
-</a>
