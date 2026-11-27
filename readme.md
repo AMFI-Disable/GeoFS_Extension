@@ -2,6 +2,8 @@
 
 # GeoFS Flight Suite (`GeoFS_Extension`)
 
+[中文文档](readme.zh-cn.md) · [Contributing](contributing.md)
+
 **All-In-One Addon Pack For GeoFS V3.9 & V4.0 — AP++ Autopilot, Autothrottle, Landing Stats, SimBrief, GPWS, Realism Pack, Fuel, Failures, TCAS & Pushback**
 
 [![Website: Live](https://img.shields.io/badge/Website-Live-66BB6A.svg?style=flat-square)](https://amfi-disable.github.io/GeoFS_Extension/)

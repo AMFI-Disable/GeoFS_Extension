@@ -7,6 +7,11 @@
 
 ## [Unreleased]
 
+### Documentation
+
+- Added Simplified Chinese project and contribution guides and bilingual feedback templates.
+
+
 ### Added
 
 - Added free live GeoFS + global **ADS-B** radar (`src/sidepanel/radar-panel.tsx`, `src/shared/global-traffic.ts`) with popout tab support and callsign watchlist.
