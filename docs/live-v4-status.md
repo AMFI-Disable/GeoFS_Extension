@@ -3,7 +3,7 @@
 > [!CAUTION]
 > **Educational And Fair-Play Disclaimer**: Use this extension for education and single-player simulation. Respect GeoFS subscriptions, ad-reward entitlements, multiplayer rules, and access controls.
 
-Tracker updated November 23, 2026. Checked items have live evidence from the builds documented below. The unpacked v0.3.0 build still needs a live retest.
+Tracker updated November 28, 2026. Checked items have live evidence from the builds documented below.
 
 ## Live Verification Checklist
 
@@ -14,16 +14,16 @@ Tracker updated November 23, 2026. Checked items have live evidence from the bui
 - [x] Confirm docked Side Panel telemetry, `UI_MOUNT`, and `REALISM_STATE`.
 - [x] Confirm Realism & Fuel renders and marks Vortex Effects and Carrier Ops unavailable on V4.
 - [x] Confirm OP / Diag exposes boost controls and diagnostics.
-- [ ] Confirm fresh default HUD placement with no saved position.
-- [ ] Measure the 40 × 40 px off-edge collapsed circle and confirm it restores in place.
+- [x] Confirm fresh default HUD placement with no saved position.
+- [x] Measure the 40 × 40 px off-edge collapsed circle and confirm it restores in place.
 - [ ] Verify the expanded A/THR speed pad, LANDING label, and OP ENG layout in an extension-only parked session.
 
 ### Leg 2 — Checklist And Fuel
 
 - [x] Confirm the checklist gates and fuel controls render.
 - [ ] Verify PRE-T/O parking brake, flaps, gear, and lights each actuate in the simulator.
-- [ ] Open GUIDE and verify the situational reference for the aircraft.
-- [ ] Change fuel from 100% to 10% and verify gross weight, `FUEL_MASS_SYNC`, and native rigid-body `setMassProps`.
+- [x] Open GUIDE and verify the situational reference for the aircraft.
+- [x] Change fuel from 100% to 10% and verify gross weight, `FUEL_MASS_SYNC`, and native rigid-body `setMassProps`.
 - [ ] Compare matched 100% and 10% fuel takeoff rolls for acceleration and pitch response.
 - [ ] Verify live multi-throttle ALTITUDE BURN and REAL TANKS left, center, and right tank drain.
 
@@ -91,3 +91,11 @@ The expanded HUD measured 250 px wide. Dragging its grip moved it from viewport 
 During this run, GeoFS stopped rendering with an invalid array length error. A tab reload then failed to initialize WebGL and construct the Cesium widget. This prevented further flight checks in this session. The simulator's preference reset was left untouched.
 
 On the next Chrome session, GeoFS initialized with a Piper Cub near ground level. The collapsed HUD reappeared at the left edge, measured 24 × 40 CSS px, and restored the full HUD on click. The earlier off-edge position was not reproduced on startup. Chrome automation timed out during the repeat drag-and-collapse sequence and again when reconnecting through the native Chrome controls. The off-edge dimensions and remaining flight checks are still open.
+
+## November 28 Parked Piper Cub Retest
+
+The unpacked extension ran in a fresh Chromium profile on live GeoFS V4. After the startup overlay cleared, three samples showed ground contact, no crash and 0.38–0.51 KIAS. The simulator page contained crash-panel text even when the aircraft's crash flag was false.
+
+- At a 1280 × 720 viewport the fresh HUD measured 250 × 501 px at (976, 70). After dragging it to (1030, 105), the off-edge circle measured 40 × 40 px. Expanding restored the same position and size.
+- In CHECKS, GUIDE opened Situational Procedures Guide. Expanding Cold & Dark Engine Start Guide displayed its reference steps while the aircraft reported ground contact at 0.02 KIAS.
+- Before the fuel fix, a pilot-selected 10% load showed 427 kg while the rigid body still reported 431.5 kg. The fixed build changed both definition and rigid-body mass from 467.5 kg at 100% to 427 kg at 10%. The corresponding FUEL_MASS_SYNC event reported 427 kg and rigidBodySynced true. Returning to 100% restored both to 467.5 kg. Ground contact remained true throughout.

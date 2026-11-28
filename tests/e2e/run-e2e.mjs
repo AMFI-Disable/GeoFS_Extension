@@ -589,6 +589,18 @@ async function run() {
     await simV3.click('#tab-btn-fuel');
     await simV3.waitForSelector('text=ALTITUDE BURN');
     await assertHudNoScroll('FUEL');
+    const fuelSlider = simV3.locator('[data-role="slider"]');
+    await fuelSlider.press('End');
+    const fullMass = await simV3.evaluate(() => window.geofs.aircraft.instance.rigidBody.mass);
+    await fuelSlider.press('ArrowLeft');
+    const selectedMass = await simV3.evaluate(() => {
+      const aircraft = window.geofs.aircraft.instance;
+      return { body: aircraft.rigidBody.mass, definition: aircraft.definition.mass };
+    });
+    assert(selectedMass.definition < fullMass, 'One fuel slider step must reduce gross mass');
+    assert.equal(selectedMass.body, selectedMass.definition, 'Manual fuel edits must update physics even below the burn threshold');
+    await fuelSlider.press('End');
+
     const fuelBtnCur = await simV3.evaluate(() => getComputedStyle(document.querySelector('[data-role="fuelDynamicSfc"]')).cursor);
     assert.equal(fuelBtnCur, 'grab', `Fuel buttons inside HUD must keep grab cursor, got ${fuelBtnCur}`);
     const oldDync = await simV3.locator('text=DYN SFC').count();

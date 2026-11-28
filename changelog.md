@@ -7,6 +7,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Applied small manual fuel changes to the simulator rigid body immediately. Verified the 100% to 10% change and restoration on a parked Piper Cub in live GeoFS V4.
+
 ### Documentation
 
 - Added Simplified Chinese project and contribution guides and bilingual feedback templates.

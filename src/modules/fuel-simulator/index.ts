@@ -322,7 +322,7 @@ export class FuelSimulatorModule implements IModule {
         const payload = Math.max(profile.mtow * 0.1, profile.mtow - profile.oew - profile.maxFuel) * 0.5;
         const mass = profile.oew + payload + this.fuelKg;
         if (Number.isFinite(mass) && mass > 0) {
-          this.syncMass(this.aircraft, mass);
+          this.syncMass(this.aircraft, mass, true);
           this.massSyncElapsed = 0;
           if (this.weightEl) this.weightEl.textContent = `${Math.round(mass).toLocaleString()} kg`;
         }
@@ -507,7 +507,7 @@ export class FuelSimulatorModule implements IModule {
     this.ctx?.emitEvent('fuel:state', { pct: percent, burnKgHr: displayedBurn });
   }
 
-  private syncMass(aircraft: GeoFSAircraftInstance, mass: number): void {
+  private syncMass(aircraft: GeoFSAircraftInstance, mass: number, manualChange = false): void {
     const body = aircraft.rigidBody;
     const definition = aircraft.definition;
     if (body !== this.massTarget?.body || definition !== this.massTarget?.definition) this.restoreMass();
@@ -560,7 +560,8 @@ export class FuelSimulatorModule implements IModule {
 
       if (scaledInertia) {
         const prevBodyMass = this.massTarget.lastBodyMass ?? this.massTarget.originalMass;
-        const bodyThreshold = Math.max(2, this.massTarget.originalMass * 0.01);
+        // Apply pilot-selected fuel loads exactly. Batch small changes from continuous fuel burn.
+        const bodyThreshold = manualChange ? 0 : Math.max(2, this.massTarget.originalMass * 0.01);
         if (!this.massTarget.calledSetMassProps || Math.abs(prevBodyMass - safeMass) > bodyThreshold) {
           body.setMassProps(safeMass, scaledInertia);
           this.massTarget.calledSetMassProps = true;
